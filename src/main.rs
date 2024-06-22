@@ -15,16 +15,16 @@ struct Block {
 async fn add_block(block: Json<Block>, client: &rocket::State<Client>) -> &'static str {
     // ブロックの処理と検証
 
-    // メインチェーンへのブロック転送
-    let main_chain_url = "http://main_chain:8080/add_block";
-    let res = client.post(main_chain_url)
+    // 大陸チェーンへのブロック転送
+    let continental_chain_url = "http://continental_chain:8080/add_block";
+    let res = client.post(continental_chain_url)
                     .json(&*block)
                     .send()
                     .await;
 
     match res {
-        Ok(_) => "Block added and sent to main chain",
-        Err(_) => "Failed to send block to main chain",
+        Ok(_) => "Block added and sent to continental chain",
+        Err(_) => "Failed to send block to continental chain",
     }
 }
 
