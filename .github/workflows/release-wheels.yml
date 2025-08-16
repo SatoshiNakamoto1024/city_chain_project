@@ -12,38 +12,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Setup Rust (for maturin)
+      - name: Setup Rust (stable)
         uses: dtolnay/rust-toolchain@stable
 
+        # maturin/pyo3 用に必要十分
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
           pip install maturin==1.5.1 build twine
 
-      # Rust 拡張 wheel（manylinux）
+      # ---- A) Rust 拡張の wheel を作る（manylinux2014 互換）----
       - name: Build rust wheels
         run: |
           maturin build \
             -m DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust/Cargo.toml \
             --release --features python --manylinux 2014 \
-            --out dist_rust
+            --out target/wheels
 
-      # Python ラッパー（sdist+wheel）
+      # ---- B) Python ラッパー（sdist + wheel）----
       - name: Build python wrapper
         working-directory: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
         run: python -m build
 
-      # TestPyPI にアップロード
+      # ---- C) TestPyPI にアップロード ----
       - name: Upload to TestPyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
           twine upload --repository-url https://test.pypi.org/legacy/ \
-            dist_rust/*.whl \
+            target/wheels/*.whl \
             DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/dist/*
+YAML
+
+git add .github/workflows/release-wheels.yml
+git commit -m "ci(release): minimal working release-wheels.yml"
+git push origin main
