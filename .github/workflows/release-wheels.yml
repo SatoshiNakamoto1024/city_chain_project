@@ -8,38 +8,36 @@ jobs:
   build-upload:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write   # Release に添付もする
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python 3.12
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Setup Rust (stable)
+      - name: Setup Rust (for maturin)
         uses: dtolnay/rust-toolchain@stable
 
-        # maturin/pyo3 用に必要十分
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
           pip install maturin==1.5.1 build twine
 
-      # ---- A) Rust 拡張の wheel を作る（manylinux2014 互換）----
-      - name: Build rust wheels
+      # (A) Rust 拡張 wheel
+      - name: Build rust wheels (manylinux)
         run: |
           maturin build \
             -m DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust/Cargo.toml \
-            --release --features python --manylinux 2014 \
-            --out target/wheels
+            --release --features python --manylinux 2014
 
-      # ---- B) Python ラッパー（sdist + wheel）----
-      - name: Build python wrapper
+      # (B) Python ラッパー
+      - name: Build python wrapper (sdist+wheel)
         working-directory: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
         run: python -m build
 
-      # ---- C) TestPyPI にアップロード ----
+      # (C) TestPyPI に両方アップ（依存関係も同じ index上）
       - name: Upload to TestPyPI
         env:
           TWINE_USERNAME: __token__
@@ -48,8 +46,12 @@ jobs:
           twine upload --repository-url https://test.pypi.org/legacy/ \
             target/wheels/*.whl \
             DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/dist/*
-YAML
 
-git add .github/workflows/release-wheels.yml
-git commit -m "ci(release): minimal working release-wheels.yml"
-git push origin main
+      # (D) GitHub Release（wheel を資産としても添付しておくと入手が楽）
+      - name: Attach wheels to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            target/wheels/*.whl
+            DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/dist/*
