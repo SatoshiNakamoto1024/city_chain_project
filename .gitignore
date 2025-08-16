@@ -50,6 +50,7 @@ pnpm-debug.log*
 .vscode/
 .idea/
 *.iml
+Thumbs.db
 
 # -------------------------------
 # OS / Temp / Logs
