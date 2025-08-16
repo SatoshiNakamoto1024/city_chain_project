@@ -104,3 +104,4 @@ ninja-*/
 **/.clean*/
 **/.venv*/
 **/Lib/site-packages/
+target-release/
