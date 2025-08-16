@@ -1,0 +1,49 @@
+name: Release Wheels
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Rust (for maturin)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin==1.5.1 build twine
+
+      # Rust 拡張 wheel（manylinux）
+      - name: Build rust wheels
+        run: |
+          maturin build \
+            -m DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust/Cargo.toml \
+            --release --features python --manylinux 2014 \
+            --out dist_rust
+
+      # Python ラッパー（sdist+wheel）
+      - name: Build python wrapper
+        working-directory: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
+        run: python -m build
+
+      # TestPyPI にアップロード
+      - name: Upload to TestPyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          twine upload --repository-url https://test.pypi.org/legacy/ \
+            dist_rust/*.whl \
+            DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/dist/*
