@@ -11,7 +11,7 @@ jobs:
       packages: write
       contents: read
     env:
-      REGISTRY: ghcr.io/<your-org-or-user>
+      REGISTRY: ghcr.io/SatoshiNakamoto1024   # ← ここを直す
       VERSION: ${{ github.ref_name }}  # v0.1.0 など
     steps:
       - uses: actions/checkout@v4
