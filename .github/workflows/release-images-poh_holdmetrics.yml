@@ -1,4 +1,5 @@
-name: Release Images
+name: Release Images (poh_holdmetrics)
+
 on:
   push:
     tags:
@@ -11,8 +12,8 @@ jobs:
       packages: write
       contents: read
     env:
-      REGISTRY: ghcr.io/SatoshiNakamoto1024   # ← ここを直す
-      VERSION: ${{ github.ref_name }}  # v0.1.0 など
+      REGISTRY: ghcr.io/SatoshiNakamoto1024
+      VERSION: ${{ github.ref_name }}   # 例: v0.1.7
     steps:
       - uses: actions/checkout@v4
 

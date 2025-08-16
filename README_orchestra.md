@@ -1520,7 +1520,14 @@ perl -0777 -pe 's/("version"\s*:\s*")\d+\.\d+\.\d+(")/${1}0.1.6${2}/' \
 perl -0777 -pe 's/(poh_holdmetrics_rust>=)\d+\.\d+\.\d+/${1}0.1.6/' \
   -i DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/pyproject.toml
 
-# 2) release-wheels.yml に protoc インストール & manylinux 外し（上の diff の通り編集）
+# 2) 古いワークフローを削除し、新ファイルを追加
+git rm -f .github/workflows/release-wheels.yml 2>/dev/null || true
+git rm -f .github/workflows/release-images.yml 2>/dev/null || true
+
+git add .github/workflows/_release-wheels-reusable.yml \
+        .github/workflows/release-wheels-poh_holdmetrics.yml \
+        .github/workflows/release-images-poh_holdmetrics.yml \
+        .github/workflows/ci.yml
 
 # 3) コミット & タグ
 git add -A

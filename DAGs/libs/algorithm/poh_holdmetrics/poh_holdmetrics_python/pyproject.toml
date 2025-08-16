@@ -21,7 +21,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "poh_holdmetrics_rust>=0.1.0",
+  "poh_holdmetrics_rust>=0.1.7",
   "click>=8.1",
   "uvicorn[standard]>=0.20",
   "fastapi>=0.95",

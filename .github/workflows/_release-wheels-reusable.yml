@@ -1,0 +1,74 @@
+name: _release-wheels-reusable
+
+on:
+  workflow_call:
+    inputs:
+      cargo_manifest:
+        type: string
+        required: true
+        default: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust/Cargo.toml
+      python_wrapper_dir:
+        type: string
+        required: true
+        default: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
+    secrets:
+      TEST_PYPI_API_TOKEN:
+        required: true
+
+jobs:
+  build-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ← protoc をホスト(Ubuntuランナー)にインストール
+      - name: Install protoc (Ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Rust (for maturin)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin==1.5.1 build twine
+
+      # Rust拡張のwheel（manylinux指定なし＝ホストUbuntuでビルド）
+      - name: Build rust wheels
+        run: |
+          maturin build \
+            -m "${{ inputs.cargo_manifest }}" \
+            --release --features python
+
+      # Pythonラッパー（sdist + wheel）
+      - name: Build python wrapper (sdist+wheel)
+        working-directory: ${{ inputs.python_wrapper_dir }}
+        run: python -m build
+
+      # TestPyPIへ公開（両方まとめて）
+      - name: Upload to TestPyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          twine upload --repository-url https://test.pypi.org/legacy/ \
+            target/wheels/*.whl \
+            ${{ inputs.python_wrapper_dir }}/dist/*
+
+      # GitHub ReleaseのAssetsにも添付（入手しやすくするため）
+      - name: Attach wheels to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            target/wheels/*.whl
+            ${{ inputs.python_wrapper_dir }}/dist/*
