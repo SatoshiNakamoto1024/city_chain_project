@@ -76,9 +76,8 @@ pyo3-build-config = "0.25.0"
 rayon           = "1.10"
 
 [build-dependencies]
-tonic-build = { version = "0.12", features = ["prost", "protoc-bin-vendored"] }
-prost-build = { version = "0.12", features = ["protoc-bin-vendored"] }
-protoc-bin-vendored = "3"
+tonic-build = { version = "0.12", default-features = false, features = ["prost"] }
+prost-build  = "0.13"
 
 [[bench]]
 name    = "bench_holdmetrics_parallel"

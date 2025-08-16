@@ -1280,7 +1280,8 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --no-index --find-links=/mnt/d/wheelhouse -r requirements.txt
 
-#　git,github　へ
+
+#　さあ、つぎはgit,github　へ
 まだテスト中なので、結果は後ほど。先に確認で質問です。これがパスしたら、今度はgitにコミット、プッシュして、その後、githubにはソースコードのみをアップするという流れだろうが、python側からrustを呼び出すこともあるし、rust側からpythonを呼び出すこともある。その本番運用に備えて、ローカルでwheelを創るのではなく、gitにてwheelをつくり、それを読み込むという流れでいいんだよね？これらの処理もいれれば、poh_holdmetrics\というクレートはひとまず完成ということかな。手順を１つずつ教えて
 ChatGPT said:
 Thought for 1m 10s
@@ -1491,6 +1492,43 @@ jobs:
 ローカル：REGISTRY を ghcr にして pull するだけ。
 REGISTRY=ghcr.io/your-org-or-user docker compose -f docker-compose.prod.generated.yml up -d
 サーバ（例：k8s）でも同様にイメージを参照。
+
+# いざ　gitにてプッシュ・コミット　（バージョンは変えてね）
+最小修正：
+・DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust/Cargo.toml
+[package]
+name = "poh_holdmetrics_rust"
+version = "0.1.6"   # ← ここを揃える
+
+・DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/pyproject.toml
+[project]
+name = "poh_holdmetrics"
+version = "0.1.6"   # ← ここも 0.1.6
+dependencies = [
+    "poh_holdmetrics_rust>=0.1.6",  # ← 依存も揃える
+    # ほか省略
+]
+
+# 1) バージョン合わせ（Rust と Python）
+# Rust
+perl -0777 -pe 's/^(version\s*=\s*")\d+\.\d+\.\d+(")/${1}0.1.6${2}/m' \
+  -i DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust/Cargo.toml
+
+# Python
+perl -0777 -pe 's/("version"\s*:\s*")\d+\.\d+\.\d+(")/${1}0.1.6${2}/' \
+  -i DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/pyproject.toml
+perl -0777 -pe 's/(poh_holdmetrics_rust>=)\d+\.\d+\.\d+/${1}0.1.6/' \
+  -i DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/pyproject.toml
+
+# 2) release-wheels.yml に protoc インストール & manylinux 外し（上の diff の通り編集）
+
+# 3) コミット & タグ
+git add -A
+git commit -m "chore(poh_holdmetrics): bump to 0.1.6 and fix release-wheels (install protoc)"
+git tag -f v0.1.6
+git push origin main
+git push -f origin v0.1.6
+
 
 
 #　本番へ、開発手順

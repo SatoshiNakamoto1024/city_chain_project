@@ -1,7 +1,7 @@
 # \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_rust\pyproject.toml
 [project]
 name             = "poh_holdmetrics_rust"
-version          = "0.1.6"
+version          = "0.1.0"
 description      = "Compiled Rust extension for poh_holdmetrics"
 license          = "Apache-2.0"
 requires-python  = ">=3.8"
