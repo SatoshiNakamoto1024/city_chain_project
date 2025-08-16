@@ -1,30 +1,61 @@
-name: _Release Images (reusable)
+name: _release-images-reusable
+
 on:
   workflow_call:
     inputs:
-      service_prefix:  # 例: poh_holdmetrics
-        required: true
+      registry:
         type: string
-    secrets:
-      GHCR_TOKEN:
         required: true
+        # 例: ghcr.io/ユーザー名 or 組織名
+      version:
+        type: string
+        required: true
+        # 例: v0.1.7 （不要なら latest のみでもOK）
+      http_target:
+        type: string
+        required: true
+        # 例: poh_holdmetrics-http-svc
+      grpc_target:
+        type: string
+        required: true
+        # 例: poh_holdmetrics-grpc-svc
+
 jobs:
   build-push:
     runs-on: ubuntu-latest
-    env:
-      REGISTRY: ghcr.io/${{ github.repository_owner }}
-      VERSION: ${{ github.ref_name }}
+    permissions:
+      packages: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
-      - run: python tools/gen.py --services services.yaml --out .
-      - name: Build & Push
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate bake/compose
+        run: python tools/gen.py --services services.yaml --out .
+
+      # まずは latest だけで安定化 → 通ったら2タグに拡張
+      - name: Build & Push images (latest only)
         run: |
           docker buildx bake -f docker-bake.generated.hcl --push \
-            --set ${{ inputs.service_prefix }}-http-svc.tags="${REGISTRY}/${{ inputs.service_prefix }}-http:latest,${REGISTRY}/${{ inputs.service_prefix }}-http:${VERSION}" \
-            --set ${{ inputs.service_prefix }}-grpc-svc.tags="${REGISTRY}/${{ inputs.service_prefix }}-grpc:latest,${REGISTRY}/${{ inputs.service_prefix }}-grpc:${VERSION}"
+            --set ${{ inputs.http_target }}.tags=${{ inputs.registry }}/poh_holdmetrics-http:latest \
+            --set ${{ inputs.grpc_target }}.tags=${{ inputs.registry }}/poh_holdmetrics-grpc:latest
+
+      # 2タグ付けに戻す場合は、上のステップをコメントアウトし、以下を有効化
+      # - name: Build & Push images (latest + version)
+      #   run: |
+      #     V="${{ inputs.version }}"
+      #     V_NOV=${V#v}
+      #     docker buildx bake -f docker-bake.generated.hcl --push \
+      #       --set ${{ inputs.http_target }}.tags=${{ inputs.registry }}/poh_holdmetrics-http:latest \
+      #       --set ${{ inputs.http_target }}.tags+=${{ inputs.registry }}/poh_holdmetrics-http:${V_NOV} \
+      #       --set ${{ inputs.grpc_target }}.tags=${{ inputs.registry }}/poh_holdmetrics-grpc:latest \
+      #       --set ${{ inputs.grpc_target }}.tags+=${{ inputs.registry }}/poh_holdmetrics-grpc:${V_NOV}

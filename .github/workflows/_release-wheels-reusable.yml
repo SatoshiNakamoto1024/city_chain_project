@@ -6,11 +6,11 @@ on:
       cargo_manifest:
         type: string
         required: true
-        default: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust/Cargo.toml
+        # 例: DAGs/.../your_crate_rust/Cargo.toml
       python_wrapper_dir:
         type: string
         required: true
-        default: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
+        # 例: DAGs/.../your_crate_python
     secrets:
       TEST_PYPI_API_TOKEN:
         required: true
@@ -18,11 +18,10 @@ on:
 jobs:
   build-upload:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      # ← protoc をホスト(Ubuntuランナー)にインストール
+      # protoc は Ubuntu ランナーに入れる（prost-build 等の前提）
       - name: Install protoc (Ubuntu)
         run: |
           sudo apt-get update
@@ -42,29 +41,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install maturin==1.5.1 build twine
 
-      # Rust拡張のwheel（manylinux指定なし＝ホストUbuntuでビルド）
+      # Rust 拡張 wheel（Linux x64; manylinux でなくてOK。必要なら --manylinux 2014 に）
       - name: Build rust wheels
         run: |
           maturin build \
             -m "${{ inputs.cargo_manifest }}" \
             --release --features python
 
-      # Pythonラッパー（sdist + wheel）
+      # Python ラッパー（sdist + wheel）
       - name: Build python wrapper (sdist+wheel)
         working-directory: ${{ inputs.python_wrapper_dir }}
         run: python -m build
 
-      # TestPyPIへ公開（両方まとめて）
+      # TestPyPI へアップロード（絶対パス/ワークスペース基点で確実に解決）
       - name: Upload to TestPyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
+          cd "${GITHUB_WORKSPACE}"
           twine upload --repository-url https://test.pypi.org/legacy/ \
-            target/wheels/*.whl \
-            ${{ inputs.python_wrapper_dir }}/dist/*
+            "target/wheels/"*.whl \
+            "${{ inputs.python_wrapper_dir }}/dist/"*
 
-      # GitHub ReleaseのAssetsにも添付（入手しやすくするため）
+      # GitHub Release の Assets にも添付（入手しやすく）
       - name: Attach wheels to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
