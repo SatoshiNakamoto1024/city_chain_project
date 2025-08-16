@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    # MongoDB をサービスとして同居起動
+    services:
+      mongo:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      # Python 側・Rust 側双方が読む接続文字列
+      MONGODB_URL: "mongodb://localhost:27017"
+      MONGODB_DB:  "holdmetrics_ci"
+
+    steps:
+    #-------------------------------------------------------------------
+    # 0) 事前セットアップ
+    #-------------------------------------------------------------------
+    - name: Checkout sources
+      uses: actions/checkout@v4
+
+    - name: Set‑up Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
+        profile: minimal
+
+    - name: Cache Cargo registry + build artefacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Set‑up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+
+    - name: Install system build deps
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential pkg-config libssl-dev patchelf
+
+    #-------------------------------------------------------------------
+    # 1) Rust 拡張ビルド (maturin wheel)
+    #-------------------------------------------------------------------
+    - name: Install maturin
+      run: python -m pip install --upgrade pip maturin
+
+    - name: Build poh_holdmetrics_rust wheel
+      working-directory: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust
+      run: |
+        maturin build --release \
+          --no-default-features --features python \
+          --locked -o ${{ github.workspace }}/dist
+
+    - name: Install Rust wheel into Python env
+      run: |
+        python -m pip install ${{ github.workspace }}/dist/poh_holdmetrics_rust-*.whl
+
+    #-------------------------------------------------------------------
+    # 2) Python ライブラリ（FastAPI 等）インストール
+    #-------------------------------------------------------------------
+    - name: Install Python package (editable) + test extras
+      working-directory: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
+      run: |
+        python -m pip install -e .[test,api,storage]
+
+    #-------------------------------------------------------------------
+    # 3) 静的チェック（任意: 失敗しても警告止まりにしたいなら continue‑on‑error）
+    #-------------------------------------------------------------------
+    - name: Run cargo fmt / clippy
+      run: |
+        cargo fmt --all -- --check
+        cargo clippy --workspace --all-features -- -D warnings
+
+    #-------------------------------------------------------------------
+    # 4) Rust ユニットテスト（Python 連携を外した core のみ）
+    #     ※ Python とのリンクが要らない `core` フィーチャで実行
+    #-------------------------------------------------------------------
+    - name: Run cargo tests (core only)
+      working-directory: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust
+      run: |
+        cargo test --release --no-default-features --features core --all-targets
+
+    #-------------------------------------------------------------------
+    # 5) 統合テスト（pytest）
+    #-------------------------------------------------------------------
+    - name: Run pytest with coverage
+      working-directory: DAGs/libs/algorithm/poh_holdmetrics
+      run: |
+        python -m pip install pytest-cov
+        pytest -v --cov=poh_holdmetrics --cov-report=xml
+
+    #-------------------------------------------------------------------
+    # 6) 生成物アップロード（必要なら）
+    #-------------------------------------------------------------------
+    - name: Upload coverage artefact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-xml
+        path: DAGs/libs/algorithm/poh_holdmetrics/coverage.xml

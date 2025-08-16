@@ -1,0 +1,113 @@
+<!-- D:\city_chain_project\Algorithm\PoP\pop_python\static\pop_event.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>PoP イベント登録</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 1em; }
+    h1 { text-align: center; }
+    form { margin-bottom: 2em; border: 1px solid #ccc; padding: 1em; border-radius: 6px; }
+    label { display: block; margin-top: 0.5em; }
+    input, textarea, select { width: 100%; padding: 0.5em; margin-top: 0.2em; }
+    button { margin-top: 1em; padding: 0.5em 1em; }
+    .result { margin-top: 0.5em; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>PoP イベント登録フォーム</h1>
+
+  <form id="cityEventForm">
+    <h2>市町村イベント登録</h2>
+    <label>city_id <input name="city_id" required /></label>
+    <label>開始日時 <input type="datetime-local" name="start_dt" required /></label>
+    <label>終了日時 <input type="datetime-local" name="end_dt" required /></label>
+    <label>倍率 <input type="number" step="0.1" name="multiplier" value="1.0" required /></label>
+    <label>action 
+      <select name="action">
+        <option value="HT">HT</option>
+        <option value="Evaluation">Evaluation</option>
+      </select>
+    </label>
+    <label>target <input name="target" /></label>
+    <label>説明 <textarea name="description" rows="2"></textarea></label>
+    <button type="submit">登録（市町村）</button>
+    <div id="cityResult" class="result"></div>
+  </form>
+
+  <form id="locEventForm">
+    <h2>ポリゴンイベント登録</h2>
+    <label>座標リスト (lon,lat の配列をカンマ区切り; 行ごとに改行)
+      <textarea name="coords" rows="3"
+        placeholder="139.01,35.01\n139.02,35.02\n..." required></textarea>
+    </label>
+    <label>開始日時 <input type="datetime-local" name="start_dt" required /></label>
+    <label>終了日時 <input type="datetime-local" name="end_dt" required /></label>
+    <label>倍率 <input type="number" step="0.1" name="multiplier" value="1.0" required /></label>
+    <label>action 
+      <select name="action">
+        <option value="HT">HT</option>
+        <option value="Evaluation">Evaluation</option>
+      </select>
+    </label>
+    <label>target <input name="target" /></label>
+    <label>説明 <textarea name="description" rows="2"></textarea></label>
+    <button type="submit">登録（ポリゴン）</button>
+    <div id="locResult" class="result"></div>
+  </form>
+
+  <script>
+    function toTimestamp(dtLocal) {
+      return Math.floor(new Date(dtLocal).getTime() / 1000);
+    }
+
+    document.getElementById("cityEventForm").onsubmit = async e => {
+      e.preventDefault();
+      const f = e.target;
+      const payload = {
+        city_id:      f.city_id.value,
+        active_start: toTimestamp(f.start_dt.value),
+        active_end:   toTimestamp(f.end_dt.value),
+        multiplier:   parseFloat(f.multiplier.value),
+        action:       f.action.value,
+        target:       f.target.value || null,
+        description:  f.description.value || null
+      };
+      const res = await fetch("/events/city", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      const js = await res.json().catch(() => ({}));
+      document.getElementById("cityResult").textContent =
+        res.ok ? "登録成功！" : "登録失敗: " + (js.detail||res.statusText);
+    };
+
+    document.getElementById("locEventForm").onsubmit = async e => {
+      e.preventDefault();
+      const f = e.target;
+      const coords = f.coords.value.trim().split("\n").map(l => {
+        const [lon, lat] = l.split(",").map(x => parseFloat(x));
+        return [lon, lat];
+      });
+      const payload = {
+        coordinates:  coords,
+        active_start: toTimestamp(f.start_dt.value),
+        active_end:   toTimestamp(f.end_dt.value),
+        multiplier:   parseFloat(f.multiplier.value),
+        action:       f.action.value,
+        target:       f.target.value || null,
+        description:  f.description.value || null
+      };
+      const res = await fetch("/events/location", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      const js = await res.json().catch(() => ({}));
+      document.getElementById("locResult").textContent =
+        res.ok ? "登録成功！" : "登録失敗: " + (js.detail||res.statusText);
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プロフィール管理</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 90%;
+      max-width: 500px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>プロフィール管理</h2>
+    <p>ここでプロフィール情報を確認・更新できます。</p>
+    <!-- このフォームは /profile の POST エンドポイントに対応するものとします -->
+    <form id="profile-form">
+      <label for="nickname">ニックネーム:</label>
+      <input type="text" id="nickname" name="nickname" required><br>
+      
+      <label for="email">メールアドレス:</label>
+      <input type="email" id="email" name="email" required><br>
+      
+      <label for="phone">電話番号:</label>
+      <input type="text" id="phone" name="phone" required><br>
+      
+      <button type="submit">更新</button>
+    </form>
+    <button onclick="window.location.href='index.html'">戻る</button>
+  </div>
+  {% if cert %}
+    <h2>証明書情報</h2>
+    <ul>
+      <li><strong>Fingerprint:</strong> {{ cert.fingerprint }}</li>
+      <li><strong>有効期間:</strong> {{ cert.valid_from }} ～ {{ cert.valid_to }}</li>
+      <li><strong>失効済み:</strong> {{ cert.revoked }}</li>
+      <li><strong>失効日時:</strong> {{ cert.revoked_at }}</li>
+    </ul>
+
+    {% if not cert.revoked %}
+    <form method="post" action="/client_cert/revoke_cert">
+      <input type="hidden" name="user_uuid" value="{{ user.uuid }}">
+      <button type="submit" onclick="return confirm('この端末の証明書を失効しますか？')">この端末の証明書を失効する</button>
+    </form>
+    {% else %}
+    <p style="color: red;">※ この証明書はすでに失効されています</p>
+    {% endif %}
+  {% endif %}
+  </div>
+  <script>
+    // フォーム送信時に、バックエンドの /profile エンドポイントに JSON 形式でリクエストを送信する
+    document.getElementById("profile-form").addEventListener("submit", function(event) {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      const jsonData = Object.fromEntries(formData.entries());
+      
+      fetch("/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(jsonData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert("プロフィールが更新されました！");
+        } else {
+          alert("更新に失敗しました: " + data.error);
+        }
+      })
+      .catch(error => {
+        console.error("エラー:", error);
+        alert("エラーが発生しました。");
+      });
+    });
+  </script>
+</body>
+</html>

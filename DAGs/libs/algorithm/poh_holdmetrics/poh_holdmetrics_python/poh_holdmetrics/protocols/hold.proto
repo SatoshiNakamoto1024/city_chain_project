@@ -1,0 +1,66 @@
+// D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\protocols\hold.proto
+//================================================
+//  hold.proto – PoH‑Hold‑Metrics gRPC API
+//================================================
+syntax = "proto3";
+
+package poh;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ────────── Messages ───────────────────────────
+
+// 単一の保持イベント (start–end 区間)
+message HoldMsg {
+  string token_id  = 1;      // トークンID（必須）
+  string holder_id = 2;      // 保有者ID（必須）
+
+  google.protobuf.Timestamp start = 3;  // 開始時刻（UTC）
+  google.protobuf.Timestamp end   = 4;  // 終了時刻（ongoing は epoch=0）
+
+  double weight = 5;          // 重み係数 (default=1.0)
+  reserved 6, 7, 8;           // 後方互換用
+}
+
+// サーバ側 ACK（処理結果フィードバック）
+message HoldAck {
+  bool   ok    = 1;           // true=成功 / false=失敗
+  string error = 2;           // ok=false 時のエラーメッセージ（任意）
+  reserved 3;                 // 後方互換用
+}
+
+// 集計スナップショット
+message HoldStat {
+  string holder_id              = 1;
+  int64  total_seconds          = 2;
+  double weighted_score         = 3;
+  google.protobuf.Timestamp updated_at = 4; // 最終更新時刻（UTC）
+  reserved 5, 6, 7;
+}
+
+// ────────── Services ──────────────────────────
+
+// Write‑side service：データ登録＋統計取得
+service HoldMetrics {
+
+  // ① 双方向ストリーム → 高スループット一括登録向け
+  rpc Broadcast (stream HoldMsg) returns (stream HoldAck);
+
+  // ② 単発登録 → テスト/簡易クライアント向け
+  rpc Record (HoldMsg) returns (HoldAck);
+
+  // ③ **Stats RPC**  ← テストコードが期待
+  //    空リクエストで最新スナップショットをサーバ側からストリーム返却
+  rpc Stats (google.protobuf.Empty) returns (stream HoldStat);
+}
+
+// Read‑side service：Pull 型・運用用 (必要なら)
+service HoldMetricsQuery {
+
+  // 全ホルダーの集計をストリームで取得（Stats と重複可）
+  rpc GetSnapshot (google.protobuf.Empty) returns (stream HoldStat);
+
+  // ヘルスチェック
+  rpc HealthCheck (google.protobuf.Empty) returns (HoldAck);
+}

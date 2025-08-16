@@ -1,0 +1,20 @@
+# VRF\vrf_python\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vrf_python"
+version = "0.1.0"
+description = "VRF (ECVRF-P256) Python helper"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["vrf_rust>=0.1.0"]
+
+# ここを追加（setuptools の自動探索）
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["vrf_python"]
+
+[project.urls]
+"Source" = "https://example.com/your-repo"

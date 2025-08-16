@@ -1,0 +1,49 @@
+# .github/workflows/ci.yml
+name: CI
+
+# main ブランチへの push および pull_request でトリガー
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Test on Python ${{ matrix.python-version }}
+    # Ubuntu 上でのみ実行（Windows の asyncio+subprocess ハング問題を回避）
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # テスト対象の Python バージョンを指定
+        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install package in editable mode
+        run: pip install -e .
+
+      - name: Install test dependencies
+        run: |
+          pip install pytest pytest-asyncio aiofiles aiosqlite
+
+      - name: Run pytest
+        run: pytest poh_storage/tests --maxfail=1 --disable-warnings -v
+
+      - name: (Optional) Lint with flake8
+        run: |
+          pip install flake8
+          flake8 poh_storage

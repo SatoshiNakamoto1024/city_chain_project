@@ -1,0 +1,24 @@
+# mongo-stack.yml  (tests ディレクトリ)
+services:
+  mongo:
+    container_name: city-mongo
+    image: mongo:6
+    restart: unless-stopped
+
+    # ──‼ ここがポイント ‼────────────────────────
+    entrypoint: >
+      sh -c '
+        set -e
+        chown 999:999 /etc/mongo-keyfile && chmod 400 /etc/mongo-keyfile
+        exec mongod --replSet rs0 --bind_ip_all --keyFile /etc/mongo-keyfile
+      '
+    # -------------------------------------------------
+
+    volumes:
+      - ./mongo-keyfile:/etc/mongo-keyfile:ro
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+volumes:
+  mongo-data:

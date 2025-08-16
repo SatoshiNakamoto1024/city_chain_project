@@ -1,0 +1,79 @@
+# D:\city_chain_project\Algorithm\EC\ec_rust_src\src\core\ldpc\src\pipeline\Cargo.toml
+# pipeline/Cargo.toml – “ストリーム × ネット I/O” だけに絞った最小構成
+
+[package]
+name         = "ldpc-pipeline"
+version      = "0.1.0"
+edition      = "2021"
+license      = "Apache-2.0"
+publish      = false
+description  = "Async streaming encoder/decoder + network transport for LDPC shards"
+authors      = ["Your Team <dev@example.com>"]
+
+###############################################################################
+# 依存クレート ―― LDPC 本体は外部クレートとして別管理（ここには含めない）
+###############################################################################
+[dependencies]
+# Link against your core-LDPC crate by path
+ldpc = { path = "../ldpc", default-features = false }
+
+tokio        = { version = "1.37", features = [
+                   "rt-multi-thread", "macros",
+                   "net", "io-util", "sync", "time"
+                 ] }
+tokio-util   = { version = "0.7", features = ["codec"] }
+tokio-stream = "0.1"
+bytes        = "1.5"
+serde        = { version = "1.0", features = ["derive"] }
+bincode      = "1.3"
+blake3       = "1.5"
+rayon        = "1.10"
+dashmap      = "5.5"
+lz4_flex     = { version = "0.11", optional = true }
+tracing      = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+
+# pipeline-specific
+futures      = "0.3"
+rmp-serde    = "1.1"
+rcgen        = "0.9"
+once_cell    = "1.17"
+crc32c       = "0.6"
+
+# QUIC optional
+[dependencies.quinn]
+version = "0.10"
+default-features = false
+optional = true
+features = ["runtime-tokio", "tls-rustls"]
+
+###############################################################################
+# 機能フラグ
+###############################################################################
+[features]
+default      = ["tcp"]
+tcp          = []
+quic         = ["quinn"]
+compress-lz4 = ["lz4_flex"]
+
+###############################################################################
+# テスト & ベンチ用
+###############################################################################
+[dev-dependencies]
+tokio-test = "0.4"
+criterion  = { version = "0.5", features = ["async"] }
+rand       = "0.8"
+
+###############################################################################
+# ライブラリターゲット（外部から `use ldpc_pipeline::*` で使う）
+###############################################################################
+[lib]
+name = "ldpc_pipeline"
+path = "src/lib.rs"
+
+###############################################################################
+# バイナリーターゲット
+###############################################################################
+[[bin]]
+name = "ldpc-pipeline"
+path = "src/main_pipeline.rs"

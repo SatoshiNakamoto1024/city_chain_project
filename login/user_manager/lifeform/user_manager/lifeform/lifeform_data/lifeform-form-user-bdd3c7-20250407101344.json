@@ -1,0 +1,19 @@
+{
+  "lifeform_id": "lifeform-form-user-bdd3c7-20250407101344",
+  "user_id": "form-user-bdd3c7",
+  "dimensions": {
+    "1次元": "個人(ニックネーム)",
+    "2次元": "FormTeam",
+    "3次元": "FormAffiliation",
+    "4次元": "FormCity",
+    "5次元": "FormState",
+    "6次元": "FormCountry",
+    "7次元": "世界経済",
+    "8次元": "人類",
+    "9次元": "地球",
+    "10次元": "太陽系",
+    "追加次元_1": "FormX",
+    "追加次元_2": "FormY"
+  },
+  "registered_at": "2025-04-07T10:13:44.221075Z"
+}

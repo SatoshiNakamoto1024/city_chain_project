@@ -1,0 +1,57 @@
+<!-- login_app/templates/index.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>トップページ</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      margin-top: 50px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #extra-buttons {
+      display: none;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Welcome to CityChain</h2>
+    <p>以下からログインまたは新規登録を行ってください。</p>
+    <button onclick="window.location.href='login.html'">ログイン</button>
+    <button onclick="window.location.href='register.html'">新規登録</button>
+    <div id="extra-buttons">
+      <button onclick="window.location.href='profile.html'">プロフィール管理</button>
+      <button onclick="window.location.href='lifeform.html'">生命体管理</button>
+    </div>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (localStorage.getItem("registrationComplete") === "true") {
+        document.getElementById("extra-buttons").style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>

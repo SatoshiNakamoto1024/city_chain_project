@@ -1,0 +1,83 @@
+<!-- municipality_verification/templates/staff_verify.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>承認待ちユーザー一覧</title>
+  <style>
+    body { font-family: Arial,Helvetica,sans-serif; background:#f7f7f7; padding:20px; }
+    table { width:100%; border-collapse:collapse; background:#fff; margin-top:20px; }
+    th,td { border:1px solid #ccc; padding:10px; text-align:left; }
+    th { background:#eee; }
+    button { padding:5px 10px; margin:0 4px; border:none; color:#fff; cursor:pointer; }
+    .approve { background:#28a745 }
+    .reject  { background:#dc3545 }
+  </style>
+</head>
+<body>
+  <h2>承認待ちユーザー一覧</h2>
+  <table id="tbl">
+    <thead><tr><th>UUID</th><th>操作</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const jwt = localStorage.getItem("staff_jwt");
+    if (!jwt) {
+      alert("未ログイン");
+      location.href = "/staff/login";
+    }
+
+    async function fetchPending() {
+      const r = await fetch("/staff/verify", {
+        headers: { Authorization: `Bearer ${jwt}` }
+      });
+      return r.json();
+    }
+
+    function row(u) {
+      return `<tr>
+        <td>${u.uuid}</td>
+        <td>
+          <!-- 承認ボタン → 地域選択画面へ遷移 -->
+          <button class="approve" onclick="location.href='/staff/select_region/${u.uuid}'">
+            承認
+          </button>
+          <!-- 却下ボタンは直接 POST -->
+          <button class="reject" onclick="rejectUser('${u.uuid}')">
+            却下
+          </button>
+        </td>
+      </tr>`;
+    }
+
+    async function render() {
+      const list = await fetchPending();
+      q("#tbl tbody").innerHTML =
+        list.map(row).join("") || "<tr><td colspan=2>0件</td></tr>";
+    }
+
+    async function rejectUser(uuid) {
+      if (!confirm("本当に却下しますか？")) return;
+      const res = await fetch("/staff/verify", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ uuid: uuid, action: "reject" })
+      });
+      const j = await res.json();
+      if (j.success) {
+        alert("却下しました");
+        render();
+      } else {
+        alert(j.error || "error");
+      }
+    }
+
+    const q = s => document.querySelector(s);
+    render();
+  </script>
+</body>
+</html>

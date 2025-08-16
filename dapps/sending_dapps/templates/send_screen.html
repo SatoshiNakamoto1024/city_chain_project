@@ -1,0 +1,223 @@
+<!-- File: dapps/sending_dapps/templates/send_screen.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>送信用 DApp</title>
+<style>
+ body{font-family:Arial,Helvetica,sans-serif;margin:40px}
+ h1{margin-bottom:24px}
+ label{display:inline-block;width:190px;margin-bottom:6px}
+ input,textarea,select{padding:6px;width:300px;margin-bottom:10px}
+ select:disabled{background:#eee}
+ button{padding:8px 16px;background:#4CAF50;border:none;color:#fff;cursor:pointer}
+ button:hover{background:#45a049}
+ #message{margin-top:20px;font-weight:bold}
+ .error{color:#d32f2f}.ok{color:#388e3c}
+ .attribute-pair{display:flex;align-items:center;margin-bottom:6px}
+ .attribute-pair input{flex:1;margin-right:6px}
+ .remove-attribute{background:#f44336}.remove-attribute:hover{background:#d32f2f}
+ #add-attribute{background:#008CBA}#add-attribute:hover{background:#0071a3}
+ table{width:100%;border-collapse:collapse;margin-bottom:24px}
+ th,td{border:1px solid #ddd;padding:10px;text-align:left}
+ th{background:#f2f2f2}
+</style>
+</head>
+<body>
+<h1>送信用 DApp</h1>
+
+<p>ウォレット : <b>{{ wallet_address|default('unknown') }}</b><br>
+現在残高 : <b id="my-balance">{{ balance|default('0.00') }}</b> 愛貨</p>
+
+<!-- ---------- 送信フォーム ---------- -->
+<div id="transaction-form">
+ <h2>トランザクションを作成</h2>
+
+ <!-- ① 宛先選択（大陸→国→都道府県→市町村→ユーザー） -->
+ <fieldset style="border:1px solid #ddd;padding:10px;margin-bottom:18px">
+  <legend>宛先選択</legend>
+  <label>大陸:</label>      <select id="selCont" required></select><br>
+  <label>国:</label>        <select id="selCountry" required></select><br>
+  <label>都道府県:</label>  <select id="selPref" required></select><br>
+  <label>市町村:</label>    <select id="selCity" required></select><br>
+  <label>ユーザー:</label>  <select id="selUser" required disabled></select><br>
+ </fieldset>
+
+ <!-- ② 必要入力項目 -->
+ <label for="amount">金額 (愛貨):</label>
+ <input type="number" id="amount" step="0.01" min="0"><br>
+
+ <label for="account_title">仕訳科目:</label>
+ <select id="account_title">
+   <option value="sales">売上</option>
+   <option value="expense">費用</option>
+   <option value="transfer">振替</option>
+   <option value="other">その他</option>
+ </select><br>
+
+ <label for="dimension">次元:</label>
+ <select id="dimension">
+   <option value="local">Local</option>
+   <option value="global">Global</option>
+   <option value="meta">Metaverse</option>
+ </select><br>
+
+ <label for="organism">生命体:</label>
+ <select id="organism">
+   <option value="human">Human</option>
+   <option value="ai">AI</option>
+   <option value="robot">Robot</option>
+ </select><br>
+
+ <label for="message">詳細メッセージ:</label>
+ <textarea id="message_field" rows="3"></textarea><br>
+
+ <!-- Attributes -->
+ <h3>追加属性</h3>
+ <div id="attributes-container"></div>
+ <button type="button" id="add-attribute">Attribute を追加</button><br><br>
+
+ <button id="send-button">送信する</button>
+ <div id="message"></div>
+</div>
+
+<!-- ダミー決算書 -->
+<div id="financial-statements" style="display:none">
+ <h2>決算書 (<span id="statement-date"></span>)</h2>
+ <table>
+  <tr><th>科目</th><th>金額</th></tr>
+  <tr><td>資産合計</td><td id="assets-total"></td></tr>
+  <tr><td>負債合計</td><td id="liabilities-total"></td></tr>
+  <tr><td>純資産合計</td><td id="equity-total"></td></tr>
+ </table>
+</div>
+
+<script>
+/* ==========  共通 util  ========== */
+const $ = s=>document.querySelector(s);
+const API_BASE="/send/api";
+const jwt = localStorage.getItem("jwt_token")||"";
+
+/* ==========  地域ツリーロード(JIS API)  ========== */
+const selC=$("#selCont"), selN=$("#selCountry"), selP=$("#selPref"),
+      selM=$("#selCity"), selU=$("#selUser");
+
+const reset=el=>{ el.innerHTML='<option value="">—</option>'; el.disabled=true; }
+const j=async url=>{
+    const r = await fetch(url);
+    if(!r.ok) throw new Error("JIS API エラー");
+    return r.json();
+};
+
+async function loadContinents(){
+    reset(selC); reset(selN); reset(selP); reset(selM); reset(selU);
+    (await j("/api/jis/continents")).forEach(x=>selC.add(new Option(x, x)));
+    selC.disabled=false;
+}
+async function loadCountries(){
+    reset(selN); reset(selP); reset(selM); reset(selU);
+    (await j("/api/jis/countries"))
+      .filter(x=>x.continent===selC.value)
+      .forEach(x=>selN.add(new Option(x.name, x.code)));
+    selN.disabled=false;
+}
+async function loadPrefs(){
+    reset(selP); reset(selM); reset(selU);
+    (await j(`/api/jis/prefectures/${selN.value}`))
+      .forEach(x=>selP.add(new Option(x.name, x.code)));
+    selP.disabled=false;
+}
+async function loadCities(){
+    reset(selM); reset(selU);
+    (await j(`/api/jis/municipalities/${selN.value}_${selP.value}`))
+      .forEach(x=>selM.add(new Option(x.name, x.name)));
+    selM.disabled=false;
+}
+async function loadUsers(){
+    reset(selU);
+    if(!selM.value) return;
+    const res = await fetch(`${API_BASE}/users?municipality=${encodeURIComponent(selM.value)}`);
+    if(!res.ok) throw new Error("ユーザー取得エラー");
+    const users = await res.json();
+    users.forEach(u=>selU.add(new Option(u.username, u.uuid)));
+    selU.disabled=false;
+}
+
+/* イベント */
+selC.onchange=loadCountries;
+selN.onchange=loadPrefs;
+selP.onchange=loadCities;
+selM.onchange=loadUsers;
+loadContinents();
+
+/* ========== Attributes UI ========== */
+const addAttr=()=>{$("#attributes-container").insertAdjacentHTML("beforeend",
+`<div class="attribute-pair">
+ <input type="text" class="attribute-key" placeholder="キー">
+ <input type="text" class="attribute-value" placeholder="値">
+ <button type="button" class="remove-attribute">削除</button>
+</div>`);}
+$("#add-attribute").onclick=addAttr;
+$("#attributes-container").onclick=e=>{
+ if(e.target.classList.contains("remove-attribute")) e.target.parentElement.remove();
+};
+
+/* ==========  送信  ========== */
+$("#send-button").onclick=async()=>{
+ const msg=$("#message"); msg.textContent=""; msg.className="";
+ /* --- 入力取得 --- */
+ const data = {
+   sender_municipality: localStorage.getItem("my_municipality") || "",
+   receiver_municipality: selM.value,
+   receiver_uuid: selU.value,
+   amount: $("#amount").value.trim(),
+   account_title: $("#account_title").value,
+   dimension: $("#dimension").value,
+   organism_name: $("#organism").value,
+   details: $("#message_field").value.trim(),
+   goods_or_money: "money",
+   location: "",
+   proof_of_place: "",
+   attributes: {}
+ };
+
+ /* フォームバリデーション */
+ if(!data.receiver_uuid){ msgErr("宛先ユーザーを選択してください"); return; }
+ if(!data.amount || +data.amount <= 0){ msgErr("金額が不正です"); return; }
+
+ /* 残高チェック */
+ const myBal = parseFloat($("#my-balance").textContent || "0");
+ if(+data.amount > myBal){ msgErr("残高不足です"); return; }
+
+ /* Attributes */
+ document.querySelectorAll(".attribute-pair").forEach(p=>{
+   const k = p.querySelector(".attribute-key").value.trim();
+   const v = p.querySelector(".attribute-value").value.trim();
+   if(k) data.attributes[k] = v;
+ });
+
+ /* 送信 (API コール) */
+ try{
+   const res = await fetch(`${API_BASE}/send_transaction`, {
+     method: "POST",
+     headers: {
+       "Content-Type": "application/json",
+       "Authorization": "Bearer " + jwt
+     },
+     body: JSON.stringify(data)
+   });
+   const body = await res.json();
+   if(!res.ok){ throw new Error(body.error || "送信失敗"); }
+   msgOK(`送信成功！ TxID=${body.transaction_id}`);
+   $("#financial-statements").style.display="none";
+ } catch(e) {
+   msgErr(e.message || "送信エラー");
+ }
+};
+
+function msgErr(t){ const m=$("#message"); m.textContent=t; m.className="error"; }
+function msgOK(t){ const m=$("#message"); m.textContent=t; m.className="ok"; }
+</script>
+</body>
+</html>

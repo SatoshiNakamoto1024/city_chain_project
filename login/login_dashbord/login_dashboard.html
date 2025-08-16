@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Dashboard</title>
+    </head>
+    
+    <title>愛貨システム</title>
+    <style>
+        /* タブのスタイル */
+        .tab {
+            display: flex;
+            cursor: pointer;
+            padding: 10px;
+            background: #f1f1f1;
+            border: 1px solid #ccc;
+            margin: 0 5px;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- ナビゲーションタブ -->
+    <div id="tabs">
+        <div class="tab" onclick="showTab('sendTab')">送信画面</div>
+        <div class="tab" onclick="showTab('receiveTab')">受信画面</div>
+    </div>
+
+    <!-- タブコンテンツ -->
+    <div id="sendTab" class="tab-content">
+        <!-- 送信画面の内容を表示 -->
+        <iframe src="dapps/index.html" width="100%" height="600px" frameborder="0"></iframe>
+    </div>
+    <div id="receiveTab" class="tab-content">
+        <!-- 受信画面の内容を表示 -->
+        <iframe src="receiving_dapps/static/index.html" width="100%" height="600px" frameborder="0"></iframe>
+    </div>
+
+    <!-- JavaScriptでタブ切り替えを実装 -->
+    <script>
+        function showTab(tabId) {
+            // すべてのタブコンテンツを非表示
+            document.querySelectorAll('.tab-content').forEach((tab) => {
+                tab.classList.remove('active');
+            });
+            // 選択されたタブコンテンツのみ表示
+            document.getElementById(tabId).classList.add('active');
+        }
+        
+        // 初期表示のタブを設定
+        showTab('sendTab');  // デフォルトで送信画面を表示
+    </script>
+</body>
+</html>

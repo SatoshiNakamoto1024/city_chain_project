@@ -1,0 +1,61 @@
+[package]
+name = "municipal_chain"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rocket = { version = "0.5.1", features = ["json", "tls"] } 
+chrono = "0.4"
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.8"
+sha2 = "0.9"
+mongodb = "3.1.0"
+tokio = { version = "1.8", features = ["full"] }
+hex = "0.4"
+openssl = { version = "0.10", features = ["vendored"] }
+openssl-sys = "0.9"
+uuid = { version = "1.0", features = ["v4"] }
+base64 = "0.22.1"
+tokio-stream = "0.1"  # バージョンは適宜最新のものにしてください
+tonic = { version = "0.12.3", features = ["tls"] }
+prost = "0.13.3"
+immudb_proto = { path = "../immudb_proto" }
+
+# `ntru`関連の依存パッケージ
+[dependencies.ntru]
+version = "0.1.0"
+path = "../ntru"
+
+# [patch.crates-io]
+# openssl-src = { path = "local_openssl_src" }
+
+[dependencies.rust-crypto]
+version = "0.2"
+optional = true
+
+[dependencies.tracing]
+version = "0.1"
+optional = true
+
+[dependencies.slog]
+version = "2.7"
+optional = true
+
+[dependencies.slog-async]
+version = "2.7"
+optional = true
+
+[dependencies.slog-term]
+version = "2.7"
+optional = true
+
+[dev-dependencies]
+rand = "0.8"
+serde_json = "1.0"
+chrono = "0.4"
+
+[[bin]]
+name = "municipal_chain"
+path = "src/main.rs"

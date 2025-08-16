@@ -1,0 +1,65 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust-toolchain: [stable]
+
+    steps:
+      # 1. ソースコードのチェックアウト
+      - uses: actions/checkout@v4
+
+      # 2. キャッシュ（Crate registry & build artifacts）
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-reg-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-${{ github.sha }} 
+
+      # 3. Rust 環境セットアップ
+      - name: Install Rust
+        uses: actions/setup-rust@v1
+        with:
+          rust-version: ${{ matrix.rust-toolchain }}
+
+      # 4. フォーマットチェック & Linting
+      - name: cargo fmt & clippy
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets -- -D warnings
+
+      # 5. ユニットテスト実行
+      - name: cargo test
+        run: cargo test --all --verbose
+
+      # 6. （オプション）ベンチマーク実行
+      #    必要に応じてアンコメントしてください。
+      # - name: cargo bench
+      #   run: cargo bench -- --noplot
+
+      # 7. 成果物アップロード（任意）
+      #    Mac/Linux stable / nightly でのみ HTML レポートをアップロードする例
+      - name: Upload bench reports
+        if: matrix.os == 'ubuntu-latest' && matrix.rust-toolchain == 'stable'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-reports-${{ matrix.os }}
+          path: target/criterion

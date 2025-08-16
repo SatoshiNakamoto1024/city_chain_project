@@ -1,0 +1,70 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_ack\poh_ack_rust\Cargo.toml
+[package]
+name         = "poh_ack_rust"
+version      = "0.1.0"
+edition      = "2021"
+authors      = ["Your Name <you@example.com>"]
+license      = "Apache-2.0"
+description  = "PoH ACK verifier (Rust core + PyO3 bindings)"
+repository   = "https://github.com/your_org/poh_ack"
+
+[features]
+# core = Rust だけ使う場合の最小機能 (bin/main_ack 用)
+core    = []
+# python = PyO3 バインディングを含む完全版
+python  = ["pyo3/extension-module", "pyo3/abi3-py312", "pyo3/auto-initialize"]
+# デフォルトはどちらもオフに
+default = []      
+# wheel ビルドや Python から import するとき
+python-ext = ["pyo3/extension-module"]
+# Rust 側で直接実行・テストしたいとき
+python-embed = ["pyo3/auto-initialize", "pyo3/abi3-py312"]  # abi3 は任意
+
+[lib]
+name       = "poh_ack_rust"
+crate-type = ["cdylib", "rlib"]
+path       = "src/lib.rs"
+
+[[bin]]
+name = "main_ack"
+path = "src/main_ack.rs"
+
+[dependencies]
+bs58          = "0.4"
+ed25519-dalek = { version = "2", default-features = false, features = ["pkcs8", "rand_core"] }
+tokio         = { version = "1.37", features = ["rt","rt-multi-thread","macros","time"] }
+once_cell     = "1.19"
+
+# --- errors & CLI etc. ----------------------------------------------------
+chrono        = { version = "0.4", features = ["serde"] }
+serde         = { version = "1.0", features = ["derive"] }
+serde_json    = "1.0"
+thiserror     = "1.0"
+anyhow        = "1.0"
+clap          = { version = "4.5", features = ["derive"] }
+indoc         = "1"
+
+# --- PyO3 & pyo3-asyncio (for Python ≥3.8 / Python 3.12 対応) ---------------
+pyo3          = { version = "0.25", features = ["abi3-py312", "extension-module", "auto-initialize"] }
+pyo3-async-runtimes = { version = "0.25", features = ["tokio-runtime"] }
+
+[dev-dependencies]
+once_cell       = "1.19"
+tempfile        = "3"  
+rand            = "0.8"
+tokio-test      = "0.4"
+criterion       = { version = "0.5", features = ["html_reports","async_tokio"] }
+assert_cmd      = "2"
+predicates      = "3"
+serde_json      = "1"
+walkdir         = "2.5"
+pyo3            = { version = "0.25", default-features = false, features = ["extension-module", "abi3-py312", "auto-initialize"] }
+pyo3-build-config = "0.25.0"
+
+[build-dependencies]
+pyo3-build-config = "0.25"
+
+[[bench]]
+name    = "bench_verifier"
+harness = false
+path    = "benches/bench_verifier.rs"

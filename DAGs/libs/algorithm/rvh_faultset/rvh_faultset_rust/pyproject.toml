@@ -1,0 +1,30 @@
+# D:\city_chain_project\DAGs\libs\algorithm\rvh_faultset\rvh_faultset_rust\pyproject.toml
+[project]
+name             = "rvh_faultset_rust"
+version          = "0.1.0"
+description      = "Python bindings for RVH faultset selection"
+license          = "Apache-2.0"
+requires-python  = ">=3.8"
+authors = [
+  { name = "Nakamoto Satoshi", email = "you@example.com" }
+]
+keywords = ["rvh", "faultset", "python", "rust"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License"
+]
+
+[build-system]
+requires    = ["maturin>=1.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+bindings = "pyo3"
+features = []
+cargo-extra-args = ["--locked"]

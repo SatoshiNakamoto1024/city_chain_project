@@ -1,0 +1,11 @@
+{
+    "uuid": "c0e7ed76-2e42-412d-a6d3-577083541f2f",
+    "session_id": "CLIENT_CERT",
+    "fingerprint": "a19c8915e72c5d8b0087879a44e1fc5dbe47baf1384202ce2019f2bc35f439d8",
+    "valid_from": "2025-04-20T19:02:20.756222Z",
+    "valid_to": "2026-04-20T19:02:20.756222Z",
+    "revoked": true,
+    "revoked_at": "2025-04-20T19:02:21.537466Z",
+    "s3_key": "client_cert/c0e7ed76-2e42-412d-a6d3-577083541f2f_20250420190220.json",
+    "issued_at": "2025-04-20T19:02:21.334344Z"
+}

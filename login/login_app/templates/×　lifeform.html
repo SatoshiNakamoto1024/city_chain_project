@@ -1,0 +1,116 @@
+<!-- login_app/templates/lifeform.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生命体管理</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 90%;
+      max-width: 500px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    form {
+      text-align: left;
+    }
+    label {
+      margin-top: 10px;
+      display: block;
+    }
+    input {
+      padding: 8px;
+      margin-top: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .back-button {
+      margin-top: 10px;
+      background-color: #aaa;
+    }
+    .back-button:hover {
+      background-color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>生命体管理</h2>
+    <form id="lifeform-form">
+      <h3>固定項目 (必須、全10件)</h3>
+      <label>1. ニックネーム:</label>
+      <input type="text" name="nickname" required>
+      <label>2. チーム名:</label>
+      <input type="text" name="team_name" required>
+      <label>3. 所属先名:</label>
+      <input type="text" name="affiliation" required>
+      <label>4. 市町村:</label>
+      <input type="text" name="municipality" required>
+      <label>5. 州・県:</label>
+      <input type="text" name="region" required>
+      <label>6. 国:</label>
+      <input type="text" name="country" required>
+      <label>7. 世界経済:</label>
+      <input type="text" name="world_economy" value="Global" required>
+      <label>8. 人類:</label>
+      <input type="text" name="humanity" value="Humanity" required>
+      <label>9. 地球:</label>
+      <input type="text" name="earth" value="Earth" required>
+      <label>10. 太陽系:</label>
+      <input type="text" name="solar_system" value="Solar System" required>
+      <h3>追加項目 (任意、最大30件まで)</h3>
+      <div id="extra-dimensions-container"></div>
+      <button type="button" onclick="addExtraDimension()">＋ 追加項目</button>
+      <br><br>
+      <button type="submit">生命体情報登録</button>
+    </form>
+    <button class="back-button" onclick="goBack()">戻る</button>
+  </div>
+  <script>
+    const MAX_TOTAL_DIMENSIONS = 30;
+    const FIXED_COUNT = 10;
+    function addExtraDimension() {
+      const container = document.getElementById("extra-dimensions-container");
+      const currentExtra = container.getElementsByTagName("input").length;
+      if (FIXED_COUNT + currentExtra >= MAX_TOTAL_DIMENSIONS) {
+        alert("登録可能な次元は最大 " + MAX_TOTAL_DIMENSIONS + " 件です。");
+        return;
+      }
+      const newInput = document.createElement("input");
+      newInput.type = "text";
+      newInput.name = "extra_dimension";
+      newInput.placeholder = "追加次元 " + (currentExtra + 1);
+      container.appendChild(newInput);
+      container.appendChild(document.createElement("br"));
+    }
+    function goBack() {
+      window.location.href = "index.html";
+    }
+    document.getElementById("lifeform-form").addEventListener("submit", function(event) {
+      event.preventDefault();
+      alert("生命体情報が登録されました（ダミー処理）。");
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!-- templates/admin_revoke_device.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>管理者：端末失効</title>
+</head>
+<body>
+  <h1>管理者：個別端末失効</h1>
+  <form id="revoke-form">
+    <label>ユーザーUUID：<input type="text" id="uuid" required></label><br>
+    <label>デバイスID：  <input type="text" id="device_id" required></label><br>
+    <button type="submit">失効</button>
+  </form>
+  <div id="result" style="margin-top:1em;"></div>
+  <script>
+    document.getElementById("revoke-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const uuid = document.getElementById("uuid").value;
+      const device_id = document.getElementById("device_id").value;
+      const res = await fetch("/admin/revoke_device", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("admin_jwt")}`
+        },
+        body: JSON.stringify({ uuid, device_id })
+      });
+      const data = await res.json();
+      document.getElementById("result").innerText = 
+        res.ok ? "成功しました" : `Error: ${data.error}`;
+    });
+  </script>
+</body>
+</html>

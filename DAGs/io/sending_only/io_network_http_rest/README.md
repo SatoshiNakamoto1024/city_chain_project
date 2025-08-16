@@ -1,0 +1,1 @@
+③	io_network_http_rest	OpenAPI/JSON REST エンドポイント (Axum + FastAPI)

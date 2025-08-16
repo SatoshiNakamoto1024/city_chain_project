@@ -1,0 +1,29 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_ack\poh_ack_rust\pyproject.toml
+[build-system]
+requires = ["maturin>=1.3"]
+build-backend = "maturin"
+
+[project]
+name = "poh-ack-rust"
+version = "0.1.0"
+description = "Python bindings for PoH ACK verification & TTL"
+requires-python = ">=3.8"
+authors = [{name = "Your Name", email = "you@example.com"}]
+license = "Apache-2.0"
+keywords = ["ack", "ttl", "verifier", "python", "rust"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: Apache Software License"
+]
+
+[tool.maturin]
+bindings = "pyo3"
+features = ["python-ext"]      # ← ここを修正
+cargo-extra-args = ["--locked"]
+platform-tag = "manylinux2014_x86_64"

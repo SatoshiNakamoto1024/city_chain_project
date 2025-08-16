@@ -1,0 +1,15 @@
+{
+  "tx_id": "4fba4382-1443-46b4-bfdb-38140c237bb7",
+  "sender": "User51",
+  "receiver": "User128",
+  "amount": 734,
+  "timestamp": 1741598318.6900084,
+  "hash": "021af819f4b909e1bb1036414f522b6a6f32c715db9d5347fffb18cbad6ab0c7",
+  "distribution_info": {
+    "municipality": "CityD",
+    "continent": "Oceania",
+    "node": "oceania_node_1",
+    "base_hash": 952276053715761140182220321246918815563035627694959517986253455205161676999,
+    "score": 0.8580379279663721
+  }
+}

@@ -1,0 +1,8 @@
+dir = "D:\\city_chain_project\\network\\DB\\immudb\\data\\tests\\login\\Default"
+address = "192.168.3.8"
+port = 3322
+metrics-address = "192.168.3.8:9497/metrics"
+
+[grpc]
+enabled = true
+port = 3322

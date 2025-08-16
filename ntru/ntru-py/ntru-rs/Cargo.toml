@@ -1,0 +1,13 @@
+[package]
+name = "ntru-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ntrust-native = { path = "ntrust-native" } # パスを調整
+pqcrypto-ntru = { version = "0.5.8" }
+pqcrypto-traits = "0.3.4" # 他の依存関係に合わせてバージョンを調整
+
+[[bin]]
+name = "ntru_main"
+path = "src/bin/ntru_main.rs"

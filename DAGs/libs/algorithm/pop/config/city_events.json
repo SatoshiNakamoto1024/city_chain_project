@@ -1,0 +1,11 @@
+[
+  {
+    "city_id": "1234567",
+    "active_start": 1750474980,
+    "active_end": 1750561380,
+    "multiplier": 1.5,
+    "action": "HT",
+    "target": null,
+    "description": null
+  }
+]

@@ -1,0 +1,24 @@
+# Compiled binaries
+/bm
+dist
+
+# Immudb data
+/data*
+
+# Vendor
+vendor
+
+# Unuseful stuff
+*.iml
+*.swp
+.idea/
+.gitignore
+build
+resources
+/immudata
+/Dockerfile*
+pkg/integration/replication
+webconsole/dist
+
+# Allow FIPS build checker
+!build/fips/check-fips.sh

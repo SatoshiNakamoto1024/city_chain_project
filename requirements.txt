@@ -1,0 +1,32 @@
+# ───────── Runtime core ─────────
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+redis>=4.2,<5.0
+grpcio==1.72.1
+
+# ───────── Observability ────────
+opentelemetry-api==1.34.1
+opentelemetry-sdk==1.34.1
+opentelemetry-exporter-otlp==1.34.1            # includes proto-grpc/http
+opentelemetry-instrumentation-asgi==0.55b1
+prometheus-client==0.22.1
+protobuf>=5,<6                                  # OTel 1.34.x 要件
+
+# ───────── Data / Storage ───────
+pymongo==4.7.3
+motor>=3.4,<3.5                                 # PyMongo 4 対応版
+aiohttp==3.9.5
+httpx>=0.28,<0.29
+
+# ───────── Business libs ────────
+openai>=1.30,<2.0                               # adjust if必要
+requests>=2.32,<3
+
+flask==3.0.3
+flask-jwt-extended>=4.6,<5.0
+
+# ───────── コメント ─────────
+# - grpcio-tools は実行時には不要（codegen 時に dev 依存へ）
+# - バージョン範囲は “実運用で検証済みのメジャー” に固定している
+
+-r requirements-dev.txt

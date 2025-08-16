@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>管理者専用 証明書一覧管理</title>
+  <style>
+    body { font-family: sans-serif; background: #f9f9f9; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #eee; }
+    .revoked { color: red; font-weight: bold; }
+    .valid { color: green; font-weight: bold; }
+    form { margin: 0; }
+  </style>
+</head>
+<body>
+  <h2>管理者専用 証明書一覧管理</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>UUID</th>
+        <th>フィンガープリント</th>
+        <th>有効期間</th>
+        <th>状態</th>
+        <th>失効日時</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.uuid }}</td>
+        <td>{{ user.certificate.fingerprint }}</td>
+        <td>{{ user.certificate.valid_from }} ～ {{ user.certificate.valid_to }}</td>
+        <td>
+          {% if user.certificate.revoked %}
+            <span class="revoked">失効</span>
+          {% else %}
+            <span class="valid">有効</span>
+          {% endif %}
+        </td>
+        <td>{{ user.certificate.revoked_at or "" }}</td>
+        <td>
+          {% if not user.certificate.revoked %}
+          <form method="post" action="/client_cert/admin/revoke/{{ user.uuid }}">
+            <button onclick="return confirm('本当に失効しますか？')">失効</button>
+          </form>
+          {% else %}
+          -
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

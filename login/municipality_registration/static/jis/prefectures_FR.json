@@ -1,0 +1,26 @@
+[
+  {
+    "code": "IDF",
+    "name": "Île-de-France"
+  },
+  {
+    "code": "ARA",
+    "name": "Auvergne-Rhône-Alpes"
+  },
+  {
+    "code": "PAC",
+    "name": "Provence-Alpes-Côte d'Azur"
+  },
+  {
+    "code": "NAQ",
+    "name": "Nouvelle-Aquitaine"
+  },
+  {
+    "code": "OCC",
+    "name": "Occitanie"
+  },
+  {
+    "code": "HDF",
+    "name": "Hauts-de-France"
+  }
+]

@@ -1,0 +1,32 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_rust\pyproject.toml
+[project]
+name             = "poh_holdmetrics_rust"
+version          = "0.1.0"
+description      = "Compiled Rust extension for poh_holdmetrics"
+license          = "Apache-2.0"
+requires-python  = ">=3.8"
+authors = [
+  { name = "Nakamoto Satoshi", email = "you@example.com" }
+]
+keywords = ["hold", "PoHold", "metrics", "python", "rust"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License"
+]
+
+[build-system]
+requires    = ["maturin>=1.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+features = ["py-ext"]          # ← Cargo feature を必ず ON
+bindings = "pyo3"      # ← **コレが重要**
+module-name      = "poh_holdmetrics_rust"   # ← Python 側と合わせ打ち
+cargo-extra-args = ["--locked"]

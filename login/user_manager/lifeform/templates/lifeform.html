@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生命体管理</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    .container {
+      width: 90%;
+      max-width: 600px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+    .dimension-container {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+    .dimension-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .dimension-row label {
+      flex: 1;
+    }
+    .dimension-row input {
+      flex: 2;
+      padding: 8px;
+      margin-right: 10px;
+    }
+    .add-btn {
+      padding: 8px 12px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .add-btn:hover {
+      background-color: #218838;
+    }
+    .extra-container {
+      margin-top: 5px;
+    }
+    .extra-input-block {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+      padding: 6px;
+      border: 1px dashed #ccc;
+      background-color: #fafafa;
+    }
+    .extra-input-block label {
+      margin-right: 5px;
+      white-space: nowrap;
+    }
+    .extra-input-block input {
+      padding: 6px;
+      margin-right: 5px;
+      width: 40%;  /* 固定項目と同じ枠よりやや短く */
+    }
+    .extra-input-block button {
+      padding: 6px 10px;
+      margin-right: 5px;
+    }
+    .extra-entry {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+      background-color: #eef;
+      padding: 5px;
+    }
+    .extra-entry span {
+      flex: 1;
+    }
+    .delete-btn {
+      padding: 4px 8px;
+      background-color: #dc3545;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+    .submit-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .submit-btn:hover {
+      background-color: #0056b3;
+    }
+    .back-button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #aaa;
+      border: none;
+      cursor: pointer;
+    }
+    .back-button:hover {
+      background-color: #888;
+    }
+    /* プレビューモーダル用 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 500px;
+      text-align: left;
+    }
+    .modal-buttons {
+      text-align: right;
+      margin-top: 10px;
+    }
+    .modal-buttons button {
+      padding: 6px 12px;
+      margin-left: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>生命体管理</h2>
+    <!-- フォーム送信先は Blueprint で設定された /lifeform/ -->
+    <form id="lifeform-form" action="/lifeform/" method="post">
+      <!-- ユーザーIDを送信する hidden フィールド（例：セッションやURLパラメータから取得したもの） -->
+      <input type="hidden" name="user_id" value="{{ user_id }}">
+      <!-- 隠しフィールド：各次元の最終値を JSON で送信 -->
+      <input type="hidden" name="final_dimensions" id="final_dimensions">
+      
+      <h3>固定項目 (必須、全10件)</h3>
+      <div id="dimensions-container">
+        <!-- 以下、10個の dimension-container -->
+        <div class="dimension-container" data-dim="1">
+          <div class="dimension-row">
+            <label>1. ニックネーム:</label>
+            <input type="text" name="dimension_1_fixed" required>
+            <button type="button" class="add-btn" onclick="showExtraInput(this)">追加</button>
+          </div>
+          <div class="extra-container"></div>
+        </div>
+        <div class="dimension-container" data-dim="2">
+          <div class="dimension-row">
+            <label>2. チーム名:</label>
+            <input type="text" name="dimension_2_fixed" required>
+            <button type="button" class="add-btn" onclick="showExtraInput(this)">追加</button>
+          </div>
+          <div class="extra-container"></div>
+        </div>
+        <div class="dimension-container" data-dim="3">
+          <div class="dimension-row">
+            <label>3. 所属先名:</label>
+            <input type="text" name="dimension_3_fixed" required>
+            <button type="button" class="add-btn" onclick="showExtraInput(this)">追加</button>
+          </div>
+          <div class="extra-container"></div>
+        </div>
+        <div class="dimension-container" data-dim="4">
+          <div class="dimension-row">
+            <label>4. 市町村:</label>
+            <input type="text" name="dimension_4_fixed" required>
+            <button type="button" class="add-btn" onclick="showExtraInput(this)">追加</button>
+          </div>
+          <div class="extra-container"></div>
+        </div>
+        <div class="dimension-container" data-dim="5">
+          <div class="dimension-row">
+            <label>5. 州・県:</label>
+            <input type="text" name="dimension_5_fixed" required>
+            <button type="button" class="add-btn" onclick="showExtraInput(this)">追加</button>
+          </div>
+          <div class="extra-container"></div>
+        </div>
+        <div class="dimension-container" data-dim="6">
+          <div class="dimension-row">
+            <label>6. 国:</label>
+            <input type="text" name="dimension_6_fixed" required>
+            <button type="button" class="add-btn" onclick="showExtraInput(this)">追加</button>
+          </div>
+          <div class="extra-container"></div>
+        </div>
+        <div class="dimension-container" data-dim="7">
+          <div class="dimension-row">
+            <label>7. 世界経済:</label>
+            <input type="text" name="dimension_7_fixed" value="Global" required>
+            <button type="button" class="add-btn" onclick="showExtraInput(this)">追加</button>
+          </div>
+          <div class="extra-container"></div>
+        </div>
+        <div class="dimension-container" data-dim="8">
+          <div class="dimension-row">
+            <label>8. 人類:</label>
+            <input type="text" name="dimension_8_fixed" value="Humanity" required>
+            <button type="button" class="add-btn" onclick="showExtraInput(this)">追加</button>
+          </div>
+          <div class="extra-container"></div>
+        </div>
+        <div class="dimension-container" data-dim="9">
+          <div class="dimension-row">
+            <label>9. 地球:</label>
+            <input type="text" name="dimension_9_fixed" value="Earth" required>
+            <button type="button" class="add-btn" onclick="showExtraInput(this)">追加</button>
+          </div>
+          <div class="extra-container"></div>
+        </div>
+        <div class="dimension-container" data-dim="10">
+          <div class="dimension-row">
+            <label>10. 太陽系:</label>
+            <input type="text" name="dimension_10_fixed" value="Solar System" required>
+            <button type="button" class="add-btn" onclick="showExtraInput(this)">追加</button>
+          </div>
+          <div class="extra-container"></div>
+        </div>
+      </div>
+      <br>
+      <button type="submit" class="submit-btn">生命体情報登録</button>
+    </form>
+    <button type="button" class="back-button" onclick="goBack()">戻る</button>
+  </div>
+
+  <!-- プレビューモーダル -->
+  <div id="preview-modal" class="modal">
+    <div class="modal-content">
+      <h3>生命体情報プレビュー</h3>
+      <pre id="preview-json" style="background: #f0f0f0; padding: 10px;"></pre>
+      <div class="modal-buttons">
+        <button id="confirm-btn">OK</button>
+        <button id="cancel-btn">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 固定項目ごとに追加ボタンを押すと、その dimension-container 内の extra-container に入力ブロックを追加する
+    function showExtraInput(button) {
+      const container = button.closest('.dimension-container');
+      const dim = container.getAttribute("data-dim");
+      const extraContainer = container.querySelector(".extra-container");
+      
+      // もし入力ブロックがすでに存在していれば追加しない
+      if (extraContainer.querySelector(".extra-input-block")) {
+        return;
+      }
+      
+      const inputBlock = document.createElement("div");
+      inputBlock.className = "extra-input-block";
+      
+      // ラベルを作成（例："dimension_2:"）
+      const label = document.createElement("label");
+      label.textContent = "dimension_" + dim + ":";
+      inputBlock.appendChild(label);
+      
+      // 追加生命体名入力フィールド（固定項目と同じ幅よりやや短い）
+      const extraInput = document.createElement("input");
+      extraInput.type = "text";
+      extraInput.placeholder = "追加生命体名";
+      inputBlock.appendChild(extraInput);
+      
+      // OK ボタン
+      const okButton = document.createElement("button");
+      okButton.type = "button";
+      okButton.textContent = "OK";
+      okButton.onclick = function() {
+        const val = extraInput.value.trim();
+        if (!val) {
+          alert("生命体名を入力してください。");
+          return;
+        }
+        // 追加エントリーを作成（例："dimension_2: 製造1課"）
+        const entryDiv = document.createElement("div");
+        entryDiv.className = "extra-entry";
+        const span = document.createElement("span");
+        span.textContent = "dimension_" + dim + ": " + val;
+        entryDiv.appendChild(span);
+        
+        // 削除ボタン
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "削除";
+        deleteBtn.onclick = function() {
+          entryDiv.remove();
+        };
+        entryDiv.appendChild(deleteBtn);
+        
+        extraContainer.appendChild(entryDiv);
+        inputBlock.remove();
+      };
+      inputBlock.appendChild(okButton);
+      
+      // キャンセルボタン
+      const cancelButton = document.createElement("button");
+      cancelButton.type = "button";
+      cancelButton.textContent = "キャンセル";
+      cancelButton.onclick = function() {
+        inputBlock.remove();
+      };
+      inputBlock.appendChild(cancelButton);
+      
+      // 入力ブロックを extra-container の最後に追加する
+      extraContainer.appendChild(inputBlock);
+    }
+    
+    function goBack() {
+      window.location.href = "index.html";
+    }
+    
+    // フォーム送信時に、各 dimension-container 内の固定値と追加エントリーを結合し、hidden フィールドに設定する
+    document.getElementById("lifeform-form").addEventListener("submit", function(event) {
+      event.preventDefault();
+      const finalDimensions = {};
+      const containers = document.querySelectorAll(".dimension-container");
+      containers.forEach(container => {
+        const dim = container.getAttribute("data-dim");
+        const fixedInput = container.querySelector(`input[name="dimension_${dim}_fixed"]`);
+        const fixedVal = fixedInput ? fixedInput.value.trim() : "";
+        const extraEntries = [];
+        container.querySelectorAll(".extra-entry span").forEach(span => {
+          const text = span.textContent;
+          const parts = text.split(":");
+          if (parts.length >= 2) {
+            extraEntries.push(parts.slice(1).join(":").trim());
+          }
+        });
+        finalDimensions["dimension_" + dim] = [fixedVal, ...extraEntries].filter(x => x).join(", ");
+      });
+      document.getElementById("final_dimensions").value = JSON.stringify(finalDimensions);
+      document.getElementById("preview-json").textContent = JSON.stringify(finalDimensions, null, 2);
+      document.getElementById("preview-modal").style.display = "block";
+    });
+    
+    // モーダルの OK ボタン：確認後にフォームを送信する
+    document.getElementById("confirm-btn").addEventListener("click", function() {
+      const form = document.getElementById("lifeform-form");
+      const formData = new FormData(form);
+      fetch("http://localhost:5000/lifeform/", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert("登録成功: " + JSON.stringify(data, null, 2));
+        document.getElementById("preview-modal").style.display = "none";
+      })
+      .catch(error => {
+        alert("登録エラー: " + error);
+        document.getElementById("preview-modal").style.display = "none";
+      });
+    });
+    
+    // モーダルの キャンセル ボタン：モーダルを閉じる
+    document.getElementById("cancel-btn").addEventListener("click", function() {
+      document.getElementById("preview-modal").style.display = "none";
+    });
+  </script>
+</body>
+</html>

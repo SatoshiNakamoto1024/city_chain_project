@@ -1,0 +1,31 @@
+# D:\city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_python\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "maturin>=1.4"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rvh_trace"
+version = "0.1.0"
+description = "Python helper for high-performance tracing & metrics via rvh_trace_rust"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.8"
+
+dependencies = [
+  # 先にパッケージ化してあるのでOK
+  "rvh_trace_rust>=0.1.0",
+  "aiofiles>=23.1.0",
+  "aiosqlite>=0.18.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+  "pytest-asyncio>=1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rvh_trace"]
+
+[project.urls]
+Source = "https://example.com/your-repo"

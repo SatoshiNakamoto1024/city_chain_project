@@ -1,0 +1,62 @@
+# D:\city_chain_project\DAGs\libs\algorithm\rvh_weighted\Cargo.toml
+[package]
+name    = "rvh_weighted"
+version = "0.1.0"
+edition = "2021"
+description = "Weighted Rendezvous-Hash (HRW) with SIMD 128-bit score"
+license     = "Apache-2.0"
+rust-version = "1.74"
+
+########################
+#  依 存 関 係
+########################
+[dependencies]
+# 高速ハッシュ：内部で AVX2 / NEON を自動活用
+blake3         = { version = "1.5", default-features = false, features = ["rayon"] }
+cfg-if         = "1.0"          # CPU feature 切替
+rayon    = "1.10"     # 並列スコア計算
+thiserror = "1.0"     # ← 追加: エラー型 derive
+clap      = { version = "4.5", features = ["derive"] }
+indoc = "1"              # ← 追加
+serde = { version = "1.0", features = ["derive"] }
+rvh_simd  = { path = "../rvh_simd" }
+
+########################
+#  開 発 時 依 存
+########################
+[dev-dependencies]
+criterion      = { version = "0.5", features = ["html_reports"] }
+assert_cmd     = "2"            # CLI テスト
+predicates     = "3"            # ↑ assertion 拡張
+serde_json = "1"
+walkdir = "2.5"      # ファイル再帰探索
+
+[build-dependencies]
+cc = "1"      # AVX2/NEON 検出ヘルパ
+
+########################
+#  フ ィ ー チ ャ
+########################
+[features]
+# デフォルトはライブラリのみ
+default = []
+# 軽量ベンチ CLI をビルドしたいときだけ有効化
+cli     = []
+
+########################
+#  ク レ ート タ イ プ
+########################
+[lib]
+name       = "rvh_weighted"
+path       = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+# `--features cli` 指定時のみ有効
+name       = "main_weighted"
+path       = "src/main_weighted.rs"
+required-features = ["cli"]
+
+[[bench]]
+name = "bench_weighted"
+harness = false

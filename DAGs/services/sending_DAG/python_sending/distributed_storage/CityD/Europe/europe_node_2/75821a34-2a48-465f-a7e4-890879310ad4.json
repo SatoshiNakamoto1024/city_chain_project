@@ -1,0 +1,15 @@
+{
+  "tx_id": "75821a34-2a48-465f-a7e4-890879310ad4",
+  "sender": "User96",
+  "receiver": "User187",
+  "amount": 506,
+  "timestamp": 1741596783.7750323,
+  "hash": "7db332d7b07469a94d60e50cb3eb92f42df58d60b443a01401f3509861d3cb97",
+  "distribution_info": {
+    "municipality": "CityD",
+    "continent": "Europe",
+    "node": "europe_node_2",
+    "base_hash": 56855722599792355064288393353220920220248090489813159182572260716223243996055,
+    "score": 0.6420235104925204
+  }
+}

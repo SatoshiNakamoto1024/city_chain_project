@@ -1,0 +1,46 @@
+DAGs/io (~130)
+フォルダー (役割)
+io_network_grpc (3) – tonic + aio
+io_network_http (3) – Axum / FastAPI
+io_network_ws (3) – websocket
+io_network_quic (2) – QUIC
+io_network_libp2p (2)
+io_network_kademlia (2)
+io_network_gossip (2)
+io_network_multicast (2)
+io_network_nat (3)
+io_storage_mongo (3) – driver+sync
+io_storage_immudb (3)
+io_storage_rocksdb (2)
+io_storage_sqlite (1)
+io_storage_parquet (1)
+io_storage_redis (3)
+io_storage_backup (1)
+io_storage_shardmap (3)
+io_message_kafka (3)
+io_message_nats (3)
+io_message_rabbitmq (3)
+io_message_grpc_stream (3)
+io_serialization_cbor (2)
+io_serialization_flatbuf (2)
+io_serialization_arrow (2)
+io_serialization_capnp (2)
+io_tls_rustls (2)
+io_auth_jwt (1)
+io_auth_oauth2 (1)
+io_logging_json (1)
+io_logging_ansi (1)
+io_metrics_prom (1)
+io_telemetry_otlp (1)
+io_rate_limiter (2)
+io_backpressure (2)
+io_admin_api (3)
+io_cli_utils (1)
+io_file_transport (1)
+io_bench_loadgen (1)
+io_sim_netloss (1)
+
+③	io_network_http_rest	OpenAPI/JSON REST エンドポイント (Axum + FastAPI)
+②	io_network_peer_discovery	mDNS／Kademlia で P2P ピア探索
+③	io_storage_cache_redis	Redis キャッシュ (Tx メタ・TTL)
+①	io_telemetry_trace	OpenTelemetry span 収集 & OTLP 出力

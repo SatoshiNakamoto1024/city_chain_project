@@ -1,0 +1,14 @@
+{
+    "uuid": "8a249278-2a6b-4e76-ba33-539c1d77f1ef",
+    "session_id": "REGISTRATION",
+    "name": "joka",
+    "birth_date": "1973-10-24",
+    "address": "222-3 Izumidaimachi Nomi",
+    "mynumber": "123456789",
+    "email": "next_teal_organization@gmail.com",
+    "phone": "08030000000",
+    "initial_harmony_token": "100000",
+    "password_hash": "57808c35a627fb4a50d6a1de627adfc609ce85b1d61b4506ee1d8d6c97b7f319",
+    "salt": "9a43aca97eda9102eaf9c877d0a8b84f",
+    "created_at": "2025-03-20T21:24:06.771635Z"
+}

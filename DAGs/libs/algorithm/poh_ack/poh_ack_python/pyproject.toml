@@ -1,0 +1,48 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_ack\poh_ack_python\pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "maturin>=1.4"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "poh-ack"
+version = "0.1.0"
+description = "Python bindings and utilities for PoH ACK verification & TTL"
+requires-python = ">=3.8,<4.0"
+authors = [
+  { name = "Your Name", email = "you@example.com" },
+]
+dependencies = [
+  "pydantic>=2.0,<3.0",
+  "click>=8.0",
+  "cryptography>=41.0",
+  "base58>=2.1",
+  "poh-ack-rust>=0.1.0",
+  "aiofiles>=23.1.0",
+  "aiosqlite>=0.18.0",
+]
+
+[project.scripts]
+poh-ack = "poh_ack.cli:cli"
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+  "pytest-asyncio>=1.0",
+]
+
+[tool.maturin]
+bindings = "pyo3"
+features = ["python"]
+cargo-extra-args = ["--locked"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["poh_ack", "poh_ack.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["poh_ack/tests"]
+python_files = ["test_*.py"]
+
+[project.urls]
+Source = "https://example.com/your-repo"

@@ -1,0 +1,27 @@
+# D:\city_chain_project\Algorithm\EC\ec_rust_src\core\ldpc\Cargo.toml
+[package]
+name = "ldpc"
+version = "0.1.0"
+edition = "2021"
+description = "LDPC subcrate implementing ErasureCoder via Reed–Solomon delegation"
+license = "Apache-2.0"
+# If part of a workspace, remove [workspace]
+
+[dependencies]
+# Delegate encoding/decoding to Reed–Solomon
+reed-solomon-erasure = { version = "5.0", default-features = false, features = ["simd-accel"] }
+# Error derive
+thiserror = "1.0"
+
+[dev-dependencies]
+# For testing
+assert_cmd = "2.0"
+predicates = "2.1"
+
+[lib]
+name       = "ldpc"
+path       = "src/lib.rs"
+
+[[bin]]
+name = "ldpc"
+path = "src/main_ldpc.rs"

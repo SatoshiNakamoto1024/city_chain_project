@@ -1,0 +1,1 @@
+dag_snapshot (2) – Snapshot	状態スナップ/復旧

@@ -1,0 +1,1 @@
+vdf_wesolowski	②	Wesolowski VDF（乱数ビーコン／タイムロック）

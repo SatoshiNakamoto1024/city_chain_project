@@ -1,0 +1,12 @@
+{
+  "journal_entries": {
+    "Asia": "mongodb://mongo-asia:13024/Asia_journal_entries",
+    "Europe": "mongodb://mongo-europe:13025/Europe_journal_entries",
+    "Oceania": "mongodb://mongo-australia:13026/Oceania_journal_entries",
+    "Africa": "mongodb://mongo-africa:13027/Africa_journal_entries",
+    "NorthAmerica": "mongodb://mongo-northamerica:13028/NorthAmerica_journal_entries",
+    "SouthAmerica": "mongodb://mongo-southamerica:13029/SouthAmerica_journal_entries",
+    "Antarctica": "mongodb://mongo-antarctica:13030/Antarctica_journal_entries",
+    "Default": "mongodb://mongo-default:13000/Default_journal_entries"
+  }
+}

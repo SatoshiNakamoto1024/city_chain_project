@@ -1,0 +1,16 @@
+{
+  "tx_id": "tx_dummy",
+  "sender": "Alice",
+  "receiver": "Bob",
+  "amount": 100,
+  "timestamp": 1741787715.858151,
+  "hash": "eeced8a22d96c40432f884ff979a26b08adcf39eadbdafe6cb852568492ee76b",
+  "distribution_info": {
+    "municipality": "CityD",
+    "continent": "Africa",
+    "node": "africa_node_1",
+    "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731,
+    "score": 0.4510979844694671,
+    "contract_executed": true
+  }
+}

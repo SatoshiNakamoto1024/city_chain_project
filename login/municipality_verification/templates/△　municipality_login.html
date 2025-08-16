@@ -1,0 +1,114 @@
+<!-- templates/municipality_login.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>市町村職員ログイン</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#f7f7f7;text-align:center;padding:50px}
+    .container{max-width:440px;margin:auto;background:#fff;padding:30px;box-shadow:0 0 10px #0001}
+    input,select{width:100%;padding:8px;margin-top:10px;box-sizing:border-box}
+    button{margin-top:20px;padding:10px;width:100%;background:#007bff;color:#fff;border:none;cursor:pointer}
+    button:hover{background:#0056b3}
+    label{display:block;text-align:left;margin-top:10px}
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>市町村職員ログイン</h2>
+  <form id="admin-login-form">
+    <!-- 地域ツリー ---------------------------- -->
+    <label>大陸:</label>
+    <select id="selCont" required></select>
+
+    <label>国:</label>
+    <select id="selCountry" required></select>
+
+    <label>都道府県 / 州:</label>
+    <select id="selPref" required></select>
+
+    <label>市町村:</label>
+    <select id="selCity" required></select>
+
+    <!-- ログイン資格 ------------------------- -->
+    <label for="admin_id">ユーザー名:</label>
+    <input type="text" id="admin_id" name="admin_id" required>
+
+    <label for="password">パスワード:</label>
+    <input type="password" id="password" name="password" required>
+
+    <!-- 送信用（市町村コード／名前どちらでも） -->
+    <input type="hidden" id="municipality" name="municipality">
+
+    <button type="submit">ログイン</button>
+  </form>
+</div>
+
+<script>
+/* --------- 地域ツリー ---------- */
+const API = "/api/jis";
+const contSel = q("#selCont"), cntrySel=q("#selCountry"),
+      prefSel = q("#selPref"), citySel = q("#selCity");
+
+function q(s){return document.querySelector(s)}
+function reset(sel){sel.innerHTML='<option value="">—</option>'; sel.disabled=true;}
+
+async function fetchJson(url){
+  const r = await fetch(url); if(!r.ok) throw new Error(`${url} ${r.status}`);
+  return r.json();
+}
+async function loadContinents(){
+  reset(contSel); reset(cntrySel); reset(prefSel); reset(citySel);
+  const list = await fetchJson(`${API}/continents`);
+  list.forEach(c=>contSel.add(new Option(c,c)));
+  contSel.disabled=false;
+}
+async function loadCountries(){
+  reset(cntrySel); reset(prefSel); reset(citySel);
+  const list = await fetchJson(`${API}/countries`);
+  list.filter(c=>c.continent===contSel.value)
+      .forEach(c=>cntrySel.add(new Option(c.name,c.code)));
+  cntrySel.disabled=false;
+}
+async function loadPref(){
+  reset(prefSel); reset(citySel);
+  const list = await fetchJson(`${API}/prefectures/${cntrySel.value}`);
+  list.forEach(p=>prefSel.add(new Option(p.name,p.code)));
+  prefSel.disabled=false;
+}
+async function loadCities(){
+  reset(citySel);
+  const url = `${API}/municipalities/${cntrySel.value}_${prefSel.value}`;
+  const list = await fetchJson(url);
+  list.forEach(c=>citySel.add(new Option(c.name,c.name)));
+  citySel.disabled=false;
+}
+
+contSel.onchange = loadCountries;
+cntrySel.onchange = loadPref;
+prefSel.onchange  = loadCities;
+citySel.onchange  = ()=>q("#municipality").value = citySel.value;
+
+loadContinents();
+
+/* --------- ログイン POST ---------- */
+document.getElementById("admin-login-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!citySel.value){alert("市町村を選択してください");return;}
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  try{
+    const r = await fetch("/admin_login",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(data)
+    });
+    const res = await r.json();
+    if(res.success){
+      localStorage.setItem("admin_jwt",res.admin_jwt);
+      alert("ログイン成功");
+      location.href="/municipality_verify";
+    }else alert(`ログイン失敗: ${res.error||""}`);
+  }catch(err){alert("通信エラー:"+err);}
+});
+</script>
+</body>
+</html>

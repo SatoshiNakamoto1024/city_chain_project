@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: 3.9
+  # adjust matrix below as needed
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      # 1. Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Cache pip
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml', '**/poetry.lock') }}
+
+      # 3. Setup Python
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      # 5. Run tests (sync)
+      - name: Run pytest (sync)
+        run: |
+          pytest rvh_filter/tests -q
+
+      # 6. Run tests (async)
+      - name: Run pytest (async)
+        run: |
+          pip install pytest-asyncio
+          pytest rvh_filter/tests -q
+
+      # 7. Lint with flake8 (optional)
+      - name: Install lint deps
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: |
+          pip install flake8
+      - name: Run flake8
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: |
+          flake8 rvh_filter

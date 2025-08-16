@@ -1,0 +1,1 @@
+common_time_zone	①	tzdb & オフセット計算

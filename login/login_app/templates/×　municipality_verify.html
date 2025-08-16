@@ -1,0 +1,55 @@
+<!-- login_app/templates/municipality_verify.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>本人確認</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 90%;
+      max-width: 400px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 10px;
+      margin-top: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .back-button {
+      margin-top: 10px;
+      background-color: #aaa;
+    }
+    .back-button:hover {
+      background-color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>本人確認</h2>
+    <form id="verify-form" action="{{ url_for('registration_bp.municipality_verify') }}" method="post">
+      <label for="approval_code">承認コード:</label>
+      <input type="text" id="approval_code" name="approval_code" required>
+      <button type="submit">確認</button>
+    </form>
+    <button class="back-button" onclick="window.location.href='index.html'">戻る</button>
+  </div>
+</body>
+</html>

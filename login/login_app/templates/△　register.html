@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ユーザー登録</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 90%;
+      max-width: 400px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+    label {
+      margin-top: 10px;
+      display: block;
+    }
+    input {
+      padding: 8px;
+      margin-top: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .back-button {
+      margin-top: 10px;
+      background-color: #aaa;
+    }
+    .back-button:hover {
+      background-color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ユーザー登録</h1>
+    <!-- このフォームは /register エンドポイントに送信される -->
+    <form id="register-form">
+      <label for="username">ユーザー名:</label>
+      <input type="text" id="username" name="username" required>
+
+      <label for="birth_date">生年月日:</label>
+      <input type="date" id="birth_date" name="birth_date" required>
+
+      <label for="address">住所:</label>
+      <input type="text" id="address" name="address" required>
+
+      <label for="mynumber">マイナンバー:</label>
+      <input type="text" id="mynumber" name="mynumber" required>
+
+      <label for="email">メールアドレス:</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="phone">電話番号:</label>
+      <input type="text" id="phone" name="phone" required>
+
+      <label for="password">パスワード:</label>
+      <input type="password" id="password" name="password" required>
+
+      <label for="initial_harmony_token">初期Harmony Token:</label>
+      <input type="number" id="initial_harmony_token" name="initial_harmony_token" required>
+
+      <button type="submit">登録</button>
+    </form>
+    <button class="back-button" onclick="window.location.href='/'">戻る</button>
+  </div>
+  <p>
+    ※登録後、システム側でクライアント証明書（.p12ファイル相当のデータ）が発行されます。<br>
+    高齢者向けには、QRコード経由やメール添付による証明書の配布方法の案内を行います。
+  </p>
+  <script>
+    document.getElementById("register-form").addEventListener("submit", function(e){
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+      // サーバー側の登録エンドポイントは、同じオリジン内の "/register" を想定
+      fetch("/register", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(result => {
+        if(result.success){
+          alert("登録成功！\n発行されたクライアント証明書を必ず保存してください。\n※証明書はQRコードまたはメールでダウンロード可能です。");
+          console.log("Client Certificate (Base64):", result.client_cert);
+          window.location.href = "/login";
+        } else {
+          alert("登録失敗: " + (result.error || "不明なエラー"));
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("登録中にエラーが発生しました。");
+      });
+    });
+  </script>
+</body>
+</html>

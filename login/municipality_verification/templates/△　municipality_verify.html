@@ -1,0 +1,141 @@
+<!-- templates/municipality_verify.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>市町村ユーザー承認画面</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      padding: 20px;
+    }
+    .message {
+      color: green;
+      font-weight: bold;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #fff;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+    .btn-approve, .btn-reject {
+      margin: 0 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .btn-approve {
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+    }
+    .btn-reject {
+      background-color: #dc3545;
+      color: #fff;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>市町村ユーザー承認画面</h1>
+
+  {% if message %}
+    <div class="message">{{ message }}</div>
+  {% endif %}
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <p>承認待ちユーザー一覧（{{ users|length }} 件）</p>
+  <table>
+    <tr>
+      <th>UUID</th>
+      <th>操作</th>
+    </tr>
+    {% for user in users %}
+      <tr>
+        <td>{{ user.uuid }}</td>
+        <td>
+          <button class="btn-approve" onclick="approve('{{ user.uuid }}')">承認</button>
+          <button class="btn-reject" onclick="reject('{{ user.uuid }}')">却下</button>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  <script>
+    const adminToken = localStorage.getItem("admin_jwt");
+    if (!adminToken) {
+      alert("管理者トークンがありません。ログインし直してください。");
+      window.location.href = "/admin_login"; // GET
+    }
+
+    function approve(uuid) {
+      const code = prompt("承認コードを入力 (APPROVEDなど)");
+      const formData = new FormData();
+      formData.append("uuid", uuid);
+      formData.append("action", "approve");
+      formData.append("approval_code", code);
+
+      fetch("/municipality_verify_api", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${adminToken}`
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          alert(result.message);
+          window.location.reload();
+        } else {
+          alert("エラー: " + (result.error || "不明"));
+        }
+      })
+      .catch(err => {
+        alert("通信エラー: " + err);
+      });
+    }
+
+    function reject(uuid) {
+      const formData = new FormData();
+      formData.append("uuid", uuid);
+      formData.append("action", "reject");
+
+      fetch("/municipality_verify_api", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${adminToken}`
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          alert(result.message);
+          window.location.reload();
+        } else {
+          alert("エラー: " + (result.error || "不明"));
+        }
+      })
+      .catch(err => {
+        alert("通信エラー: " + err);
+      });
+    }
+  </script>
+</body>
+</html>

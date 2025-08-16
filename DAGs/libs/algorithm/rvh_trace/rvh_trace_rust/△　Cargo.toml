@@ -1,0 +1,71 @@
+# D:\city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_rust\Cargo.toml
+[package]
+name        = "rvh_trace_rust"
+version     = "0.1.0"
+edition     = "2021"
+description = "High-performance tracing and metrics helper (Rust core + PyO3 bindings)"
+license     = "Apache-2.0"
+repository  = "https://github.com/yourorg/rvh_trace"
+
+[dependencies]
+# --- runtime & tracing -----------------------------------------------------
+tokio                   = { workspace = true, features = ["rt","rt-multi-thread","macros","time"] }
+tracing                 = "0.1"
+tracing-subscriber      = { version = "0.3", features = ["fmt","env-filter","registry"] }
+tracing-opentelemetry   = "0.22"
+once_cell               = "1.19"
+
+# --- OpenTelemetry ---------------------------------------------------------
+opentelemetry           = { version = "0.21", features = ["trace"] }
+opentelemetry-otlp      = { version = "0.14", features = ["tonic"] }
+
+# --- PyO3 & pyo3-asyncio (for Python ≥3.8 / Python 3.12 対応) ---------------
+pyo3 = { workspace = true, default-features = false }   # ①一旦 feature を全部外す
+pyo3-async-runtimes = { workspace = true }
+
+# --- errors & CLI etc. ----------------------------------------------------
+serde           = { version = "1.0", features = ["derive"] }
+thiserror       = "1.0"
+anyhow          = "1.0"
+clap            = { version = "4.5", features = ["derive"] }
+indoc           = "1"
+
+[dev-dependencies]
+tokio-test      = "0.4"
+criterion       = { version = "0.5", features = ["html_reports","async_tokio"] }
+assert_cmd      = "2"
+predicates      = "3"
+serde_json      = "1"
+walkdir         = "2.5"
+
+[build-dependencies]          # ← 新しく追加
+pyo3-build-config = "0.25"    # ← link args を吐かせる
+
+[features]
+# デフォルト = 普通の Rust ライブラリ（→ cargo test 用）
+default = ["pyo3/auto-initialize"]   # ← libpython をリンクする安全パス
+
+# Python 拡張を作るときだけ明示的に指定.Wheel を作るときしか使わない。こちらは “リンクしない” 拡張用。
+py-ext = ["pyo3/extension-module", "pyo3/abi3-py312"]
+
+cli     = []
+embed-tests  = []     # ← もし後でテストを丸ごと切り替えたい場合用のスイッチ
+
+# ===== ☆ 重要 ☆ =========================================
+# これを書くだけで pyo3-build-config が自動でリンクフラグを伝搬
+[package.metadata.pyo3]
+extension-module = true
+
+[lib]
+name       = "rvh_trace_rust"
+crate-type = ["cdylib", "rlib"]
+path       = "src/lib.rs"
+
+[[bin]]
+name = "main_trace"
+path = "src/main_trace.rs"
+
+[[bench]]
+name    = "bench_trace"
+harness = false
+path    = "benches/bench_trace.rs"

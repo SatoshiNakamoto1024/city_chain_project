@@ -1,0 +1,15 @@
+{
+  "tx_id": "d24b75b5-0294-476f-953e-9192870bbb07",
+  "sender": "User57",
+  "receiver": "User127",
+  "amount": 985,
+  "timestamp": 1741596768.3476152,
+  "hash": "59f494c39ccaf20da55f0b46ae5007ccfd5fb7da381860eae5bdafda956f2af6",
+  "distribution_info": {
+    "municipality": "CityC",
+    "continent": "Asia",
+    "node": "asia_node_2",
+    "base_hash": 40687980939877763884563042055769768169561573360272747249504425901585146522358,
+    "score": 1.0524687456240607
+  }
+}

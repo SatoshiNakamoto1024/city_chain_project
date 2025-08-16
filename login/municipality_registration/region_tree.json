@@ -1,0 +1,141 @@
+{
+  "Asia": {
+    "countries": [
+      {
+        "code": "JP",
+        "name": "Japan",
+        "prefectures": [
+          {
+            "code": "18",
+            "name": "Ishikawa",
+            "cities": [
+              "Kanazawa",
+              "Komatsu",
+              "Hakusan",
+              "Nomi",
+              "Kaga"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "TW",
+        "name": "Taiwan",
+        "prefectures": [
+          {
+            "code": "TPE",
+            "name": "Taipei-City",
+            "cities": [
+              "Taipei"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "Europe": {
+    "countries": [
+      {
+        "code": "IE",
+        "name": "Ireland",
+        "prefectures": [
+          {
+            "code": "SO",
+            "name": "County-Sligo",
+            "cities": [
+              "Sligo"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "IT",
+        "name": "Italy",
+        "prefectures": [
+          {
+            "code": "LAZ",
+            "name": "Lazio",
+            "cities": [
+              "Rome"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "FR",
+        "name": "France",
+        "prefectures": [
+          {
+            "code": "IDF",
+            "name": "Île-de-France",
+            "cities": [
+              "Paris",
+              "Versailles",
+              "Testville-0d5147",
+              "Testville-645d12",
+              "Testville-fd8152",
+              "Testville-e5b1c1",
+              "Testville-49397e",
+              "Testville-efb851",
+              "Testville-7c6e8c"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "NorthAmerica": {
+    "countries": [
+      {
+        "code": "US",
+        "name": "United States",
+        "prefectures": [
+          {
+            "code": "MA",
+            "name": "Massachusetts",
+            "cities": [
+              "Boston",
+              "Worcester"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "Default": {
+    "countries": [
+      {
+        "code": "ZZ",
+        "name": "Undefined",
+        "prefectures": [
+          {
+            "code": "000",
+            "name": "Default",
+            "cities": [
+              "Defaultcity"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "TestContinent": {
+    "countries": [
+      {
+        "code": "TC",
+        "name": "TestCountry",
+        "prefectures": [
+          {
+            "code": "TP",
+            "name": "TestPref",
+            "cities": [
+              "TestMuni-042c9d",
+              "TestMuni-f7f608",
+              "TestMuni-bcff0e"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

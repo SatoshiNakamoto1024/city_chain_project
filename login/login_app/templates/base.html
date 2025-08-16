@@ -1,0 +1,85 @@
+<!-- login_app/templates/base.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CityChain Dashboard{% endblock %}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      text-align: center;
+    }
+    header {
+      background-color: #007bff;
+      color: #fff;
+      padding: 20px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+    nav {
+      margin-top: 15px;
+    }
+    nav ul {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    nav ul li a {
+      display: block;
+      padding: 10px 15px;
+      color: #007bff;
+      background-color: #fff;
+      border: 1px solid #007bff;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    nav ul li a:hover {
+      background-color: #0056b3;
+      color: #fff;
+    }
+    main {
+      padding: 20px;
+      min-height: 60vh;
+    }
+    footer {
+      background-color: #222;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CityChain Dashboard</h1>
+    <nav>
+      <ul>
+        <li><a href="{{ url_for('sending_bp.send') }}">送信する</a></li>
+        <li><a href="{{ url_for('receiving_bp.receive') }}">受信する</a></li>
+        <li><a href="{{ url_for('profile_bp.profile') }}">プロフィール管理</a></li>
+        <li><a href="{{ url_for('lifeform_bp.lifeform') }}">生命体管理</a></li>
+        <li><a href="{{ url_for('analysis_bp.analysis') }}">履歴分析</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    {% block content %}
+    <!-- 各ページ固有の内容がここに挿入されます -->
+    {% endblock %}
+  </main>
+  <footer>
+    <p>&copy; 2025 CityChain Project</p>
+  </footer>
+</body>
+</html>

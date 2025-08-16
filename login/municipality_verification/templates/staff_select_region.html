@@ -1,0 +1,168 @@
+<!-- municipality_verification/templates/staff_select_region.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>ユーザー承認（地域選択）</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f7f7f7;
+      padding: 40px;
+      text-align: center;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: #fff;
+      padding: 20px 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      text-align: left;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    select, input[type="hidden"], button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 25px;
+      background: #28a745;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #218838;
+    }
+    .reject-button {
+      background: #dc3545;
+    }
+    .reject-button:hover {
+      background: #c82333;
+    }
+    .note {
+      margin-top: 15px;
+      font-size: 0.9em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>ユーザー承認／地域選択</h2>
+    <p>以下のユーザーを承認または却下してください。</p>
+    <p><strong>UUID: </strong>{{ uuid }}</p>
+
+    <!-- 地域選択フォーム -->
+    <form id="region-form" method="POST" action="/staff/verify">
+      <!-- 大陸 → 国 → 都道府県 → 市町村 -->
+      <label for="selCont">大陸:</label>
+      <select id="selCont" name="continent" required></select>
+
+      <label for="selCountry">国:</label>
+      <select id="selCountry" name="country" disabled required></select>
+
+      <label for="selPref">都道府県 / 州:</label>
+      <select id="selPref" name="prefecture" disabled required></select>
+
+      <label for="selCity">市町村:</label>
+      <select id="selCity" name="municipality" disabled required></select>
+
+      <!-- フォームで渡したいパラメータ -->
+      <input type="hidden" name="uuid" value="{{ uuid }}">
+      <!-- action=approve / reject はボタンでセット -->
+      <input type="hidden" id="actionField" name="action" value="approve">
+
+      <div style="margin-top:20px;">
+        <button type="submit">承認してマッピング</button>
+        <button type="button" class="reject-button" onclick="rejectOnly()">却下</button>
+      </div>
+    </form>
+
+    <p class="note">
+      ※ 「承認してマッピング」を押すと、ユーザーが承認されると同時に地域情報が登録されます。<br>
+      ※ 「却下」を押すと地域選択なしに却下されます。
+    </p>
+  </div>
+
+  <script>
+    // ─────────── JIS API のエンドポイント ───────────
+    const JIS_API_BASE = "/api/jis";
+
+    const q = s => document.querySelector(s);
+    const selC = q("#selCont"), selN = q("#selCountry"),
+          selP = q("#selPref"), selM = q("#selCity");
+    const actionField = q("#actionField");
+
+    function reset(el) {
+      el.innerHTML = '<option value="">───</option>';
+      el.disabled = true;
+    }
+
+    async function fetchJson(url) {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
+      return r.json();
+    }
+
+    // 大陸リスト読み込み
+    async function loadContinents() {
+      reset(selC); reset(selN); reset(selP); reset(selM);
+      const list = await fetchJson(`${JIS_API_BASE}/continents`);
+      list.forEach(cont => selC.add(new Option(cont, cont)));
+      selC.disabled = false;
+    }
+
+    // 国リスト（大陸選択時）
+    async function loadCountries() {
+      reset(selN); reset(selP); reset(selM);
+      const arr = await fetchJson(`${JIS_API_BASE}/countries`);
+      arr
+        .filter(x => x.continent === selC.value)
+        .forEach(x => selN.add(new Option(x.name, x.code)));
+      selN.disabled = false;
+    }
+
+    // 都道府県リスト（国選択時）
+    async function loadPrefectures() {
+      reset(selP); reset(selM);
+      const list = await fetchJson(`${JIS_API_BASE}/prefectures/${selN.value}`);
+      list.forEach(x => selP.add(new Option(x.name, x.code)));
+      selP.disabled = false;
+    }
+
+    // 市町村リスト（都道府県選択時）
+    async function loadCities() {
+      reset(selM);
+      const list = await fetchJson(
+        `${JIS_API_BASE}/municipalities/${selN.value}_${selP.value}`
+      );
+      list.forEach(x => selM.add(new Option(x.name, x.name)));
+      selM.disabled = false;
+    }
+
+    // 「却下だけ」ボタンが押されたとき
+    function rejectOnly() {
+      actionField.value = "reject";
+      document.getElementById("region-form").submit();
+    }
+
+    selC.onchange = loadCountries;
+    selN.onchange = loadPrefectures;
+    selP.onchange = loadCities;
+
+    // ページ初期ロードで大陸を読み込む
+    loadContinents();
+  </script>
+</body>
+</html>

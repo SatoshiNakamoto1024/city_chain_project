@@ -1,0 +1,1 @@
+| ② | dag_errors | エラー型・コード定義 (thiserror + anyhow) |

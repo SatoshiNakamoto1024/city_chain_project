@@ -1,0 +1,105 @@
+# \city_chain_project\.gitignore
+# -------------------------------
+# Python
+# -------------------------------
+.venv*/
+venv/
+**/.venv*/
+**/venv/
+.env
+.env.*
+__pycache__/
+*.py[cod]
+*.pyo
+.ipynb_checkpoints/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+**/build/
+**/dist/
+**/*.egg-info/
+**/*.egg
+**/*.whl
+*.pyd
+wheels/
+
+# -------------------------------
+# Rust
+# -------------------------------
+**/target/
+*.pdb
+# Cargo.lock は追跡する（ignore しない）
+
+# -------------------------------
+# Node.js
+# -------------------------------
+**/node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# -------------------------------
+# Editors / IDE
+# -------------------------------
+.vscode/
+.idea/
+*.iml
+
+# -------------------------------
+# OS / Temp / Logs
+# -------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+tmp/
+temp/
+*.tmp
+*.bak
+*~
+logs/
+*.log
+*.cache
+*.pid
+
+# -------------------------------
+# Binaries (生成物)
+# -------------------------------
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+*.o
+*.a
+*.d
+docker-bake.generated.hcl
+docker-compose.test.generated.yml
+docker-compose.prod.generated.yml
+
+# -------------------------------
+# Project local data
+# -------------------------------
+mongo-data/
+**/diagnostic.data/
+
+# --- Big SDKs/toolchains (never commit) ---
+android_store/
+msys64/
+OpenSSL-*/
+openssl-src-rs/
+mingw64/
+cmake-*/
+ninja-*/
+**/.gradle/
+**/.m2/
+
+# local env / clean snapshots
+**/.clean*/
+**/.venv*/
+**/Lib/site-packages/

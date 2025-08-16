@@ -1,0 +1,21 @@
+{
+  "name": "mobile_app",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "react": "17.0.1",
+    "react-native": "0.64.0",
+    "ntru-crypto": "^1.0.0",  
+    "react-native-qrcode-svg": "^6.1.0",  
+    "react-native-fs": "^2.18.0",  
+    "react-native-permissions": "^3.0.5" 
+  }
+}
+
+  

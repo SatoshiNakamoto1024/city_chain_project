@@ -1,0 +1,333 @@
+name: pushCI
+
+env:
+  GO_VERSION: "1.18"
+  MIN_SUPPORTED_GO_VERSION: "1.17"
+
+on:
+  push:
+    branches:
+      - master
+      - release/v*
+    tags:
+      - 'v*'
+
+jobs:
+
+  old-go:
+    name: Ensure immudb compiles with the oldest supported go version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.MIN_SUPPORTED_GO_VERSION }}
+      - uses: actions/checkout@v4
+      - run: make all
+
+  gosec:
+    runs-on: ubuntu-latest
+    env:
+      JOB_NAME: ${{ github.job }}
+      JOB_ID: ${{ github.run_id }}
+    steps:
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/checkout@v4
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@v2.17.0
+        with:
+          args: -fmt=json -out=results-$JOB_ID.json -no-fail ./...
+
+  binaries:
+      name: Build binaries and notarize sources
+      needs:
+        - gosec
+        - old-go
+      runs-on: ubuntu-latest
+      env:
+        JOB_NAME: ${{ github.job }}
+        JOB_ID: ${{ github.run_id }}
+      outputs:
+        matrix: ${{ steps.list-binaries.outputs.matrix }}
+      steps:
+        - uses: actions/setup-go@v5
+          with:
+            go-version: ${{ env.GO_VERSION }}
+        - uses: actions/checkout@v4
+        - name: Build binaries
+          run: WEBCONSOLE=default SWAGGER=true make dist
+        - id: list-binaries
+          run: |
+            echo "matrix=$(ls dist | jq -R -s -c 'split("\n")[:-1] | {binary: .}')" >> $GITHUB_OUTPUT
+        - name: Upload binary artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: immudb-binaries
+            path: dist
+            retention-days: 5
+        - name: Calculate checksums
+          run: make dist/binary.md
+
+  binaries-quick-test:
+    name: Quick test of compiled binaries
+    needs: binaries
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            selector: '*-windows-amd64.exe'
+          - os: ubuntu-latest
+            selector: '*-linux-amd64'
+          - os: ubuntu-latest
+            selector: '*-linux-amd64-static'
+          - os: ubuntu-latest
+            selector: '*-linux-amd64-fips'
+          - os: macos-latest
+            selector: '*-darwin-amd64'
+          - os: ubuntu-latest
+            selector: '*-linux-arm64'
+            qemu-binfmt: true
+          - os: ubuntu-latest
+            selector: '*-linux-s390x'
+            qemu-binfmt: true
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: immudb-binaries
+        path: dist
+
+    - name: List matching binaries
+      shell: bash
+      run: ls -all dist/${{ matrix.selector }}
+
+    - name: Make binaries executable
+      run: chmod +x dist/${{ matrix.selector }}
+      shell: bash
+      if: runner.os != 'Windows'
+
+    - name: Install qemu binaries
+      uses: docker/setup-qemu-action@v2
+      if: matrix.qemu-binfmt
+
+    - name: Run immudb in the background
+      shell: bash
+      run: |
+        IMMUDB=dist/immudb-${{ matrix.selector }}
+        $IMMUDB -d
+
+    - name: immuadmin test
+      shell: bash
+      run: |
+        IMMUADMIN=dist/immuadmin-${{ matrix.selector }}
+
+        echo -n "immudb" | $IMMUADMIN login immudb || true
+        $IMMUADMIN database create test
+        $IMMUADMIN database list
+        $IMMUADMIN database unload test
+        $IMMUADMIN database load test
+
+    - name: immuclient test
+      shell: bash
+      continue-on-error: ${{ matrix.continue-on-error || false }}
+      run: |
+        IMMUCLIENT=dist/immuclient-${{ matrix.selector }}
+
+        $IMMUCLIENT login --username immudb --password immudb
+        echo -n "immudb" | $IMMUCLIENT login --username immudb
+        $IMMUCLIENT use test
+        $IMMUCLIENT safeset test3 githubaction
+        sg=$($IMMUCLIENT safeget test3)
+        grep -q "githubaction" <<< $sg
+        grep -q "verified" <<< $sg
+        grep -q "true" <<< $sg
+
+  stress-tests:
+    name: Run KV stress tests
+    needs: binaries
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download binary artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: immudb-binaries
+        path: dist
+    - name: Make binaries executable
+      run: chmod +x dist/*linux-amd64
+    - name: Run immudb in the background
+      run: dist/immudb-*-linux-amd64 -d
+    - uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    - uses: actions/checkout@v4
+    - name: Run KV stress test
+      run: |
+        go run ./tools/testing/stress_tool_test_kv/ \
+          -mix-read-writes \
+          -randomize-key-length \
+          -total-entries-written 300000 \
+          -total-entries-read 10000
+
+# This job is needed because currently it's not possible to pass an environment variable
+# to the called workflow on job performance-tests.
+# Reference: https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
+  go-version:
+    name: Extract Go version
+    runs-on: ubuntu-latest
+    outputs:
+      go-version: ${{ steps.extraction.outputs.go_version }}
+    steps:
+      - id: extraction
+        run: echo "go_version=$GO_VERSION" >> $GITHUB_OUTPUT
+
+  performance-tests:
+    name: Performance tests
+    needs:
+      - gosec
+      - old-go
+      - go-version
+    uses: ./.github/workflows/performance.yml
+    secrets: inherit
+    with:
+      go-version: "1.19" # we need a post 1.19, to limit memory usage
+
+  notarize-binaries:
+      name: Notarize binaries
+      needs:
+        - binaries
+        - binaries-quick-test
+        - stress-tests
+      runs-on: ubuntu-latest
+      strategy:
+        matrix: ${{fromJson(needs.binaries.outputs.matrix)}}
+      env:
+        JOB_NAME: ${{ github.job }}
+        JOB_ID: ${{ github.run_id }}
+      steps:
+        - name: Download binary artifacts
+          uses: actions/download-artifact@v4
+          with:
+            name: immudb-binaries
+            path: dist
+
+  images:
+      name: Build and notarize Docker Images
+      needs:
+        - binaries
+        - binaries-quick-test
+        - stress-tests
+      runs-on: ubuntu-latest
+      env:
+        JOB_NAME: ${{ github.job }}
+        JOB_ID: ${{ github.run_id }}
+        DOCKER_IMAGE_IMMUDB: "${{ vars.DOCKER_HUB_USER }}/immudb"
+        DOCKER_IMAGE_IMMUDB_FIPS: "${{ vars.DOCKER_HUB_USER }}/immudb-fips"
+        DOCKER_IMAGE_IMMUADMIN: "${{ vars.DOCKER_HUB_USER }}/immuadmin"
+        DOCKER_IMAGE_IMMUADMIN_FIPS: "${{ vars.DOCKER_HUB_USER }}/immuadmin-fips"
+        DOCKER_IMAGE_IMMUCLIENT: "${{ vars.DOCKER_HUB_USER }}/immuclient"
+        DOCKER_IMAGE_IMMUCLIENT_FIPS: "${{ vars.DOCKER_HUB_USER }}/immuclient-fips"
+        DOCKER_BUILDKIT: "1"
+        DEBIAN_VERSION: bullseye-slim
+        ALMA_VERSION: almalinux-8-minimal
+      steps:
+        - uses: actions/checkout@v4
+        - name: Build docker images
+          shell: bash
+          run: |
+            if [[ "${GITHUB_REF}" =~ ^refs/tags/v([0-9]+)\.([A-Z0-9]+)\.([0-9]+)$ ]]; then
+              VERSION_TAG="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+              VERSION_TAG_SHORT="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+            fi
+
+            docker build --tag "${DOCKER_IMAGE_IMMUDB}:dev" --target scratch -f build/Dockerfile .
+            docker build --tag "${DOCKER_IMAGE_IMMUDB}:dev-${DEBIAN_VERSION}" --target ${DEBIAN_VERSION} -f build/Dockerfile .
+            docker build --tag "${DOCKER_IMAGE_IMMUDB}:dev-${ALMA_VERSION}" -f build/Dockerfile.alma .
+            docker build --tag "${DOCKER_IMAGE_IMMUADMIN}:dev" -f build/Dockerfile.immuadmin .
+            docker build --tag "${DOCKER_IMAGE_IMMUCLIENT}:dev" -f build/Dockerfile.immuclient .
+            docker build --tag "${DOCKER_IMAGE_IMMUDB_FIPS}:dev" -f build/fips/Dockerfile .
+            docker build --tag "${DOCKER_IMAGE_IMMUADMIN_FIPS}:dev" -f build/fips/Dockerfile.immuadmin .
+            docker build --tag "${DOCKER_IMAGE_IMMUCLIENT_FIPS}:dev" -f build/fips/Dockerfile.immuclient .
+
+            docker login -u "${{ secrets.REGISTRY_USER }}" -p "${{ secrets.REGISTRY_PASS }}"
+
+            docker push "${DOCKER_IMAGE_IMMUDB}:dev"
+            docker push "${DOCKER_IMAGE_IMMUDB}:dev-${DEBIAN_VERSION}"
+            docker push "${DOCKER_IMAGE_IMMUDB}:dev-${ALMA_VERSION}"
+            docker push "${DOCKER_IMAGE_IMMUADMIN}:dev"
+            docker push "${DOCKER_IMAGE_IMMUCLIENT}:dev"
+            docker push "${DOCKER_IMAGE_IMMUDB_FIPS}:dev"
+            docker push "${DOCKER_IMAGE_IMMUADMIN_FIPS}:dev"
+            docker push "${DOCKER_IMAGE_IMMUCLIENT_FIPS}:dev"
+
+            if [[ ! -z "$VERSION_TAG" ]]; then
+              for tag in "${VERSION_TAG}" "${VERSION_TAG_SHORT}" "latest"; do
+                docker tag "${DOCKER_IMAGE_IMMUDB}:dev" "${DOCKER_IMAGE_IMMUDB}:${tag}"
+                docker push "${DOCKER_IMAGE_IMMUDB}:${tag}"
+
+                docker tag "${DOCKER_IMAGE_IMMUDB}:dev-${DEBIAN_VERSION}" "${DOCKER_IMAGE_IMMUDB}:${tag}-${DEBIAN_VERSION}"
+                docker push "${DOCKER_IMAGE_IMMUDB}:${tag}-${DEBIAN_VERSION}"
+
+                docker tag "${DOCKER_IMAGE_IMMUDB}:dev-${ALMA_VERSION}" "${DOCKER_IMAGE_IMMUDB}:${tag}-${ALMA_VERSION}"
+                docker push "${DOCKER_IMAGE_IMMUDB}:${tag}-${ALMA_VERSION}"
+
+                docker tag "${DOCKER_IMAGE_IMMUADMIN}:dev" "${DOCKER_IMAGE_IMMUADMIN}:${tag}"
+                docker push "${DOCKER_IMAGE_IMMUADMIN}:${tag}"
+
+                docker tag "${DOCKER_IMAGE_IMMUCLIENT}:dev" "${DOCKER_IMAGE_IMMUCLIENT}:${tag}"
+                docker push "${DOCKER_IMAGE_IMMUCLIENT}:${tag}"
+
+                docker tag "${DOCKER_IMAGE_IMMUDB_FIPS}:dev" "${DOCKER_IMAGE_IMMUDB_FIPS}:${tag}"
+                docker push "${DOCKER_IMAGE_IMMUDB_FIPS}:${tag}"
+
+                docker tag "${DOCKER_IMAGE_IMMUADMIN_FIPS}:dev" "${DOCKER_IMAGE_IMMUADMIN_FIPS}:${tag}"
+                docker push "${DOCKER_IMAGE_IMMUADMIN_FIPS}:${tag}"
+
+                docker tag "${DOCKER_IMAGE_IMMUCLIENT_FIPS}:dev" "${DOCKER_IMAGE_IMMUCLIENT_FIPS}:${tag}"
+                docker push "${DOCKER_IMAGE_IMMUCLIENT_FIPS}:${tag}"
+
+              done
+            fi
+
+            docker logout
+
+
+  coveralls:
+    name: Publish coverage
+    needs:
+      - gosec
+      - old-go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/checkout@v4
+      - run: |
+          # Spawn minio docker container in the background
+          docker run -d -t -p 9000:9000 --name minio \
+            -e "MINIO_ACCESS_KEY=minioadmin" \
+            -e "MINIO_SECRET_KEY=minioadmin" \
+            minio/minio server /data
+
+          # Create immudb bucket
+          docker run --net=host -t --entrypoint /bin/sh minio/mc -c "
+            mc alias set local http://localhost:9000 minioadmin minioadmin &&
+            mc mb local/immudb
+          "
+
+          export PATH=$PATH:$(go env GOPATH)/bin
+          set -o pipefail
+          ./ext-tools/go-acc ./... --covermode=atomic --ignore test,immuclient,immuadmin,helper,fs,cmdtest,sservice,version,tools,webconsole,protomodel,schema,swagger  --tags minio || true
+          cat coverage.txt | grep -v "test" | grep -v "schema" | grep -v "protomodel" | grep -v "swagger" | grep -v "webserver.go" | grep -v "immuclient" | grep -v "immuadmin" | grep -v "helper" | grep -v "fs" | grep -v "cmdtest" | grep -v "sservice" | grep -v "version" | grep -v "tools" | grep -v "webconsole" > coverage.out
+          ./ext-tools/goveralls -coverprofile=coverage.out -service=gh-ci
+
+          # Stop minio
+          docker rm -f minio
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Analyze with SonarCloud
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

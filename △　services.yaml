@@ -1,0 +1,106 @@
+# services.yaml
+# ===================================================================================
+# 目的:
+#   - クレートごとに「どうビルドするか / どう起動するか / どうテストするか」を宣言
+#   - tools/gen.py が docker-bake.generated.hcl / docker-compose.*.generated.yml を生成
+#
+# 用語:
+#   kind:
+#     - python : Pythonオンリー（Rust無し）
+#     - rust   : Rustオンリー（バイナリ）
+#     - mixed  : Python×Rust（PyO3拡張を maturin でビルド）
+#
+# 本ファイルでは:
+#   - rvh_trace（mixed / ライブラリ = pyext 枠）
+#   - poh_holdmetrics（mixed / ライブラリ = pyext 枠）
+#   - poh_srv（rust / gRPCサーバ = services 枠）
+#   - mongo（infra）
+# ===================================================================================
+
+version: 1
+
+defaults:
+  python: "3.12"
+  rust:
+    msrv: "1.88.0"
+  dockerfile: "./Dockerfile"
+  registry: "local"
+  network: "city_chain_net"
+
+# -----------------------------------------------------------------------------------
+# 1) pyext: ライブラリ（wheel）をビルドし、必要なら pytest を回す
+# -----------------------------------------------------------------------------------
+pyext:
+  - name: "rvh_trace"
+    kind: "mixed"
+    crate_path: "DAGs/libs/algorithm/rvh_trace/rvh_trace_rust"
+    python_wrapper: "DAGs/libs/algorithm/rvh_trace/rvh_trace_python"
+    features: ["python"]       # maturin に渡す feature 群（なければ空配列でもOK）
+    tests:
+      - kind: "pytest"
+        path: "DAGs/libs/algorithm/rvh_trace/rvh_trace_python/rvh_trace/tests"
+        markers: "unit or ffi"
+
+  - name: "poh_holdmetrics"
+    kind: "mixed"
+    crate_path: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust"
+    python_wrapper: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python"
+    features: ["python"]       # grpc を feature 化するなら ["python","grpc"] みたいに増やす
+    tests:
+      - kind: "pytest"
+        path: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/tests"
+      - kind: "pytest"
+        path: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_integration.py"
+
+# -----------------------------------------------------------------------------------
+# 2) services: 常駐サーバ（gRPC/HTTP）
+# -----------------------------------------------------------------------------------
+services:
+  - name: "poh_srv"
+    kind: "rust"
+    crate_path: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust"
+    bin_name: "main_holdmetrics"     # cargo build 後にできる実行バイナリ名
+    features: []                     # Rust 側 feature を使うならここに列挙
+    env:
+      PORT: "60051"
+      MONGO_URI: "mongodb://mongo:27017"
+    depends_on: ["mongo"]
+    ports: ["60051:60051"]
+    healthcheck:
+      type: "tcp"
+      port_env: "PORT"
+      interval: "5s"
+      timeout: "2s"
+      retries: 10
+    tests:
+      - kind: "pytest"
+        path: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/tests/test_api.py::test_grpc_stats_broadcast"
+        env:
+          POH_GRPC_ADDR: "poh_srv:60051"
+        wait_for:
+          service: "poh_srv"
+          healthy: true
+
+# -----------------------------------------------------------------------------------
+# 3) infra: 既製ミドル
+# -----------------------------------------------------------------------------------
+infra:
+  - name: "mongo"
+    image: "mongo:7"
+    ports: ["27017:27017"]  # ローカル確認用。CI/本番で外出ししないなら外してOK
+    volumes:
+      - name: "mongo-data"
+        mount: "/data/db"
+    healthcheck:
+      type: "mongosh"
+      command: "db.adminCommand({ping:1})"
+      interval: "5s"
+      timeout: "2s"
+      retries: 20
+
+# -----------------------------------------------------------------------------------
+# 4) volumes: Compose 生成用の永続ボリューム宣言
+# -----------------------------------------------------------------------------------
+volumes:
+  - name: "mongo-data"
+    driver: "local"

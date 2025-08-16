@@ -1,0 +1,13 @@
+[
+  {
+    "Create": {
+      "IndexName": "user_index",
+      "KeySchema": [
+        { "AttributeName": "user_uuid", "KeyType": "HASH" }
+      ],
+      "Projection": {
+        "ProjectionType": "ALL"
+      }
+    }
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "lifeform_id": "lifeform-73e5bf49-bf3a-4e31-8c8f-181156731f9e-20250316090907",
+  "user_id": "73e5bf49-bf3a-4e31-8c8f-181156731f9e",
+  "dimensions": {
+    "1次元": "個人（ニックネーム）",
+    "2次元": "TestTeam",
+    "3次元": "TestAffiliation",
+    "4次元": "TestCity",
+    "5次元": "TestState",
+    "6次元": "TestCountry",
+    "7次元": "世界経済",
+    "8次元": "人類",
+    "9次元": "地球",
+    "10次元": "太陽系",
+    "追加次元_1": "ExtraDimension1",
+    "追加次元_2": "ExtraDimension2"
+  },
+  "registered_at": "2025-03-16T09:09:07.582617Z"
+}

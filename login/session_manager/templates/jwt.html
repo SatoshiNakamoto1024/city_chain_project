@@ -1,0 +1,13 @@
+<!-- session_manager/templates/jwt.html -->
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>JWT 状態確認</title>
+</head>
+<body>
+  <h1>JWT 状態確認</h1>
+  <p>クエリ文字列に含まれるJWT情報（開発時確認用）:</p>
+  <pre>{{ request.query_string | safe }}</pre>
+</body>
+</html>

@@ -1,0 +1,1 @@
+common_macros_error (2)	bail!/ensure!

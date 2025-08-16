@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>受信トランザクション</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <h1>受信トランザクション</h1>
+  <form action="/receive_transaction" method="post">
+    <label>送信者: <input type="text" name="sender" required></label><br>
+    <label>受信者: <input type="text" name="receiver" required></label><br>
+    <label>金額: <input type="number" name="amount" required></label><br>
+    <button type="submit">受信する</button>
+  </form>
+</body>
+</html>

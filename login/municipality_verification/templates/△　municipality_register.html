@@ -1,0 +1,51 @@
+<label>大陸:</label>
+<select id="selCont" required></select>
+
+<label>国:</label>
+<select id="selCountry" required></select>
+
+<label>都道府県 / 州:</label>
+<select id="selPref" required></select>
+
+<label>市町村:</label>
+<select id="selCity" name="municipality" required></select>
+
+<script>
+const root = "/mapping";
+const contSel = q("#selCont"), cntrySel=q("#selCountry"),
+      prefSel = q("#selPref"), citySel = q("#selCity");
+
+function q(s){return document.querySelector(s)}
+
+async function loadContinents(){
+  const cs = (await (await fetch(`${root}/continents`)).json()).continents;
+  contSel.innerHTML = cs.map(c=>`<option>${c}</option>`).join("");
+  await loadCountries();
+}
+async function loadCountries(){
+  const cont = contSel.value;
+  const res = await fetch(`${root}/continents/${cont}/countries`);
+  const list = (await res.json()).countries;
+  cntrySel.innerHTML = list.map(c=>`<option value="${c.code}">${c.name}</option>`).join("");
+  await loadPrefs();
+}
+async function loadPrefs(){
+  const cont = contSel.value, cn=cntrySel.value;
+  const res = await fetch(`${root}/continents/${cont}/countries/${cn}/prefectures`);
+  const list = (await res.json()).prefectures;
+  prefSel.innerHTML = list.map(p=>`<option value="${p.code}">${p.name}</option>`).join("");
+  await loadCities();
+}
+async function loadCities(){
+  const cont = contSel.value, cn=cntrySel.value, pf=prefSel.value;
+  const res = await fetch(`${root}/continents/${cont}/countries/${cn}/prefectures/${pf}/cities`);
+  const list = (await res.json()).cities;
+  citySel.innerHTML = list.map(c=>`<option>${c}</option>`).join("");
+}
+
+contSel.onchange = loadCountries;
+cntrySel.onchange = loadPrefs;
+prefSel.onchange  = loadCities;
+
+loadContinents();          // kick-off
+</script>

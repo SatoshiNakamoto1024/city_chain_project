@@ -1,0 +1,10 @@
+dir = "D:\\city_chain_project\\network\\DB\\immudb\\data\\tests\\login\\antarctica"
+# address = "192.168.3.8" テスト用に下記のlocalhost を使用
+address = "127.0.0.7"
+port = 3329
+metrics-address = "127.0.0.7:9504/metrics"
+defaultDatabase = "antarctica"   # ← ここでデータベース名を指定
+
+[grpc]
+enabled = true
+port = 3329

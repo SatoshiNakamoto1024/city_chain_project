@@ -1,0 +1,1 @@
+crdt_delta	③	δ-State-based CRDT（オフライン→再接続）

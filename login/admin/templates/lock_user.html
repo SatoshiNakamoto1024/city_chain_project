@@ -1,0 +1,19 @@
+<!-- admin/templates/lock_user.html -->
+<!doctype html><meta charset="utf-8">
+<h2>ユーザー ロック / 解除</h2>
+<label>Admin JWT<input id="jwt" style="width:100%"></label><br><br>
+<label>User UUID<input id="uuid" style="width:100%"></label><br><br>
+<button id="lock">Lock</button>
+<button id="unlock">Unlock</button>
+<pre id="out"></pre>
+<script>
+function call(path){
+ fetch("/admin/"+path,{method:"POST",
+  headers:{"Content-Type":"application/json",
+           Authorization:"Bearer "+jwt.value.trim()},
+  body:JSON.stringify({uuid:uuid.value.trim()})})
+ .then(r=>r.json()).then(j=>out.textContent=JSON.stringify(j,null,2));
+}
+lock.onclick = ()=>call("lock_user");
+unlock.onclick= ()=>call("unlock_user");
+</script>

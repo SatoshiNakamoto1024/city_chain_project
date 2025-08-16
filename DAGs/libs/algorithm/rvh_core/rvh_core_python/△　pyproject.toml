@@ -1,0 +1,22 @@
+# D:\city_chain_project\DAGs\libs\algorithm\rvh_core\rvh_python\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rvh_python"
+version = "0.1.0"
+description = "RVH algorithm for rendezvous hashing"
+authors = [{ name = "Your Name", email = "your@email.com" }]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["rvh_rust>=0.1.0"]
+
+# ここを追加（setuptools の自動探索）
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rvh_python"]
+
+[project.urls]
+"Source" = "https://example.com/your-repo"

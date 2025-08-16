@@ -1,0 +1,7 @@
+[
+  { "code": "JP", "name": "Japan",       "continent": "Asia" },
+  { "code": "TW", "name": "Taiwan",      "continent": "Asia" },
+  { "code": "FR", "name": "France",      "continent": "Europe" },
+  { "code": "IE", "name": "Ireland",     "continent": "Europe" },
+  { "code": "US", "name": "UnitedStates","continent": "NorthAmerica" }
+]

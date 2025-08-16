@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # 1) Install Rust + Cargo
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # 2) Cargo test (Rust 単体テスト)
+      - name: Cargo test
+        run: |
+          cd rust
+          cargo test
+
+      # 3) Install Python 3 + maturin
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install maturin
+        run: |
+          pip install --upgrade pip
+          pip install maturin
+
+      # 4) Build Python wheel from Rust using maturin
+      - name: Build wheel
+        run: |
+          cd rust
+          maturin build --release
+
+      # 5) Install the built wheel + Python dependencies + run pytest
+      #    (assuming dist/*.whl is our newly built wheel)
+      - name: Python tests
+        run: |
+          cd python
+          pip install --upgrade pip
+          # 依存関係をインストール（requirements.txtあれば）
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # ホイールをインストール
+          pip install ../rust/target/wheels/*.whl
+          # pytest 実行
+          pytest --maxfail=1 --disable-warnings -v
+
+      # 6) (オプション) Lint or format check if needed
+      #    - name: Cargo fmt ...
+      #    - name: Black ...

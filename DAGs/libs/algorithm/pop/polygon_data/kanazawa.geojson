@@ -1,0 +1,22 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "kanazawa",
+        "name": "kanazawa"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [136.6200, 36.5500],
+          [136.6800, 36.5500],
+          [136.6800, 36.6000],
+          [136.6200, 36.6000],
+          [136.6200, 36.5500]
+        ]]
+      }
+    }
+  ]
+}

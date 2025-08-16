@@ -1,0 +1,1 @@
+②	dag_persistence_parquet	  Parquet ⻑期アーカイブ書き込み (arrow + compression)

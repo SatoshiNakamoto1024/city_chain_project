@@ -1,0 +1,7 @@
+{
+  "journal_id": "b8d8161ad00445a5b9ac372d2107abf4",
+  "transaction_id": "168e804b-d4df-4a10-9914-25c37a71b045",
+  "amount": 123.45,
+  "timestamp": "2025-05-24T08:56:20.613466+00:00Z",
+  "status": "send_pending"
+}

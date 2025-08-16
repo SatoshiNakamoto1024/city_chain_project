@@ -1,0 +1,1 @@
+dag_utils_simd (2)	memmove, xor simd

@@ -1,0 +1,32 @@
+# D:\city_chain_project\docker-compose.yml
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build
+      args: { CRATE_PATH: DAGs/libs/algorithm/rvh_trace }
+    working_dir: /workspace
+    command: bash
+    tty: true
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args: { CRATE_PATH: DAGs/libs/algorithm/rvh_trace }
+
+  test_rvh_trace:
+    build:
+      context: .
+      target: build
+    working_dir: /workspace/DAGs/libs/algorithm/rvh_trace/rvh_trace_python
+    command: bash -lc "pip install -e .[test] && pytest -q rvh_trace/tests"
+
+  test_poh_holdmetrics:
+    build:
+      context: .
+      target: build
+    working_dir: /workspace/DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
+    command: bash -lc "pip install -e .[test] && pytest -q poh_holdmetrics/tests"

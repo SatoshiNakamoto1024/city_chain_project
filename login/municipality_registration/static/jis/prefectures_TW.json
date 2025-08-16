@@ -1,0 +1,26 @@
+[
+  {
+    "code": "TPE",
+    "name": "Taipei City"
+  },
+  {
+    "code": "NWT",
+    "name": "New Taipei City"
+  },
+  {
+    "code": "TAO",
+    "name": "Taoyuan City"
+  },
+  {
+    "code": "TXG",
+    "name": "Taichung City"
+  },
+  {
+    "code": "TNN",
+    "name": "Tainan City"
+  },
+  {
+    "code": "KHH",
+    "name": "Kaohsiung City"
+  }
+]

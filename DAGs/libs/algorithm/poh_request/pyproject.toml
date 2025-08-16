@@ -1,0 +1,84 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_request\pyproject.toml
+# poh_request/pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "poh_request"
+version         = "0.1.0"
+description     = "Asynchronous PoH Request Tx builder & sender"
+# ここを >=3.12,<3.13 に変更
+requires-python = ">=3.12,<3.13"
+license         = { text = "Apache-2.0" }
+authors = [
+  { name = "Your Name", email = "you@example.com" }
+]
+keywords = ["PoH", "blockchain", "JSON", "asyncio", "nacl", "httpx"]
+classifiers = [
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: Apache Software License",
+]
+
+dependencies = [
+  "pydantic>=2.0",
+  "python-dotenv>=1.0",
+  "pynacl>=1.5",
+  "typer>=0.9",
+  "httpx>=0.24",
+  "base58>=2.1",
+  "aiofiles>=23.1.0",
+  "aiosqlite>=0.18.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-asyncio>=1.0",
+  "mypy>=1.0",
+  "ruff>=0.0.280",
+  "black>=23.3",
+  "isort>=5.12",
+]
+
+[project.scripts]
+poh-request = "poh_request.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/your_org/poh_request"
+Source   = "https://github.com/your_org/poh_request"
+Tracker  = "https://github.com/your_org/poh_request/issues"
+
+[tool.setuptools]
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+where   = ["poh_request"]   # ←② だけを探索ルートに
+include = ["poh_request*"]
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 88
+# すでに py312 へロックされているのでこのままで OK
+target-version = ["py312"]
+
+[tool.mypy]
+python_version       = 3.12
+strict               = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths   = ["poh_request/tests"]
+minversion  = "7.0"
+addopts     = "-ra -q"
+asyncio_mode = "strict"
+
+[tool.pre-commit]
+repos = [
+  { repo = "https://github.com/psf/black", rev = "stable", hooks = [ { id = "black" } ] },
+  { repo = "https://github.com/pycqa/ruff", rev = "v0.0.280", hooks = [ { id = "ruff", args = ["--fix"] } ] },
+  { repo = "https://github.com/pre-commit/mirrors-mypy", rev = "v1.0.1", hooks = [ { id = "mypy" } ] },
+]

@@ -1,0 +1,15 @@
+{
+  "tx_id": "1cac1a8d-a5d4-49bf-b907-bd07cb322a76",
+  "sender": "User5",
+  "receiver": "User194",
+  "amount": 205,
+  "timestamp": 1741598229.854582,
+  "hash": "8d3649902966717d54378f568764300c5eaf0d0ff81963f8f3a992b1cdd7d3e7",
+  "distribution_info": {
+    "municipality": "CityD",
+    "continent": "Africa",
+    "node": "africa_node_1",
+    "base_hash": 63872029105814175990609067008469955024140148084567917284376435131539533583335,
+    "score": 0.9922936031844958
+  }
+}

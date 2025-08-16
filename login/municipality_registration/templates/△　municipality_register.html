@@ -1,0 +1,181 @@
+<!-- municipality_registraion/templates/municipality_register.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>市町村登録フォーム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    form { background: #fff; padding: 20px; max-width: 500px; margin: auto; box-shadow: 0 0 10px #ccc; }
+    label { display: block; margin-top: 10px; }
+    select, input, button { width: 100%; padding: 8px; margin-top: 5px; }
+    button { background: #007bff; color: white; border: none; }
+    button:hover { background: #0056b3; }
+    .msg { margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <form id="registration-form">
+    <h2>市町村 登録フォーム</h2>
+
+    <label for="continent">大陸</label>
+    <select id="continent" name="continent" required>
+      <option value="">— 選択してください —</option>
+    </select>
+
+    <label for="country">国</label>
+    <select id="country" name="country_code" required disabled>
+      <option value="">—</option>
+    </select>
+    <input type="hidden" name="country_name" id="country_name_input" />
+
+    <label for="prefecture">都道府県</label>
+    <select id="prefecture" name="pref_code" required disabled>
+      <option value="">—</option>
+    </select>
+    <input type="hidden" name="pref_name" id="pref_name_input" />
+
+    <label for="municipality">市町村名</label>
+    <select id="municipality" name="municipality_name" required disabled>
+      <option value="">—</option>
+    </select>
+
+    <label>管理者メールアドレス</label>
+    <input type="email" name="admin_email" required />
+
+    <label>管理者パスワード</label>
+    <input type="password" name="admin_password" required />
+
+    <button type="submit">登録する</button>
+    <div class="msg" id="result-msg"></div>
+  </form>
+
+  <script>
+    // JIS コード JSON API のベース URL
+    const API_BASE = "http://127.0.0.1:6050/api/jis";
+
+    const selCont    = document.getElementById("continent");
+    const selCountry = document.getElementById("country");
+    const selPref    = document.getElementById("prefecture");
+    const selMuni    = document.getElementById("municipality");
+    const msg        = document.getElementById("result-msg");
+    const inputCountryName = document.getElementById("country_name_input");
+    const inputPrefName    = document.getElementById("pref_name_input");
+
+    function resetSelect(el) {
+      el.innerHTML = `<option value="">—</option>`;
+      el.disabled = true;
+    }
+
+    // 1) ページロード時に大陸一覧を取得
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const res = await fetch(`${API_BASE}/continents`);
+        const continents = await res.json();  // ["Asia","Europe",…]
+        continents.forEach(c => selCont.add(new Option(c, c)));
+        selCont.disabled = false;
+      } catch (e) {
+        console.error(e);
+        msg.textContent = "大陸データ取得エラー";
+        msg.style.color = "red";
+      }
+    });
+
+    // 2) 大陸選択 → 国一覧を取得
+    selCont.addEventListener("change", async () => {
+      resetSelect(selCountry);
+      resetSelect(selPref);
+      resetSelect(selMuni);
+      inputCountryName.value = "";
+      inputPrefName.value    = "";
+
+      const continent = selCont.value;
+      if (!continent) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/countries`);
+        const countries = await res.json();  // [{code,name,continent},…]
+        countries
+          .filter(c => c.continent === continent)
+          .forEach(c => selCountry.add(new Option(c.name, c.code)));
+        selCountry.disabled = false;
+      } catch (e) {
+        console.error(e);
+        msg.textContent = "国データ取得エラー";
+        msg.style.color = "red";
+      }
+    });
+
+    // 3) 国選択 → 都道府県一覧を取得
+    selCountry.addEventListener("change", async () => {
+      resetSelect(selPref);
+      resetSelect(selMuni);
+      inputPrefName.value = "";
+
+      const idx = selCountry.selectedIndex;
+      inputCountryName.value = idx > 0 ? selCountry.options[idx].text : "";
+
+      try {
+        const res = await fetch(`${API_BASE}/prefectures`);
+        const prefs = await res.json();  // [{code,name},…]
+        prefs.forEach(p => selPref.add(new Option(p.name, p.code)));
+        selPref.disabled = false;
+      } catch (e) {
+        console.error(e);
+        msg.textContent = "都道府県データ取得エラー";
+        msg.style.color = "red";
+      }
+    });
+
+    // 4) 都道府県選択 → 市町村一覧を取得
+    selPref.addEventListener("change", async () => {
+      resetSelect(selMuni);
+
+      const idx = selPref.selectedIndex;
+      inputPrefName.value = idx > 0 ? selPref.options[idx].text : "";
+
+      const prefCode = selPref.value;
+      if (!prefCode) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/municipalities/${prefCode}`);
+        const cities = await res.json();  // [{code,name},…]
+        cities.forEach(c => selMuni.add(new Option(c.name, c.name)));
+        selMuni.disabled = false;
+      } catch (e) {
+        console.error(e);
+        msg.textContent = "市町村データ取得エラー";
+        msg.style.color = "red";
+      }
+    });
+
+    // 5) フォーム送信
+    document.getElementById("registration-form")
+      .addEventListener("submit", async e => {
+        e.preventDefault();
+        msg.textContent = "";
+
+        const data = Object.fromEntries(new FormData(e.target).entries());
+        try {
+          const res = await fetch("http://127.0.0.1:6050/municipality/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+          });
+          const json = await res.json();
+          if (json.success) {
+            msg.textContent = `登録成功: ID=${json.municipality_id}`;
+            msg.style.color = "green";
+          } else {
+            throw new Error(json.error || "不明なエラー");
+          }
+        } catch (err) {
+          msg.textContent = "登録失敗: " + err.message;
+          msg.style.color = "red";
+        }
+      });
+  </script>
+</body>
+</html>

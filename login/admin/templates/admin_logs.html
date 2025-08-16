@@ -1,0 +1,66 @@
+<!-- templates/admin_logs.html -->
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>Admin Logs</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.8/dist/axios.min.js"></script>
+</head>
+<body class="p-4">
+  <h1 class="mb-4">CloudWatch Logs Viewer</h1>
+
+  <!-- Search Form -->
+  <form id="qForm" class="row g-2 mb-3">
+    <div class="col-auto">
+      <input name="query" id="query" class="form-control"
+             placeholder="Insights クエリ (例: filter @message like /ERROR/ )"
+             style="width: 420px;">
+    </div>
+    <div class="col-auto">
+      <select name="hours" id="hours" class="form-select">
+        <option value="1">直近 1 時間</option>
+        <option value="6">6 時間</option>
+        <option value="24">24 時間</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-primary">Search</button>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <table class="table table-sm table-striped" id="logTable">
+    <thead><tr><th style="width: 200px;">@timestamp</th><th>@message</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r["@timestamp"] }}</td>
+        <td class="text-break">{{ r["@message"] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+<script>
+document.getElementById("qForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const q   = document.getElementById("query").value;
+  const hrs = document.getElementById("hours").value;
+  if(!q) return alert("クエリを入力してください");
+
+  const res = await axios.post("/admin/logs/query", {query: q, hours: hrs});
+  const rows = res.data.rows;
+
+  const tbody = document.querySelector("#logTable tbody");
+  tbody.innerHTML = "";
+  rows.forEach(r=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${r["@timestamp"]}</td>
+                    <td class="text-break">${r["@message"]}</td>`;
+    tbody.appendChild(tr);
+  });
+});
+</script>
+</body>
+</html>

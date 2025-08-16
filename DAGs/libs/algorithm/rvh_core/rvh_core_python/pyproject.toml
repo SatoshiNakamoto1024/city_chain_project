@@ -1,0 +1,33 @@
+# D:\city_chain_project\DAGs\libs\algorithm\rvh_core\rvh_core_python\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "rvh_core"
+version         = "0.1.0"
+description     = "Rendezvous-(HRW) hashing helper; auto-delegates to rvh_core_rust when available"
+authors         = [{name="Your Name", email="you@example.com"}]
+license         = {text="Apache-2.0"}
+requires-python = ">=3.8"
+
+# Rust バックエンドをリポジトリ相対で拾う（編集可能インストールでも OK）
+dependencies = [
+  # 先にパッケージ化してあるのでOK
+  "rvh_core_rust>=0.1.0",
+  "aiofiles>=23.1.0",
+  "aiosqlite>=0.18.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+  "pytest-asyncio>=1.0",
+]
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["rvh_core"]   # ルート export
+
+[project.urls]
+Source = "https://example.com/your-repo"

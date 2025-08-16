@@ -1,0 +1,1 @@
+io_network_ws (3)	WebSocket サブスク（UI ダッシュボード）

@@ -1,0 +1,350 @@
+<!-- dapps\sending_dapps\templates\send_screen.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>送信用 DApp</title>
+    <style>
+        body{font-family:Arial,Helvetica,sans-serif;margin:40px}
+        h1{margin-bottom:24px}
+        label{display:inline-block;width:200px;margin-bottom:10px}
+        input,textarea,select{padding:6px;width:300px;margin-bottom:10px}
+        button{padding:8px 16px;background:#4CAF50;border:none;color:#fff;cursor:pointer}
+        button:hover{background:#45a049}
+        #message{margin-top:20px;font-weight:bold;color:red}
+        /* Attributes */
+        .attribute-pair{display:flex;align-items:center;margin-bottom:8px}
+        .attribute-pair input{flex:1;margin-right:8px}
+        .remove-attribute{background:#f44336}
+        .remove-attribute:hover{background:#d32f2f}
+        #add-attribute{background:#008CBA}
+        #add-attribute:hover{background:#0071a3}
+        /* 決算書 */
+        table{width:100%;border-collapse:collapse;margin-bottom:24px}
+        th,td{border:1px solid #ddd;padding:12px;text-align:left}
+        th{background:#f2f2f2}
+    </style>
+</head>
+<body>
+<h1>送信用 DApp</h1>
+
+<!-- ユーザー情報（テンプレート埋め込み） -->
+<p>ウォレット: <b>{{ wallet_address|default('unknown') }}</b><br>
+現在残高 : <b>{{ balance|default('0.00') }}</b> 愛貨</p>
+
+<!-- ---------- 送信フォーム ---------- -->
+<div id="transaction-form">
+    <h2>トランザクションを作成</h2>
+
+    <!-- 送信者地域選択 -->
+    <fieldset>
+      <legend><strong>送信者を選択</strong></legend>
+      <label>大陸:</label>
+      <select id="sender_selCont" required></select><br>
+      <label>国:</label>
+      <select id="sender_selCountry" required></select><br>
+      <label>都道府県 / 州:</label>
+      <select id="sender_selPref" required></select><br>
+      <label>市町村:</label>
+      <select id="sender_selCity" required></select><br>
+      <label>ユーザー:</label>
+      <select id="sender_selUser" required></select><br>
+    </fieldset>
+    <br>
+
+    <!-- 受信者地域選択 -->
+    <fieldset>
+      <legend><strong>受信者を選択</strong></legend>
+      <label>大陸:</label>
+      <select id="receiver_selCont" required></select><br>
+      <label>国:</label>
+      <select id="receiver_selCountry" required></select><br>
+      <label>都道府県 / 州:</label>
+      <select id="receiver_selPref" required></select><br>
+      <label>市町村:</label>
+      <select id="receiver_selCity" required></select><br>
+      <label>ユーザー:</label>
+      <select id="receiver_selUser" required></select><br>
+    </fieldset>
+    <br>
+
+    <label for="amount">金額:</label>
+    <input type="number" id="amount" step="0.01" required><br>
+
+    <!-- 任意フィールド -->
+    <label for="message">メッセージ:</label>
+    <textarea id="message_field" rows="3"></textarea><br>
+
+    <!-- Attributes -->
+    <h3>Attributes</h3>
+    <div id="attributes-container">
+        <div class="attribute-pair">
+            <input type="text" class="attribute-key" placeholder="キー">
+            <input type="text" class="attribute-value" placeholder="値">
+            <button type="button" class="remove-attribute">削除</button>
+        </div>
+    </div>
+    <button type="button" id="add-attribute">Attribute を追加</button><br><br>
+
+    <button id="send-button">送信する</button>
+    <div id="message"></div>
+</div>
+
+<!-- ---------- 決算書表示 ---------- -->
+<div id="financial-statements" style="display:none;">
+    <h2>決算書 (<span id="statement-date"></span>)</h2>
+
+    <h3>貸借対照表</h3>
+    <table>
+        <tr><th>科目</th><th>金額</th></tr>
+        <tr><td>資産合計</td><td id="assets-total"></td></tr>
+        <tr><td>負債合計</td><td id="liabilities-total"></td></tr>
+        <tr><td>純資産合計</td><td id="equity-total"></td></tr>
+    </table>
+
+    <h3>損益計算書</h3>
+    <table>
+        <tr><th>科目</th><th>金額</th></tr>
+        <tr><td>収益合計</td><td id="revenue-total"></td></tr>
+        <tr><td>費用合計</td><td id="expenses-total"></td></tr>
+        <tr><td>純利益</td><td id="net-profit"></td></tr>
+    </table>
+</div>
+
+<script>
+/* ───────── JWT 取得 ───────── */
+const jwt = localStorage.getItem('jwt_token');
+if(!jwt){
+    alert('未ログインです。ログインページへ移動します'); 
+    location.href='/login';
+}
+
+/* ───────── JIS + ユーザー マッピング API のベース URL ───────── */
+const JIS_API = "/api/jis";
+const MAPPING_API = "/mapping/get_users"; // ?municipality=<municipality_id>
+
+/* ───────── DOM 要素 ───────── */
+const sCont = document.getElementById("sender_selCont");
+const sCountry = document.getElementById("sender_selCountry");
+const sPref = document.getElementById("sender_selPref");
+const sCity = document.getElementById("sender_selCity");
+const sUser = document.getElementById("sender_selUser");
+
+const rCont = document.getElementById("receiver_selCont");
+const rCountry = document.getElementById("receiver_selCountry");
+const rPref = document.getElementById("receiver_selPref");
+const rCity = document.getElementById("receiver_selCity");
+const rUser = document.getElementById("receiver_selUser");
+
+/* ───────── 初期化ヘルパ ───────── */
+function reset(selectEl) {
+    selectEl.innerHTML = '<option value="">—</option>';
+    selectEl.disabled = true;
+}
+async function fetchJSON(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${res.statusText} (${res.status})`);
+    return await res.json();
+}
+
+/* ───────── 送信者セクションのデータ読み込み ───────── */
+async function loadSenderContinents() {
+    reset(sCont); reset(sCountry); reset(sPref); reset(sCity); reset(sUser);
+    const continents = await fetchJSON(`${JIS_API}/continents`);
+    continents.forEach(c => sCont.add(new Option(c, c)));
+    sCont.disabled = false;
+}
+async function loadSenderCountries() {
+    reset(sCountry); reset(sPref); reset(sCity); reset(sUser);
+    const allCountries = await fetchJSON(`${JIS_API}/countries`);
+    allCountries
+      .filter(c => c.continent === sCont.value)
+      .forEach(c => sCountry.add(new Option(c.name, c.code)));
+    sCountry.disabled = false;
+}
+async function loadSenderPrefectures() {
+    reset(sPref); reset(sCity); reset(sUser);
+    const prefList = await fetchJSON(`${JIS_API}/prefectures/${sCountry.value}`);
+    prefList.forEach(p => sPref.add(new Option(p.name, p.code)));
+    sPref.disabled = false;
+}
+async function loadSenderCities() {
+    reset(sCity); reset(sUser);
+    const cityList = await fetchJSON(`${JIS_API}/municipalities/${sCountry.value}_${sPref.value}`);
+    cityList.forEach(c => sCity.add(new Option(c.name, c.name)));
+    sCity.disabled = false;
+}
+async function loadSenderUsers() {
+    reset(sUser);
+    // sCity.value に市町村名ではなく、市町村IDを入れている想定
+    // 実際は /mapping/get_users?municipality=<municipality_id> を呼ぶ
+    const municipalityId = sCity.value;
+    if (!municipalityId) return;
+    const users = await fetchJSON(`${MAPPING_API}?municipality=${encodeURIComponent(municipalityId)}`);
+    users.forEach(u => sUser.add(new Option(u.username, u.uuid)));
+    sUser.disabled = false;
+}
+
+/* ───────── 受信者セクションのデータ読み込み ───────── */
+async function loadReceiverContinents() {
+    reset(rCont); reset(rCountry); reset(rPref); reset(rCity); reset(rUser);
+    const continents = await fetchJSON(`${JIS_API}/continents`);
+    continents.forEach(c => rCont.add(new Option(c, c)));
+    rCont.disabled = false;
+}
+async function loadReceiverCountries() {
+    reset(rCountry); reset(rPref); reset(rCity); reset(rUser);
+    const allCountries = await fetchJSON(`${JIS_API}/countries`);
+    allCountries
+      .filter(c => c.continent === rCont.value)
+      .forEach(c => rCountry.add(new Option(c.name, c.code)));
+    rCountry.disabled = false;
+}
+async function loadReceiverPrefectures() {
+    reset(rPref); reset(rCity); reset(rUser);
+    const prefList = await fetchJSON(`${JIS_API}/prefectures/${rCountry.value}`);
+    prefList.forEach(p => rPref.add(new Option(p.name, p.code)));
+    rPref.disabled = false;
+}
+async function loadReceiverCities() {
+    reset(rCity); reset(rUser);
+    const cityList = await fetchJSON(`${JIS_API}/municipalities/${rCountry.value}_${rPref.value}`);
+    cityList.forEach(c => rCity.add(new Option(c.name, c.name)));
+    rCity.disabled = false;
+}
+async function loadReceiverUsers() {
+    reset(rUser);
+    const municipalityId = rCity.value;
+    if (!municipalityId) return;
+    const users = await fetchJSON(`${MAPPING_API}?municipality=${encodeURIComponent(municipalityId)}`);
+    users.forEach(u => rUser.add(new Option(u.username, u.uuid)));
+    rUser.disabled = false;
+}
+
+/* ───────── イベントバインド ───────── */
+sCont.onchange = loadSenderCountries;
+sCountry.onchange = loadSenderPrefectures;
+sPref.onchange = loadSenderCities;
+sCity.onchange = loadSenderUsers;
+
+rCont.onchange = loadReceiverCountries;
+rCountry.onchange = loadReceiverPrefectures;
+rPref.onchange = loadReceiverCities;
+rCity.onchange = loadReceiverUsers;
+
+/* ページ読み込み時に初期化 */
+loadSenderContinents();
+loadReceiverContinents();
+
+/* ───────── Attributes UI ───────── */
+document.getElementById('add-attribute').addEventListener('click', () => {
+    const div = document.createElement('div');
+    div.className = 'attribute-pair';
+    div.innerHTML = `
+        <input type="text" class="attribute-key" placeholder="キー">
+        <input type="text" class="attribute-value" placeholder="値">
+        <button type="button" class="remove-attribute">削除</button>`;
+    document.getElementById('attributes-container').appendChild(div);
+});
+document.getElementById('attributes-container').addEventListener('click', e => {
+    if (e.target.classList.contains('remove-attribute')) {
+        e.target.parentElement.remove();
+    }
+});
+
+/* ───────── 送信ボタン ───────── */
+document.getElementById('send-button').addEventListener('click', async () => {
+    const msgEl = document.getElementById('message');
+    msgEl.textContent = '';
+
+    // バリデーション：必須選択肢がそろっているか
+    if (!sUser.value || !rUser.value) {
+        msgEl.textContent = '送信者・受信者を正しく選択してください';
+        return;
+    }
+    const amount = document.getElementById('amount').value.trim();
+    if (!amount) {
+        msgEl.textContent = '金額を入力してください';
+        return;
+    }
+
+    // フォームデータ構築
+    const data = {
+        sender_uuid: sUser.value,
+        receiver_uuid: rUser.value,
+        amount: amount,
+        sender_municipality: sCity.value,
+        receiver_municipality: rCity.value,
+        message: document.getElementById('message_field').value.trim(),
+        // ダミー値（バックエンドで必須のフィールドを埋める）
+        sender_wallet: 'dummy_sender_wallet',
+        receiver_wallet: 'dummy_receiver_wallet',
+        verifiable_credential: 'dummy',
+        subject: 'send',
+        action_level: 'normal',
+        dimension: 'local',
+        fluctuation: 'none',
+        organism_name: '-',
+        details: '-',
+        goods_or_money: 'money',
+        location: '-',
+        proof_of_place: '-',
+        attributes: {}
+    };
+
+    // Attributes 収集
+    document.querySelectorAll('.attribute-pair').forEach(p => {
+        const k = p.querySelector('.attribute-key').value.trim();
+        const v = p.querySelector('.attribute-value').value.trim();
+        if (k) data.attributes[k] = v;
+    });
+
+    try {
+        const res = await fetch('/send/api/send_transaction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwt}`
+            },
+            body: JSON.stringify(data)
+        });
+        const body = await res.json();
+        if (res.ok) {
+            msgEl.style.color = 'green';
+            msgEl.textContent = `送信成功！ transaction_id=${body.transaction_id}`;
+            fetchFinancial(body.sender_municipality || '');
+        } else {
+            msgEl.style.color = 'red';
+            msgEl.textContent = `エラー: ${body.error || 'unknown'}`;
+        }
+    } catch (e) {
+        msgEl.style.color = 'red';
+        msgEl.textContent = '通信エラー';
+        console.error(e);
+    }
+});
+
+/* ───────── 決算書取得 ───────── */
+async function fetchFinancial(muni) {
+    try {
+        const res = await fetch(`/send/api/financial_statements?municipality=${encodeURIComponent(muni)}`, {
+            headers: { 'Authorization': `Bearer ${jwt}` }
+        });
+        if (!res.ok) return;
+        const d = await res.json();
+        document.getElementById('financial-statements').style.display = '';
+        document.getElementById('statement-date').textContent = d.date;
+        document.getElementById('assets-total').textContent    = d.financial_data.assets.toFixed(2);
+        document.getElementById('liabilities-total').textContent = d.financial_data.liabilities.toFixed(2);
+        document.getElementById('equity-total').textContent    = d.financial_data.equity.toFixed(2);
+        document.getElementById('revenue-total').textContent   = d.financial_data.revenue.toFixed(2);
+        document.getElementById('expenses-total').textContent  = d.financial_data.expenses.toFixed(2);
+        document.getElementById('net-profit').textContent      = d.financial_data.net_profit.toFixed(2);
+    } catch (e) {
+        console.error(e);
+    }
+}
+</script>
+</body>
+</html>

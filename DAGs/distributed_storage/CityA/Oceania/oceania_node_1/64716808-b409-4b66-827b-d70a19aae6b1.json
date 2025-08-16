@@ -1,0 +1,15 @@
+{
+  "tx_id": "64716808-b409-4b66-827b-d70a19aae6b1",
+  "sender": "Alice",
+  "receiver": "Bob",
+  "amount": 100,
+  "timestamp": 1741598750.1803665,
+  "hash": "f574986bd2c2fa00db316f117e05127182792511b07636891cf1d15fbfd52600",
+  "distribution_info": {
+    "municipality": "CityA",
+    "continent": "Oceania",
+    "node": "oceania_node_1",
+    "base_hash": 111022654134769353245822981514503372110328263401343197026596495239662764631552,
+    "score": 0.0
+  }
+}

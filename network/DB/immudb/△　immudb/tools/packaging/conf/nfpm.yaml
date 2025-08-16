@@ -1,0 +1,48 @@
+name: "immudb"
+arch: "amd64"
+platform: "linux"
+version: "${VERSION}"
+section: "default"
+priority: "extra"
+replaces:
+- immudb
+provides:
+- immudb
+- immugw
+- immuclient
+depends:
+- adduser
+maintainer: "<info@codenotary.com>"
+description: |
+  immudb - the tamperproof database
+vendor: "Codenotary Inc."
+homepage: "https://github.com/codenotary/immudb"
+license: "Apache 2"
+bindir: "/usr/sbin"
+files:
+  "./bin/immudb": "/usr/sbin/immudb"
+  "./bin/immugw": "/usr/sbin/immugw"
+  "./bin/immuclient": "/usr/local/bin/immuclient"
+config_files:
+  ./packaging/deb/init.d/immudb: "/etc/init.d/immudb"
+  ./packaging/deb/init.d/immugw: "/etc/init.d/immugw"
+  ./packaging/deb/default/immudb: "/etc/default/immudb"
+  ./packaging/deb/default/immugw: "/etc/default/immugw"
+  ./packaging/deb/default/immudb.toml.dist: "/etc/immudb/immudb.toml"
+  ./packaging/deb/default/immugw.toml.dist: "/etc/immudb/immugw.toml"
+  ./packaging/deb/default/immuclient.toml.dist: "/etc/immudb/immuclient.toml"
+  ./packaging/deb/systemd/immudb.service: "/usr/lib/systemd/system/immudb.service"
+  ./packaging/deb/systemd/immugw.service: "/usr/lib/systemd/system/immugw.service"
+  ./packaging/deb/man/immuclient.1: "/usr/local/share/man/man1"
+  ./packaging/deb/man/immudb.1: "/usr/local/share/man/man1"
+  ./packaging/deb/man/immugw.1: "/usr/local/share/man/man1"
+
+
+overrides:
+  rpm:
+    scripts:
+      postinstall: ./packaging/rpm/control/postinst
+
+  deb:
+    scripts:
+      postinstall: ./packaging/deb/control/postinst

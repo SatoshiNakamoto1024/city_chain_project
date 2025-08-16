@@ -1,0 +1,1 @@
+dag_fastpath (2) – 	fast-commit 路

@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package poh;
+
+// ===============================================================
+//  ENUM / COMMON
+// ===============================================================
+
+enum SigAlg {
+  SIGALG_UNSPECIFIED = 0;
+  ED25519            = 1;
+  DILITHIUM3         = 2;
+}
+
+// 汎用空メッセージ
+message Empty {}
+
+// ===============================================================
+//  TRANSACTION SECTION
+// ===============================================================
+
+/** 単一 PoH トランザクション */
+message Tx {
+  string tx_id     = 1;   // 一意トランザクションID
+  string holder_id = 2;   // 保持者 ID
+  double timestamp = 3;   // UNIX Epoch (sec)
+  bytes  payload   = 4;   // バイナリペイロード
+
+  // 署名情報
+  SigAlg sig_alg   = 10;  // 署名アルゴリズム
+  bytes  signature = 11;  // 署名本体
+}
+
+/** トランザクションのバッチ送信用 */
+message TxBatch {
+  repeated Tx txs = 1;
+}
+
+/** 成功・失敗、理由など */
+message Ack {
+  bool   success     = 1;
+  string error_msg   = 2;   // success=false のときのみ有効
+  uint32 processed_n = 3;   // バッチ時: 正常処理件数
+}
+
+// ===============================================================
+//  PEER MANAGEMENT SECTION
+// ===============================================================
+
+enum Proto {
+  PROTO_UNSPECIFIED = 0;
+  GRPC = 1;
+  HTTP = 2;
+  UDP  = 3;
+}
+
+/** ピア情報（例: grpc://host:port なら address=\"host:port\", proto=GRPC） */
+message Peer {
+  string address = 1;
+  Proto  proto   = 2;
+}
+
+message PeerList {
+  repeated Peer peers = 1;
+}
+
+// ===============================================================
+//  SERVICE DEFINITIONS
+// ===============================================================
+
+service PohService {
+
+  // ---- Tx Broadcast ------------------------------------------------
+
+  /** 単発送信: クライアント → サーバ */
+  rpc Broadcast      (Tx)      returns (Ack);
+
+  /** バッチ送信: クライアント → サーバ */
+  rpc BroadcastBatch (TxBatch) returns (Ack);
+
+  /** 両方向ストリーミング: pub/sub に近い
+      クライアント側が Tx を送ると同時に
+      サーバ側がネットワーク全体から届いた Tx を push する */
+  rpc StreamTx (stream Tx) returns (stream Tx);
+
+  // ---- Health / Ping ----------------------------------------------
+
+  /** 単純に alive 判定用 */
+  rpc Ping (Empty) returns (Ack);
+
+  // ---- Peer Management --------------------------------------------
+
+  /** ピア登録要求 */
+  rpc RegisterPeer (Peer)  returns (Ack);
+
+  /** ピア一覧を取得 */
+  rpc ListPeers    (Empty) returns (PeerList);
+}

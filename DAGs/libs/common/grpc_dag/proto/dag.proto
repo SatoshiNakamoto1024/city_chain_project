@@ -1,0 +1,33 @@
+// common/grpc_dag/dag.proto
+syntax = "proto3";
+package common.grpc_dag.gen;
+
+// gRPC サービス定義
+service DAGService {
+  // トランザクション送信
+  rpc SubmitTransaction (TxRequest) returns (TxResponse);
+  // トランザクションステータス問い合わせ
+  rpc QueryTransactionStatus (StatusRequest) returns (StatusResponse);
+}
+
+// トランザクション送信リクエスト
+message TxRequest {
+  string tx_id = 1;
+  string payload = 2;
+}
+
+// トランザクション送信レスポンス
+message TxResponse {
+  string status = 1;
+  string message = 2;
+}
+
+// ステータス問い合わせリクエスト
+message StatusRequest {
+  string tx_id = 1;
+}
+
+// ステータス問い合わせレスポンス
+message StatusResponse {
+  string status = 1;
+}

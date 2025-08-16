@@ -1,0 +1,1 @@
+dag_vote_accel (2) – bitmap	ビットマップ投票高速化

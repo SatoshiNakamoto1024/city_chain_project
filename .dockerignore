@@ -1,0 +1,45 @@
+# \city_chain_project\.dockerignore     ─ allow‑list 方式
+# まず全部除外（ビルドコンテキスト激減）
+**
+
+# ---- ここから「必要なものだけ許可」 ----
+
+# ルートにある共通ファイル
+!Dockerfile
+!services.yaml
+!tools/**
+!Cargo.toml
+!Cargo.lock
+!pyproject.toml
+!README.md
+!LICENSE
+
+# ドメイン配下のソース一式（Rust/Python ともに）
+!DAGs/libs/algorithm/poh_holdmetrics/
+
+
+# ---- ここから「生成物は除外」 ----
+
+# 典型的な除外
+.git
+.gitignore
+.target
+**/target/**
+**/dist/
+**/dist/**
+**/*.whl
+**/__pycache__/**
+**/.pytest_cache/**
+**/*.egg-info/**
+**/*.dist-info/**
+**/.mypy_cache/**
+**/.ruff_cache/**
+**/.tox/**
+**/.venv/**
+.venv/**
+
+# IDE / OS 雑多
+**/.idea
+**/.vscode
+**/.DS_Store
+

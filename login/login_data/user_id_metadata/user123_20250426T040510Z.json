@@ -1,0 +1,8 @@
+{
+  "uuid": "user123",
+  "session_id": "CLIENT_CERT",
+  "fingerprint": "166308058f9064e0fb64923845b2284648aaa7f7c807a903cb33c30f5490aace",
+  "issued_at": "2025-04-26T04:05:09.942617Z",
+  "revoked": false,
+  "revoked_at": null
+}

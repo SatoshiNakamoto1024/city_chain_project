@@ -1,0 +1,1 @@
+io_serialization_flatbuf (2)	ゼロコピー shard ペイロード

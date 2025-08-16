@@ -1,0 +1,19 @@
+{
+  "lifeform_id": "lifeform-f970ae32-353c-43ee-8170-7424ba9cc2ea-20250507003725",
+  "user_id": "f970ae32-353c-43ee-8170-7424ba9cc2ea",
+  "dimensions": {
+    "1次元": "個人(ニックネーム)",
+    "2次元": "DimTeam",
+    "3次元": "DimAffiliation",
+    "4次元": "DimCity",
+    "5次元": "DimState",
+    "6次元": "DimCountry",
+    "7次元": "世界経済",
+    "8次元": "人類",
+    "9次元": "地球",
+    "10次元": "太陽系",
+    "追加次元_1": "ExtraA",
+    "追加次元_2": "ExtraB"
+  },
+  "registered_at": "2025-05-07T00:37:25.085434Z"
+}

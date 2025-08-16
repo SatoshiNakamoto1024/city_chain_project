@@ -1,0 +1,17 @@
+{
+    "user_id": "{{ user_id }}",
+    "lifeform_id": "70bd8eb2-b807-4143-bd0c-4eaa81b4c291",
+    "dimensions": {
+        "dimension_1": "joka, satoshi",
+        "dimension_2": "金沢市, 白山市",
+        "dimension_3": "石川県",
+        "dimension_4": "日本",
+        "dimension_5": "日本",
+        "dimension_6": "日本",
+        "dimension_7": "Global",
+        "dimension_8": "Humanity",
+        "dimension_9": "Earth",
+        "dimension_10": "Solar System"
+    },
+    "created_at": "2025-03-20T04:17:28.225249Z"
+}

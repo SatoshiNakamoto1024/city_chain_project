@@ -1,0 +1,39 @@
+# D:\city_chain_project\Algorithm\EC\ec_rust_src\Cargo.toml
+[package]
+name        = "ec_rust"
+version     = "0.1.0"
+edition     = "2021"
+description = "Reed-Solomon Erasure Coding core library with Python bindings"
+license     = "Apache-2.0"
+repository  = "https://github.com/yourorg/ec_rust"
+readme      = "README.md"
+
+[dependencies]
+reed-solomon-erasure = { version = "5.0", features = ["simd"] }
+pyo3 = { version = "0.18", features = ["extension-module"] }
+blake2 = "0.10"
+hex = "0.4"
+anyhow = "1.0"                # Blake2b512 を使う
+serde     = { version = "1.0", features = ["derive"] }
+thiserror            = "1.0"
+clap                 = { version = "4.5", features = ["derive"] }
+toml = "0.7"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "ec_rust"
+path = "src/lib.rs"
+
+[[bin]]
+name = "main_ec"
+path = "src/main_ec.rs"
+
+[sharding]
+data_shards = 4
+parity_shards = 2
+
+[security]
+seed = "0123456789abcdef0123456789abcdef"
+
+[metrics]
+enabled = true

@@ -1,0 +1,1 @@
+io_storage_redis (3)	キャッシュ & メタ TTL

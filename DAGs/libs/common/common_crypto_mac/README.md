@@ -1,0 +1,1 @@
+common_crypto_mac	②	HMAC / CMAC helpers

@@ -1,0 +1,26 @@
+[
+  {
+    "code": "MA",
+    "name": "Massachusetts"
+  },
+  {
+    "code": "CA",
+    "name": "California"
+  },
+  {
+    "code": "NY",
+    "name": "New York"
+  },
+  {
+    "code": "TX",
+    "name": "Texas"
+  },
+  {
+    "code": "FL",
+    "name": "Florida"
+  },
+  {
+    "code": "IL",
+    "name": "Illinois"
+  }
+]

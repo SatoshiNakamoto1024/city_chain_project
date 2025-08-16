@@ -1,0 +1,18 @@
+# D:\city_chain_project\Algorithm\VRF\vrf_rust_src\pyproject.toml
+[build-system]
+requires    = ["maturin>=1.0", "setuptools", "wheel"]
+build-backend = "maturin"
+
+[project]
+name            = "vrf_rust"
+version         = "0.1.0"
+description     = "Rust-based VRF (ECVRF) Python extension via PyO3"
+readme          = "README.md"
+requires-python = ">=3.8"
+authors = [
+  { name = "Your Name", email = "you@example.com" }
+]
+dependencies = []
+
+[project.urls]
+"Repository" = "https://github.com/your/repo"

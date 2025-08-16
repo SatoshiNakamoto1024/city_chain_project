@@ -1,0 +1,105 @@
+<!-- login_app/templates/login.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ログイン</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      text-align: center;
+    }
+    .container {
+      width: 90%;
+      max-width: 400px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+    label {
+      margin-top: 10px;
+      display: block;
+    }
+    input {
+      padding: 8px;
+      margin-top: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>ログイン</h2>
+    <form id="login-form">
+      <label for="username">ユーザー名またはメールアドレス:</label>
+      <input type="text" id="username" name="username" required>
+
+      <label for="password">パスワード:</label>
+      <input type="password" id="password" name="password" required>
+
+      <label>
+        <input type="checkbox" id="force" name="force"> 他の端末をログアウトしてログインする
+      </label>
+
+      <button type="submit">ログイン</button>
+    </form>
+    <button onclick="window.location.href='/register'">新規登録はこちら</button>
+  </div>
+
+  <script>
+    async function tryLogin(force = false) {
+      const form = document.getElementById("login-form");
+      const data = Object.fromEntries(new FormData(form).entries());
+      data.force = force;
+
+      const response = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        alert("ログイン成功！ JWT: " + result.jwt_token);
+        localStorage.setItem("jwt_token", result.jwt_token);
+        localStorage.setItem("user_uuid", result.user_uuid);
+        window.location.href = "/certificate/info";
+      } else if (response.status === 409 && !force) {
+        const confirmForce = confirm("他の端末でログイン中です。強制ログアウトして続行しますか？");
+        if (confirmForce) {
+          tryLogin(true);
+        } else {
+          alert("ログインをキャンセルしました。");
+        }
+      } else {
+        alert("ログイン失敗: " + (result.error || "不明なエラー"));
+      }
+    }
+
+    document.getElementById("login-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const forceChecked = document.getElementById("force").checked;
+      tryLogin(forceChecked);
+    });
+  </script>
+</body>
+</html>

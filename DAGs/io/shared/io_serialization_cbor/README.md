@@ -1,0 +1,1 @@
+io_serialization_cbor (2)	Compact MsgPack 互換

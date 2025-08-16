@@ -1,0 +1,1 @@
+common_build_version (2)	Git SHA embed

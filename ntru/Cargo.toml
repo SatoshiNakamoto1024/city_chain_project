@@ -1,0 +1,30 @@
+[package]
+name = "ntru"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ntru"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[[bin]]
+name = "ntru_example"
+path = "src/bin/ntru_example.rs"
+
+[dependencies]
+rand = "0.8" # 乱数生成に使用
+serde = { version = "1.0", features = ["derive"] }
+serde_derive = "1.0"
+serde_json = "1.0" # JSONのシリアライズとデシリアライズに使用
+sha2 = "0.9.9" # SHA-256などのハッシュ関数に使用
+chrono = { version = "0.4.19", features = ["serde"] } # 時間管理
+hex = "0.4" # バイトデータを16進数表記に変換するために使用
+
+# NTRU（量子耐性暗号）関連の依存ライブラリ
+ntru = "0.5.6" # NTRU暗号ライブラリ
+pqcrypto-ntruprime = "0.1.6" # 最新バージョンに変更
+pqcrypto-traits = "0.3.5"  # 0.3.x の最新バージョンに合わせる
+
+[features]
+default = []

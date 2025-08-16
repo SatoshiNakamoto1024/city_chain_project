@@ -1,0 +1,72 @@
+# \city_chain_project\Cargo.toml
+#==================================================================
+#  city_chain_project : Root workspace
+#  MSRV 1.88.0 / Python 3.12 / PyO3 0.25 / abi3‑py312 固定
+#==================================================================
+
+#############################
+# 1) ワークスペース定義
+#############################
+[workspace]
+resolver = "2"
+
+# --- サブクレートをパターンでまとめる ---------------------------
+members = [
+  "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust",
+  # pythonのみクレートは列挙しない
+  # 必要なら他ドメインも
+  # "DAGs/libs/analytics/*/*_rust",
+  # "DAGs/libs/login/*/*_rust",
+]
+
+# build.rs などで生成されるワークスペース外生成物を除外したい場合
+# exclude = ["DAGs/rust/**/benches/*"]
+
+#############################
+# 2) 依存バージョンを一元管理
+#############################
+[workspace.dependencies]
+# -- PyO3 core -- root では “バージョン縛りだけ”features は子 crate で付ける
+pyo3 = "0.25"
+
+# -- Asyncio bridge (alias) --
+pyo3-async-runtimes = { version = "0.25", features = ["tokio-runtime"], default-features = false }
+
+# --- FFI / ランタイム -----
+tokio              = { version = "1.38", features = ["rt-multi-thread", "sync", "time"] }
+
+# --- ネットワーク / RPC ---
+tonic = { version = "0.12.3", features = ["tls"] }
+
+# --- 共通ユーティリティ -----
+anyhow    = "1.0"
+thiserror = "1.0"
+serde     = { version = "1.0", features = ["derive"] }
+bincode   = "1.3"
+blake3    = "1.8"
+rayon     = "1.10"
+half      = "=2.6.0"        # ← = を付けて厳密指定
+
+# Protobuf 系のバージョンを全クレートで 0.13.5 に固定
+prost       = "=0.13.5"
+prost-types = "=0.13.5"
+
+#############################
+# 4) 共通ビルド依存
+#############################
+# （各サブクレートで build-dependencies に書けば OKなのでコメントアウト）
+# [workspace.build-dependencies]
+# gRPC サービスコード生成 (tonic-build) は build.rs 側から呼び出す
+# tonic-build = "0.12.3"
+
+#############################
+# 5) プロファイル最適化
+#############################
+[profile.release]
+lto           = "thin"   # サイズ削減 & LTO
+codegen-units = 1        # ビルド時間 <-> 実行サイズ優先
+opt-level     = "z"      # “最小サイズ” 最適化
+
+[profile.dev]
+opt-level = 0
+debug     = true

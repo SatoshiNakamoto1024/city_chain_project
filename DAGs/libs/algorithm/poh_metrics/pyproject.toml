@@ -1,0 +1,36 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_metrics\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "poh_metrics"
+version         = "0.1.0"
+description     = "Prometheus metrics collection and HTTP exporter for PoH service"
+authors         = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.8"
+dependencies = [
+  "prometheus-client>=0.16.0",
+  "aiohttp>=3.8.0",      
+  "protobuf==5.27.0",          # ← ここで安全版に固定
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+  "pytest-asyncio>=1.0",
+]
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["poh_metrics*"]
+
+[project.scripts]
+poh-metrics = "poh_metrics.app_metrics:main"
+
+[project.urls]
+"Source"        = "https://example.com/your-repo"
+"Bug Tracker"   = "https://example.com/your-repo/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["poh_metrics/tests"]

@@ -1,0 +1,24 @@
+# D:\city_chain_project\DAGs\libs\algorithm\rvh_faultset\rvh_faultset_python\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rvh_faultset"
+version = "0.1.0"
+description = "Geohash-based latency optimization and failover pipeline"
+authors = [
+  { name = "Your Name", email = "you@example.com" },
+]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "rvh_faultset_rust @ file:../rvh_faultset_rust"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rvh_faultset"]
+
+[project.urls]
+"Source" = "https://example.com/your-repo"

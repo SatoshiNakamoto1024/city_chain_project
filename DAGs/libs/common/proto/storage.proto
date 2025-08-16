@@ -1,0 +1,19 @@
+// D:\city_chain_project\network\DAGs\common\proto\storage.proto
+syntax = "proto3";
+
+package storage;
+
+service StorageService {
+  rpc StoreFragment (ShardRequest) returns (StoreResponse) {}
+}
+
+message ShardRequest {
+  string tx_id = 1;
+  string shard_id = 2;
+  bytes data = 3;
+}
+
+message StoreResponse {
+  bool success = 1;
+  string message = 2;
+}

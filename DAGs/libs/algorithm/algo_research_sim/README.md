@@ -1,0 +1,1 @@
+algo_research_sim (1) – 研究用シム

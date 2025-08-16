@@ -1,0 +1,19 @@
+[build-system]
+requires = ["maturin>=1.0"]
+build-backend = "maturin"
+
+[project]
+name = "pop_rust"
+version = "0.1.0"
+description = "Proof-of-Presence (PoP) core: Python＋Rust ポリゴン＆イベントボーナス"
+authors = [{ name="Your Name", email="you@example.com" }]
+requires-python = ">=3.8"
+
+[tool.maturin]
+bindir = "pop_rust"    # Python import 名 (lib.rs の #[pymodule] 名) は pop_rust のまま
+
+# ビルド手順
+# cd pop_rust
+# maturin build --release
+# 成功すると、📦 Built wheel to D:\city_chain_project\Algorithm\PoP\pop_rust\target\wheels\pop_rust-0.1.0-cp314-cp314-win_amd64.whl
+# twine upload target/wheels/pop_rust-0.1.0-cp*.whl      # 社内PyPIでもOK

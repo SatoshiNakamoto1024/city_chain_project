@@ -1,0 +1,93 @@
+# D:\city_chain_project\.github\workflows\ci.yml
+name: Build & Test (Rust + Python wheels)
+
+on:
+  push:
+    paths:
+      - 'DAGs/libs/algorithm/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'DAGs/libs/algorithm/**'
+      - '.github/workflows/ci.yml'
+
+jobs:
+  build-test-all:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false          # ↓ 個別クレートの失敗で全部止めない
+      matrix:
+        crate:
+          - rvh_trace_rust       # ここへ追加すれば自動で横展開
+          # - poh_ack_rust
+          # - dpos_rust
+          # - pop_rust
+          # - etc...
+
+    # 以降の `run:` での相対パス基準をクレート直下に固定
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/DAGs/libs/algorithm/${{ matrix.crate }}
+
+    steps:
+      # ─────────────────────────────
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      # ─────────────────────────────
+      - name: 📦 Cache Cargo registry & target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      # ─────────────────────────────
+      - name: 🔧 Set up Rust 1.88 (MSRV)
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.88.0      # ← MSRV を固定
+          override: true
+
+      # ─────────────────────────────
+      - name: 🐍 Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 🩺 Install system Python headers
+        run: sudo apt-get update -y && sudo apt-get install -y python3.12-dev
+
+      # ─────────────────────────────
+      - name: ⬆️ Upgrade pip / install maturin
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin==1.5.1        # バージョンは固定推奨
+
+      # ─────────────────────────────
+      - name: 🧪 Cargo build & tests (release)
+        run: |
+          # クレート単体ビルドでも workspace 依存は全部取ってくる
+          cargo test --workspace --all-targets --release -- --nocapture
+
+      # ─────────────────────────────
+      - name: 🏗️ Build abi3 wheel
+        run: |
+          maturin build \
+            --release \
+            --strip \
+            -i python3.12 \
+            --compatibility abi3 \
+            --features py-ext \        # ←★ここ！
+            -o wheelhouse
+
+      # ─────────────────────────────
+      - name: 📤 Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.crate }}-wheel
+          path: wheelhouse/*.whl

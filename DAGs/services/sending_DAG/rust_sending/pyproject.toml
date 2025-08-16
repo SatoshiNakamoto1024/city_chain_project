@@ -1,0 +1,28 @@
+# D:\city_chain_project\network\DAGs\rust\pyproject.toml
+# 解説:pyproject.toml により、maturin を使って Rust ライブラリを Python 用のホイール(.whl)にビルドできます。
+# こうしてビルドした成果物を Python 環境に pip install するか、maturin develop でローカルインストールすれば、
+# import federation_dag が可能に。
+
+[build-system]
+requires = ["maturin>=0.13,<0.14"]
+build-backend = "maturin"
+
+[project]
+name = "federation_dag"
+version = "0.1.0"
+description = "Rust library for DAG concurrency, PoP/DPoS partial logic, NTRU/Dilithium stubs"
+authors = ["Your Team <team@example.com>"]
+keywords = ["rust", "python", "pyo3", "dag", "blockchain"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+# 必要があれば extras を定義
+dev = []
+
+[tool.maturin]
+# 同じディレクトリに Cargo.toml がある前提
+# この設定により 'maturin build' or 'maturin develop' を実行できる

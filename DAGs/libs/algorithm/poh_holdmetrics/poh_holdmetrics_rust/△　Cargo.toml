@@ -1,0 +1,102 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_rust\Cargo.toml
+[package]
+name          = "poh_holdmetrics_rust"
+version       = "0.1.0"
+edition       = "2021"
+description   = "High-performance PoHold metrics core (Rust) for poh_holdmetrics"
+license       = "Apache-2.0"
+repository    = "https://github.com/your_org/poh_holdmetrics"
+build         = "build.rs"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "poh_holdmetrics_rust"
+path = "src/lib.rs"
+
+[[bin]]
+name = "main_holdmetrics"
+path = "src/main_holdmetrics.rs"
+
+[features]
+# ① **auto-initialize を外す**  
+#    python.dll を静的に要求しなくなり DLL 地獄が消える
+python = ["pyo3/extension-module", "pyo3/abi3-py312"]
+
+# ② feature を３段に整理  
+#    *ext* / *embed* は “python” を継承させるだけ
+python-ext    = ["pyo3/extension-module", "pyo3/abi3-py312"]                  # maturin build / wheel 用
+python-embed  = ["pyo3/auto-initialize"]  # cargo test --features python-embed
+
+# ── 純 Rust (デフォルト) ───────────────────────────────
+default = ["core", "grpc"]
+core    = []      # bin/main 用
+grpc    = []      # gRPC サーバ／クライアント
+test    = []
+
+[dependencies]
+# --- FFI & Async ---
+pyo3 = { version = "0.25", default-features = false }   # ← ここでは feature つけない
+pyo3-async-runtimes = { version = "0.25", features = ["tokio-runtime"] }
+tokio           = { version = "1.38", features = ["rt-multi-thread", "macros", "time", "signal"] }
+
+# --- Data / Calc ---
+serde           = { version = "1.0", features = ["derive"] }
+serde_json      = "1.0"
+chrono          = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+rayon           = "1.10"
+anyhow          = "1.0"
+dashmap         = "5.5"
+clap            = { version = "4.5", features = ["derive"] }
+indoc           = "1"
+
+# --- gRPC ---
+tonic           = { version = "0.12", features = ["transport", "tls"] }
+prost           = "0.13"
+prost-types     = "0.13"
+tokio-stream    = "0.1"
+async-stream    = "0.3"
+hyper           = { version = "0.14", features = ["full"] }  # 既にあれば OK
+tonic-health    = "0.12"         # gRPC Health Checking (optional)
+tonic-reflection = "0.12"      # Server Reflection (optional)
+
+# --- Observability ---
+once_cell       = "1.19"
+prometheus      = "0.13"
+tracing         = { version = "0.1", features = ["log"] }
+tracing-subscriber = { version = "0.3", features = ["fmt", "json", "env-filter", "time"] }
+
+# --- Misc ---
+thiserror       = "1.0"
+config          = "0.14"
+
+[dev-dependencies]
+criterion       = { version = "0.5", features = ["html_reports"] }
+assert_cmd      = "2.0"
+tempfile        = "3.10"
+walkdir         = "2.5"
+pyo3            = { version = "0.25.0", default-features = false }
+pyo3-build-config = "0.25.0"
+rayon           = "1.10"  # bench のみでリンク
+
+[build-dependencies]
+tonic-build = { version = "0.12", default-features = false, features = ["prost"] }
+prost-build  = "0.13"   # tonic-build が内部で使います
+
+[package.metadata.pyo3]
+# これでサブクレートがあっても強制的に off
+link-mode = "off"
+
+[[bench]]
+name    = "bench_holdmetrics_parallel"
+harness = false
+path    = "benches/bench_holdmetrics_parallel.rs"
+
+[[bench]]
+name    = "bench_holdmetrics_calc"
+harness = false
+path    = "benches/bench_holdmetrics_calc.rs"
+
+[[test]]
+name = "test_py_bindings"
+path = "tests/test_py_bindings.rs"
+required-features = ["python"]

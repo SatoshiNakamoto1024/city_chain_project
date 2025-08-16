@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>クライアント証明書情報</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .info {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .back-button {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #aaa;
+      border: none;
+      cursor: pointer;
+    }
+    .back-button:hover {
+      background-color: #888;
+    }
+    .revoked {
+      color: red;
+      font-weight: bold;
+    }
+    .valid {
+      color: green;
+      font-weight: bold;
+    }
+    .btn {
+      margin-top: 15px;
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>クライアント証明書情報</h2>
+
+    {% if cert %}
+      <div class="info">シリアル番号: {{ cert.serial_number }}</div>
+      <div class="info">有効期間: {{ cert.valid_from }} ～ {{ cert.valid_to }}</div>
+      <div class="info">フィンガープリント: {{ cert.fingerprint }}</div>
+      <div class="info">Base64エンコード: {{ cert.cert_base64 }}</div>
+
+      <div class="info">
+        失効状態: 
+        {% if cert.revoked %}
+          <span class="revoked">失効済み</span>
+        {% else %}
+          <span class="valid">有効</span>
+        {% endif %}
+      </div>
+
+      {% if cert.revoked_at %}
+        <div class="info">失効日時: {{ cert.revoked_at }}</div>
+        <div class="info">
+          <a href="/download_cert_pem?uuid={{ cert.uuid }}" class="button">PEM 形式でダウンロード</a>
+        </div>
+      {% endif %}
+
+      <!-- ✅ QRコード再生成・ダウンロードボタン -->
+      <form method="get" action="/certificate/download_qr">
+        <input type="hidden" name="uuid" value="{{ cert.serial_number or cert.uuid }}">
+        <button class="action-button" type="submit">QRコードを再生成・表示</button>
+      </form>
+
+    {% else %}
+      <p>証明書情報が見つかりません</p>
+    {% endif %}
+
+    <button class="back-button" onclick="window.location.href='/'">戻る</button>
+  </div>
+</body>
+</html>

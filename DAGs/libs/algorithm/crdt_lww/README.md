@@ -1,0 +1,1 @@
+crdt_lww	③	LWW-Element-Set CRDT（メタ情報同期）

@@ -1,0 +1,125 @@
+<!-- municipality_verification/templates/staff_login.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>市町村職員ログイン</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#f7f7f7;text-align:center;padding:50px}
+    .container{max-width:440px;margin:auto;background:#fff;padding:30px;box-shadow:0 0 10px #0001}
+    input,select{width:100%;padding:8px;margin-top:10px;box-sizing:border-box}
+    button{margin-top:20px;padding:10px;width:100%;background:#007bff;color:#fff;border:none;cursor:pointer}
+    button:hover{background:#0056b3}
+    label{display:block;text-align:left;margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>市町村職員ログイン</h2>
+    <form id="staff-login-form">
+      <!-- 地域ツリー -->
+      <label>大陸:</label><select id="selCont" required></select>
+      <label>国:</label><select id="selCountry" required></select>
+      <label>都道府県 / 州:</label><select id="selPref" required></select>
+      <label>市町村:</label><select id="selCity" required></select>
+
+      <label for="staff_id">スタッフID（staff_id）:</label>
+      <input type="text" id="staff_id" name="staff_id" required>
+      <label for="password">パスワード:</label>
+      <input type="password" id="password" name="password" required>
+
+      <input type="hidden" id="municipality" name="municipality">
+      <button type="submit">ログイン</button>
+    </form>
+  </div>
+
+  <script>
+    /* ----- JIS 樹形取得 ----- */
+    // JIS API が動いているホスト:ポートを指定（例: localhost:6050）
+    const API = "http://localhost:6050/api/jis";
+
+    const q = s => document.querySelector(s);
+    const selC = q("#selCont"), selN = q("#selCountry"), selP = q("#selPref"), selM = q("#selCity");
+
+    function reset(el) {
+      el.innerHTML = '<option value="">—</option>';
+      el.disabled = true;
+    }
+    async function j(url) {
+      const r = await fetch(url);
+      if (!r.ok) throw r;
+      return r.json();
+    }
+
+    async function loadCont() {
+      reset(selC); reset(selN); reset(selP); reset(selM);
+      const a = await j(`${API}/continents`);
+      a.forEach(x => selC.add(new Option(x, x)));
+      selC.disabled = false;
+    }
+    async function loadCountry() {
+      reset(selN); reset(selP); reset(selM);
+      (await j(`${API}/countries`))
+        .filter(x => x.continent === selC.value)
+        .forEach(x => selN.add(new Option(x.name, x.code)));
+      selN.disabled = false;
+    }
+    async function loadPref() {
+      reset(selP); reset(selM);
+      (await j(`${API}/prefectures/${selN.value}`))
+        .forEach(x => selP.add(new Option(x.name, x.code)));
+      selP.disabled = false;
+    }
+    async function loadCity() {
+      reset(selM);
+      (await j(`${API}/municipalities/${selN.value}_${selP.value}`))
+        .forEach(x => selM.add(new Option(x.name, x.name)));
+      selM.disabled = false;
+    }
+
+    selC.onchange = loadCountry;
+    selN.onchange = loadPref;
+    selP.onchange = loadCity;
+    selM.onchange = () => q("#municipality").value = selM.value;
+    loadCont();
+
+    /* ----- ログイン ----- */
+    // Flask (app_municipality_verification.py) が動いているホスト:ポートを指定 (例: localhost:5000)
+    const LOGIN_API = "http://localhost:5000/staff/login";
+
+    q("#staff-login-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      if (!selM.value) {
+        alert("市町村を選択してください");
+        return;
+      }
+
+      const data = Object.fromEntries(new FormData(e.target).entries());
+      data.role = "staff";
+
+      try {
+        // ここで Flask サーバーへリクエストを送る
+        const r = await fetch(LOGIN_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        // JSON レスポンスを取得
+        const res = await r.json();
+
+        if (res.success) {
+          localStorage.setItem("staff_jwt", res.jwt);
+          alert("ログイン成功");
+          // ログイン成功後に承認画面へリダイレクト (末尾スラッシュがなければ注意)
+          window.location.href = "http://localhost:5000/staff/verify/";
+        } else {
+          alert("ログイン失敗: " + (res.message || ""));
+        }
+      } catch (err) {
+        console.error("ログイン API 呼び出しエラー:", err);
+        alert("通信エラーが発生しました。コンソールを確認してください。");
+      }
+    });
+  </script>
+</body>
+</html>

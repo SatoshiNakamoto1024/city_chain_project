@@ -1,0 +1,14 @@
+{
+  "tx_id": "tx_test",
+  "sender": "Alice",
+  "receiver": "Bob",
+  "amount": 100,
+  "timestamp": 1234567890.0,
+  "hash": "dummyhash",
+  "distribution_info": {
+    "municipality": "CityA",
+    "continent": "Asia",
+    "node": "asia_node_1",
+    "base_hash": 12345
+  }
+}

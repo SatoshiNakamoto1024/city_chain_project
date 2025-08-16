@@ -1,0 +1,35 @@
+# D:\city_chain_project\DAGs\libs\algorithm\rvh_stable\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "rvh_stable"
+version         = "0.1.0"
+description     = "Pure-Python Jump Consistent Hash with sync and async API"
+authors         = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.8"
+dependencies    = [
+  "aiofiles>=23.1.0",
+  "aiosqlite>=0.18.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+  "pytest-asyncio>=1.0",
+]
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["rvh_stable*"]
+
+[project.scripts]
+rvh-stable = "rvh_stable.cli:main"
+
+[project.urls]
+"Source"        = "https://example.com/your-repo"
+"Bug Tracker"   = "https://example.com/your-repo/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["rvh_stable/tests"]

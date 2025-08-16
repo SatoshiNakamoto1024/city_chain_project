@@ -1,0 +1,14 @@
+[
+  {
+    "city_id": "kanazawa",
+    "active_start": 1672531200,
+    "active_end":   1672534800,
+    "multiplier":   2.0
+  },
+  {
+    "city_id": "paris",
+    "active_start": 1680000000,
+    "active_end":   1680003600,
+    "multiplier":   3.5
+  }
+]

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>証明書一覧</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    .revoked {
+      color: red;
+    }
+    .valid {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h2>クライアント証明書一覧</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>UUID</th>
+        <th>発行日時</th>
+        <th>有効期間</th>
+        <th>Fingerprint</th>
+        <th>失効</th>
+        <th>失効日時</th>
+        <th>詳細</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cert in certs %}
+      <tr>
+        <td>{{ cert.uuid }}</td>
+        <td>{{ cert.issued_at }}</td>
+        <td>{{ cert.valid_from }} ～ {{ cert.valid_to }}</td>
+        <td>{{ cert.fingerprint }}</td>
+        <td class="{{ 'revoked' if cert.revoked else 'valid' }}">
+          {{ '失効済み' if cert.revoked else '有効' }}
+        </td>
+        <td>{{ cert.revoked_at or '―' }}</td>
+        <td><a href="/certificate/info?uuid={{ cert.uuid }}">詳細</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <br>
+  <button onclick="window.location.href='/'">戻る</button>
+</body>
+</html>

@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package immudb;
+
+service ImmuDB {
+    rpc Login (LoginRequest) returns (LoginResponse);
+    rpc SetTransaction (SetTransactionRequest) returns (SetTransactionResponse);
+    rpc GetTransaction (GetTransactionRequest) returns (GetTransactionResponse);
+    rpc DeleteTransaction (DeleteTransactionRequest) returns (DeleteTransactionResponse);
+}
+
+message LoginRequest {
+    string user = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string token = 1;
+}
+
+message SetTransactionRequest {
+    string key = 1;
+    string value = 2;
+}
+
+message SetTransactionResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message GetTransactionRequest {
+    string key = 1;
+}
+
+message GetTransactionResponse {
+    bool success = 1;
+    string value = 2;
+}
+
+message DeleteTransactionRequest {
+    string key = 1;
+}
+
+message DeleteTransactionResponse {
+    bool success = 1;
+    string message = 2;
+}

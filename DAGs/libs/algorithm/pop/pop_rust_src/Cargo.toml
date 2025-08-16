@@ -1,0 +1,25 @@
+[package]
+name = "pop_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow    = "1.0"
+pyo3      = { version = "0.18", features = ["extension-module"] }
+once_cell = "1.17"
+rstar     = "0.9"
+geo = "0.27"
+geojson   = "0.24"
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[lib]
+crate-type = ["cdylib"]
+name = "pop_rust"
+path = "src/lib.rs"  # 明示するのが安全
+
+[[bin]]
+name = "main_pop"
+path = "src/main_pop.rs"

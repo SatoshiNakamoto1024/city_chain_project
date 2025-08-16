@@ -1,0 +1,224 @@
+<!-- registraion/templates/register.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ユーザー登録</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 90%;
+      max-width: 400px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+    label {
+      margin-top: 10px;
+      display: block;
+    }
+    input {
+      padding: 8px;
+      margin-top: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .back-button {
+      margin-top: 10px;
+      background-color: #aaa;
+    }
+    .back-button:hover {
+      background-color: #888;
+    }
+    /* モーダルのスタイル */
+    .modal {
+      display: none; 
+      position: fixed; 
+      z-index: 1000; 
+      left: 0;
+      top: 0;
+      width: 100%; 
+      height: 100%; 
+      overflow: auto; 
+      background-color: rgba(0,0,0,0.5); 
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 15% auto; 
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%; 
+      max-width: 400px;
+      text-align: left;
+    }
+    .modal-content label {
+      margin-top: 10px;
+    }
+  </style>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>ユーザー登録</h1>
+    <!-- 通常登録フォーム (1台目用) -->
+    <form id="register-form"
+      action="http://localhost:5000/registration/"
+      method="POST">
+      <label for="username">ユーザー名:</label>
+      <input type="text" id="username" name="username" required>
+
+      <label for="birth_date">生年月日:</label>
+      <input type="date" id="birth_date" name="birth_date" required>
+
+      <label for="address">住所:</label>
+      <input type="text" id="address" name="address" required>
+
+      <label for="mynumber">マイナンバー:</label>
+      <input type="text" id="mynumber" name="mynumber" required>
+
+      <label for="email">メールアドレス:</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="phone">電話番号:</label>
+      <input type="text" id="phone" name="phone" required>
+
+      <label for="password">パスワード:</label>
+      <input type="password" id="password" name="password" required>
+
+      <label for="initial_harmony_token">初期Harmony Token:</label>
+      <input type="number" id="initial_harmony_token" name="initial_harmony_token" required>
+
+      <!-- 隠しフィールド：QRコード読み取りで設定される。2台目登録用 -->
+      <input type="hidden" id="qr_code" name="qr_code">
+      
+      <button type="submit">登録</button>
+    </form>
+
+    <!-- QRコード読み取り用のエリア（通常は表示されない） -->
+    <button type="button" onclick="enableQRScan()">📷 2台目以降の登録（QR読み取り）</button>
+    <div id="qr-reader" style="width:300px; margin:auto; display:none;"></div>
+
+    <!-- モーダル：2台目登録時の追加本人確認用（ユーザー名・パスワード再入力） -->
+    <div id="auth-modal" class="modal">
+      <div class="modal-content">
+        <h3>2台目の登録確認</h3>
+        <p>登録済みのユーザー情報を再入力してください。</p>
+        <label for="modal-username">ユーザー名:</label>
+        <input type="text" id="modal-username" name="modal-username" required>
+        <label for="modal-password">パスワード:</label>
+        <input type="password" id="modal-password" name="modal-password" required>
+        <button type="button" onclick="submitSecondaryRegistration()">確認・登録</button>
+      </div>
+    </div>
+
+    <button class="back-button" onclick="window.location.href='/'">戻る</button>
+  </div>
+
+  <p>
+    ※登録後、システム側でクライアント証明書（.p12ファイル相当）が発行されます。<br>
+    高齢者向けには、QRコードまたはメール添付で証明書を配布します。
+  </p>
+
+  <script>
+    // QRコード読み取り起動
+    function enableQRScan() {
+      const qrReader = document.getElementById("qr-reader");
+      qrReader.style.display = "block";
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        (decodedText, decodedResult) => {
+          // QRコード読み取り後、隠しフィールドに値をセット
+          document.getElementById("qr_code").value = decodedText;
+          // 表示中のQRコード読み取り画面を隠す
+          html5QrCode.stop().then(() => {
+            qrReader.style.display = "none";
+            // 2台目登録用の認証モーダルを表示
+            showAuthModal();
+          }).catch(err => {
+            console.error("QRコード停止エラー:", err);
+          });
+        },
+        (errorMessage) => {
+          console.warn("読み取りエラー:", errorMessage);
+        }
+      ).catch(err => {
+        console.error("カメラ起動エラー:", err);
+        alert("カメラが起動できませんでした。");
+      });
+    }
+
+    // モーダル表示制御
+    function showAuthModal() {
+      document.getElementById("auth-modal").style.display = "block";
+    }
+    function hideAuthModal() {
+      document.getElementById("auth-modal").style.display = "none";
+    }
+
+    // モーダルの内容を通常フォームの該当フィールドへコピーして、フォームを再送信
+    function submitSecondaryRegistration() {
+      const modalUsername = document.getElementById("modal-username").value;
+      const modalPassword = document.getElementById("modal-password").value;
+      // セカンダリ登録の場合、QRコードで取得した情報に加えて、ユーザー認証情報として上書き
+      // たとえば、すでに入力済みのregister-formのusernameとpasswordのフィールドにセットする
+      document.getElementById("username").value = modalUsername;
+      document.getElementById("password").value = modalPassword;
+      hideAuthModal();
+      // 登録フォームを自動送信する
+      document.getElementById("register-form").dispatchEvent(new Event("submit", {cancelable: true}));
+    }
+
+    // 登録フォームの送信処理
+    document.getElementById("register-form").addEventListener("submit", function(e){
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+      fetch("/registration/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(result => {
+        if(result.success){
+          alert("登録成功！\n発行されたクライアント証明書を必ず保存してください。\n証明書はQRコードまたはメールでダウンロード可能です。");
+          console.log("Client Certificate (Base64):", result.client_cert);
+          window.location.href = "/login";
+        } else {
+          alert("登録失敗: " + (result.error || "不明なエラー"));
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("登録中にエラーが発生しました。");
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'releases/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.10, 3.12]
+    env:
+      POH_ACK_RUST_FEATURES: python
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Python dependencies for poh_batcher
+        working-directory: poh_batcher
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[dev,zstd]
+
+      - name: Install Python dependencies for poh_ack
+        working-directory: poh_ack/poh_ack_python
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .
+
+      - name: Cache Rust toolchain
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions-rust/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build & Test poh_ack Rust core
+        working-directory: poh_ack/poh_ack_rust
+        run: |
+          cargo test --verbose
+
+      - name: Build & install poh_ack Rust extension (ABI3 wheel)
+        working-directory: poh_ack/poh_ack_rust
+        run: |
+          pip install maturin
+          maturin build --release --no-sdist
+          pip install target/wheels/poh_ack_rust-*.whl
+
+      - name: Test poh_ack Python wrapper
+        working-directory: poh_ack/poh_ack_python
+        run: |
+          pytest -v
+
+      - name: Test poh_batcher
+        working-directory: poh_batcher
+        run: |
+          pytest -v
+
+      - name: Upload test reports
+        if: success() || failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: pytest-report-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            poh_ack/poh_ack_python/htmlcov
+            poh_batcher/htmlcov
+
+      - name: Publish coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          files: |
+            poh_ack/poh_ack_python/htmlcov/coverage.xml
+            poh_batcher/htmlcov/coverage.xml

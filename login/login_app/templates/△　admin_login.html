@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>市町村職員ログイン</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      text-align: center;
+      padding: 50px;
+    }
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background-color: #fff;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 10px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>市町村職員ログイン</h2>
+    <form id="admin-login-form">
+      <label for="admin_id">ユーザー名:</label>
+      <input type="text" id="admin_id" name="admin_id" required><br>
+
+      <label for="password">パスワード:</label>
+      <input type="password" id="password" name="password" required><br>
+
+      <button type="submit">ログイン</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("admin-login-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+
+      // 同じオリジンなので "/admin_login_api" でOK
+      fetch("/admin_login_api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          alert("ログイン成功");
+          localStorage.setItem("admin_jwt", result.admin_jwt);
+          // ログイン成功したので承認画面へ遷移
+          window.location.href = "/municipality_verify";  // GET
+        } else {
+          alert("ログイン失敗: " + (result.error || ""));
+        }
+      })
+      .catch(err => {
+        alert("通信エラー: " + err);
+      });
+    });
+  </script>
+</body>
+</html>

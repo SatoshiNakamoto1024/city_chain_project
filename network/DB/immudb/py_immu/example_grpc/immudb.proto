@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package immudb;
+
+// --- 以下、schema.proto の内容を直接埋め込む ---
+// 元の schema.proto:
+//   syntax = "proto3";
+//   package schema;
+//   message KeyValue {
+//       bytes key   = 1;
+//       bytes value = 2;
+//   }
+// ここでは、package 宣言を削除し、メッセージ名はそのまま使います。
+message KeyValue {
+    bytes key = 1;
+    bytes value = 2;
+}
+// --- schema.proto の内容 ここまで ---
+
+service ImmuService {
+    rpc Login    (LoginRequest)    returns (LoginResponse);
+    rpc Logout   (LogoutRequest)   returns (LogoutResponse);
+    rpc Set      (SetRequest)      returns (SetResponse);
+    rpc Get      (GetRequest)      returns (GetResponse);
+    rpc MultiSet (MultiSetRequest) returns (MultiSetResponse);
+    rpc Scan     (ScanRequest)     returns (ScanResponse);
+    rpc Delete   (DeleteRequest)   returns (DeleteResponse);
+}
+
+// ログイン/ログアウト
+message LoginRequest {
+    string user     = 1;
+    string password = 2;
+    string continent = 3;  // 新たに追加するフィールド
+}
+message LoginResponse {
+    string token = 1;
+}
+
+message LogoutRequest {
+    string token = 1;
+}
+message LogoutResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// 単一セット / ゲット
+message SetRequest {
+    string token = 1;       // 追加
+    string key   = 2;
+    bytes value = 3;  // ← ここを修正
+}
+message SetResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message GetRequest {
+    string token = 1;       // 追加
+    string key = 2;
+}
+message GetResponse {
+    bool success = 1;
+    bytes value  = 2;  // bytes に変更
+}
+
+// マルチセット
+message MultiSetRequest {
+    string token = 1;
+    // ここを schema.KeyValue から KeyValue に変更
+    repeated KeyValue kvs = 2;
+}
+message MultiSetResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// スキャン
+message ScanRequest {
+    string token  = 1;
+    string prefix = 2;
+    bool desc     = 3; // 降順フラグを追加
+    uint32 limit  = 4;
+}
+message ScanResponse {
+    bool success = 1;
+    // ここも schema.KeyValue → KeyValue
+    repeated KeyValue items = 2;
+}
+
+// 削除
+message DeleteRequest {
+    string token = 1;
+    string key   = 2;
+}
+message DeleteResponse {
+    bool success = 1;
+    string message = 2;
+}

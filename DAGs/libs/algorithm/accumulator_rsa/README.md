@@ -1,0 +1,1 @@
+accumulator_rsa	②	RSA アキュムレータ（メンバーシップ証明

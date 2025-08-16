@@ -1,0 +1,1 @@
+io_message_nats (3)	 内部 bus へ TxProduced topic を publish（小規模 SaaS 版）

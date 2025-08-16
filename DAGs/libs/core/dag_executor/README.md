@@ -1,0 +1,1 @@
+dag_executor (2) – WASM 実行	Tx 実行器 / WASM sandbox

@@ -1,0 +1,15 @@
+{
+  "tx_id": "9fa86bd0-c455-44e7-a21a-57f2281bd71d",
+  "sender": "User88",
+  "receiver": "User132",
+  "amount": 57,
+  "timestamp": 1741598305.365691,
+  "hash": "74c8a1dd643a3b39cd0cb63a9053f7f4c536ff3a9bbd6e98ef09a4c3f96c95b2",
+  "distribution_info": {
+    "municipality": "CityC",
+    "continent": "Europe",
+    "node": "europe_node_2",
+    "base_hash": 52822776998479808793387522979755676709088310442768155827010034382150675764658,
+    "score": 0.749384484251181
+  }
+}

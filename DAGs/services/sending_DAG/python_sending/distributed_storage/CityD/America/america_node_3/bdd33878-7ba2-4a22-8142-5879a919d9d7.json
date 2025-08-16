@@ -1,0 +1,15 @@
+{
+  "tx_id": "bdd33878-7ba2-4a22-8142-5879a919d9d7",
+  "sender": "User36",
+  "receiver": "User152",
+  "amount": 81,
+  "timestamp": 1741596780.4713838,
+  "hash": "11d80cb1414326035d6348e316a9be2e056db652ddc95ba2254494151b328c57",
+  "distribution_info": {
+    "municipality": "CityD",
+    "continent": "America",
+    "node": "america_node_3",
+    "base_hash": 8071044991647303434523393192142934382150367310638522170140721513530670615639,
+    "score": 0.3653554246429787
+  }
+}

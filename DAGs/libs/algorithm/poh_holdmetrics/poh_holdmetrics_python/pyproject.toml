@@ -1,0 +1,69 @@
+# \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "poh_holdmetrics"
+version = "0.1.0"
+description = "Proof-of-Hold based holding-time metrics calculation and serving toolkit."
+requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [
+  { name = "Your Name", email = "you@example.com" },
+]
+keywords = ["hold", "metrics", "grpc", "prometheus", "pyo3", "asyncio"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Framework :: AsyncIO",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+  "poh_holdmetrics_rust>=0.1.0",
+  "click>=8.1",
+  "uvicorn[standard]>=0.20",
+  "fastapi>=0.95",
+  "grpcio>=1.71.2",
+  "pydantic>=2.5",
+  "pydantic-settings>=2.2",    # ← ここを追加
+  "prometheus-client>=0.16",
+  "opentelemetry-api>=1.22",
+  "opentelemetry-sdk>=1.22",
+  "httpx>=0.24",
+]
+
+[project.optional-dependencies]
+grpc-tools = ["grpcio-tools>=1.71.2", "protobuf>=5.29"]
+test = [
+  "pytest>=8.0",
+  "pytest-asyncio>=1.0",
+  "pytest-cov>=4.1",
+  "protobuf>=5.29",
+  "pymongo>=4",
+  "motor>=3.3"
+]
+config     = ["pyyaml>=6.0"]
+storage    = ["motor>=3.3", "immutdb>=0.15"]
+exporter   = ["prometheus-client>=0.16", "opentelemetry-api>=1.22", "opentelemetry-sdk>=1.22"]
+api        = ["fastapi>=0.95", "uvicorn[standard]>=0.20", "grpcio>=1.71.2", "httpx>=0.24"]
+protobuf   = ["protobuf>=4"]
+pymongo    = ["pymongo>=4"]
+
+[project.urls]
+Homepage = "https://github.com/yourorg/poh_holdmetrics"
+Source   = "https://github.com/yourorg/poh_holdmetrics"
+Tracker  = "https://github.com/yourorg/poh_holdmetrics/issues"
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["poh_holdmetrics"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["poh_holdmetrics/tests"]
+norecursedirs = [".venv312", ".clean312", "build", "dist", "target", "node_modules", ".git"]
+
+[project.scripts]
+poh-holdmetrics = "poh_holdmetrics.app_holdmetrics:cli"

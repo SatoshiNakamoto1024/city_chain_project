@@ -1,0 +1,1 @@
+dag_pruning (2) – Chain Prune	チェーン剪定ポリシ

@@ -1,0 +1,1 @@
+io_rate_limiter (2)	outbound Shard/s 上限

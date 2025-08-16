@@ -1,0 +1,1 @@
+	common_async_channel	②	MPSC / broadcast / bounded ch.

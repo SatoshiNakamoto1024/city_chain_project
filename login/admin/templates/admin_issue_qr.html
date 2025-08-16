@@ -1,0 +1,40 @@
+<!-- templates/admin_issue_qr.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>管理者：QRコード再発行</title>
+</head>
+<body>
+  <h1>管理者：QRコード再発行</h1>
+  <form id="issue-form">
+    <label>ユーザーUUID：<input type="text" id="uuid" required></label>
+    <button type="submit">再発行</button>
+  </form>
+  <div id="result" style="margin-top:1em;"></div>
+  <script>
+    document.getElementById("issue-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const uuid = document.getElementById("uuid").value;
+      const res = await fetch("/admin/issue_qr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("admin_jwt")}`
+        },
+        body: JSON.stringify({ uuid })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById("result").innerText = `Error: ${data.error}`;
+        return;
+      }
+      document.getElementById("result").innerHTML = `
+        <p>有効期限: ${new Date(data.expires_at*1000).toLocaleString()}</p>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(data.qr_code)}&size=200x200">
+        <pre>${data.qr_code}</pre>
+      `;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+# ========================================================================
+# Continuous‑Integration workflow for `poh_request`
+# ------------------------------------------------------------------------
+#  * Python 3.12 / PyO3 0.25.x が前提
+#  * Ubuntu / Windows の 2 OS でテスト
+#  * ruff・mypy・pytest で品質チェック
+#  * sdist / wheel をビルドし、成果物としてアップロード
+# ========================================================================
+name: CI
+
+on:
+  push:
+    branches: [ main, trunk, master ]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # ───────────── 共通設定 ─────────────
+  PYTHON_VERSION: "3.12"      # グローバルで 3.12 に固定
+  RUST_TOOLCHAIN: "stable"    # PyO3 0.25 は Rust stable で OK
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONBREAKPOINT: "0"       # デバッグ用 breakpoint を無効化
+
+jobs:
+  test:
+    name: Test / Lint (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      # ------------------------------------------------------------
+      # 1) 取得 & Python/Rust セットアップ
+      # ------------------------------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set‑up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      # Rust が不要なら以下 2 ステップは削除して構いません
+      - name: Install Rust (${{ env.RUST_TOOLCHAIN }})
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          # components: clippy rustfmt     # ←必要なら追加
+
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+        if: runner.os == 'Linux'          # Windows はパス長問題が出る事があるので条件付き
+
+      # ------------------------------------------------------------
+      # 2) 依存関係インストール
+      # ------------------------------------------------------------
+      - name: Upgrade pip & install package[dev]
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ".[dev]"     # tests, ruff, mypy など
+
+      # ------------------------------------------------------------
+      # 3) 静的解析 & フォーマットチェック
+      # ------------------------------------------------------------
+      - name: Ruff (lint)
+        run: ruff check .
+
+      - name: Ruff (format diff)
+        run: ruff format --check .
+
+      - name: mypy (type check)
+        run: mypy .
+
+      # ------------------------------------------------------------
+      # 4) ユニットテスト
+      # ------------------------------------------------------------
+      - name: Pytest
+        run: pytest -q
+
+  build:
+    name: Build and upload artifacts (wheel + sdist)
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build backend
+        run: |
+          python -m pip install --upgrade pip build
+
+      - name: Build sdist & wheel
+        run: python -m build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: poh_request-dist
+          path: dist/*
+

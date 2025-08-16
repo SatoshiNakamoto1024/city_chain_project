@@ -1,0 +1,45 @@
+# D:\city_chain_project\DAGs\libs\algorithm\rvh_faultset\rvh_faultset_rust\Cargo.toml
+[package]
+name        = "rvh_faultset_rust"
+version     = "0.1.0"
+edition     = "2021"
+description = "Faultset selection with latency-based integration for RVH"
+license     = "Apache-2.0"
+repository  = "https://github.com/yourorg/rvh_faultset"
+
+[dependencies]
+pyo3 = { version = "0.18", features = ["extension-module"] } # ←★追加 / 修正
+blake2 = "0.10"
+serde     = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"
+rayon     = "1.10"
+clap      = { version = "4.5", features = ["derive"] }
+indoc = "1"              # ← 追加
+
+[dev-dependencies]
+criterion   = { version = "0.5", features = ["html_reports"] }
+assert_cmd  = "2"
+predicates  = "3"
+pyo3        = { version = "0.18", features = ["auto-initialize"] }
+pyo3-build-config = "0.18"
+serde_json = "1"
+walkdir = "2.5"      # ファイル再帰探索
+
+[lib]
+name       = "rvh_faultset_rust"
+crate-type = ["cdylib", "rlib"]
+path       = "src/lib.rs"
+
+[[bin]]
+name = "main_faultset"
+path = "src/main_faultset.rs"
+
+[[bench]]
+name     = "bench_faultset_failover"
+harness  = false
+path     = "benches/bench_faultset_failover.rs"
+
+[[bench]]
+name     = "bench_faultset_parallel"
+harness  = false
+path     = "benches/bench_faultset_parallel.rs"

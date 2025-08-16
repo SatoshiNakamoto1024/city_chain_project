@@ -1,0 +1,145 @@
+{
+  "UsersTable": [
+    {
+      "PutRequest": {
+        "Item": {
+          "uuid": { "S": "uuid_kanazawa_01" },
+          "session_id": { "S": "USER_PROFILE" },
+          "username": { "S": "ナカモトサトシ_01" },
+          "sender_municipality": { "S": "Asia/JP/18/Kanazawa" },
+          "region": { "S": "Asia" },
+          "ntru_public_key": { "S": "dummy_ntru_pub_key_01" },
+          "rsa_public_key": { "S": "dummy_rsa_pub_key_01" },
+          "dilithium_private_key": { "S": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "uuid": { "S": "uuid_kanazawa_02" },
+          "session_id": { "S": "USER_PROFILE" },
+          "username": { "S": "ナカモトサトシ_02" },
+          "sender_municipality": { "S": "Asia/JP/18/Kanazawa" },
+          "region": { "S": "Asia" },
+          "ntru_public_key": { "S": "dummy_ntru_pub_key_02" },
+          "rsa_public_key": { "S": "dummy_rsa_pub_key_02" },
+          "dilithium_private_key": { "S": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "uuid": { "S": "uuid_kanazawa_03" },
+          "session_id": { "S": "USER_PROFILE" },
+          "username": { "S": "ナカモトサトシ_03" },
+          "sender_municipality": { "S": "Asia/JP/18/Kanazawa" },
+          "region": { "S": "Asia" },
+          "ntru_public_key": { "S": "dummy_ntru_pub_key_03" },
+          "rsa_public_key": { "S": "dummy_rsa_pub_key_03" },
+          "dilithium_private_key": { "S": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "uuid": { "S": "uuid_kanazawa_04" },
+          "session_id": { "S": "USER_PROFILE" },
+          "username": { "S": "ナカモトサトシ_04" },
+          "sender_municipality": { "S": "Asia/JP/18/Kanazawa" },
+          "region": { "S": "Asia" },
+          "ntru_public_key": { "S": "dummy_ntru_pub_key_04" },
+          "rsa_public_key": { "S": "dummy_rsa_pub_key_04" },
+          "dilithium_private_key": { "S": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "uuid": { "S": "uuid_kanazawa_05" },
+          "session_id": { "S": "USER_PROFILE" },
+          "username": { "S": "ナカモトサトシ_05" },
+          "sender_municipality": { "S": "Asia/JP/18/Kanazawa" },
+          "region": { "S": "Asia" },
+          "ntru_public_key": { "S": "dummy_ntru_pub_key_05" },
+          "rsa_public_key": { "S": "dummy_rsa_pub_key_05" },
+          "dilithium_private_key": { "S": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }
+        }
+      }
+    },
+
+    {
+      "PutRequest": {
+        "Item": {
+          "uuid": { "S": "uuid_sligo_01" },
+          "session_id": { "S": "USER_PROFILE" },
+          "username": { "S": "アンナ_01" },
+          "sender_municipality": { "S": "Europe/IE/SO/Sligo" },
+          "region": { "S": "Europe" },
+          "ntru_public_key": { "S": "dummy_ntru_pub_key_anna_01" },
+          "rsa_public_key": { "S": "dummy_rsa_pub_key_anna_01" },
+          "dilithium_private_key": { "S": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "uuid": { "S": "uuid_sligo_02" },
+          "session_id": { "S": "USER_PROFILE" },
+          "username": { "S": "アンナ_02" },
+          "sender_municipality": { "S": "Europe/IE/SO/Sligo" },
+          "region": { "S": "Europe" },
+          "ntru_public_key": { "S": "dummy_ntru_pub_key_anna_02" },
+          "rsa_public_key": { "S": "dummy_rsa_pub_key_anna_02" },
+          "dilithium_private_key": { "S": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "uuid": { "S": "uuid_sligo_03" },
+          "session_id": { "S": "USER_PROFILE" },
+          "username": { "S": "アンナ_03" },
+          "sender_municipality": { "S": "Europe/IE/SO/Sligo" },
+          "region": { "S": "Europe" },
+          "ntru_public_key": { "S": "dummy_ntru_pub_key_anna_03" },
+          "rsa_public_key": { "S": "dummy_rsa_pub_key_anna_03" },
+          "dilithium_private_key": { "S": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "uuid": { "S": "uuid_sligo_04" },
+          "session_id": { "S": "USER_PROFILE" },
+          "username": { "S": "アンナ_04" },
+          "sender_municipality": { "S": "Europe/IE/SO/Sligo" },
+          "region": { "S": "Europe" },
+          "ntru_public_key": { "S": "dummy_ntru_pub_key_anna_04" },
+          "rsa_public_key": { "S": "dummy_rsa_pub_key_anna_04" },
+          "dilithium_private_key": { "S": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "uuid": { "S": "uuid_sligo_05" },
+          "session_id": { "S": "USER_PROFILE" },
+          "username": { "S": "アンナ_05" },
+          "sender_municipality": { "S": "Europe/IE/SO/Sligo" },
+          "region": { "S": "Europe" },
+          "ntru_public_key": { "S": "dummy_ntru_pub_key_anna_05" },
+          "rsa_public_key": { "S": "dummy_rsa_pub_key_anna_05" },
+          "dilithium_private_key": { "S": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" }
+        }
+      }
+    }
+  ]
+}

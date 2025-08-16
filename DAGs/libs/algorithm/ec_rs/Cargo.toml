@@ -1,0 +1,64 @@
+# D:\city_chain_project\Algorithm\EC\ec_rust_src\Cargo.toml
+
+[package]
+name        = "ec_rust"
+version     = "0.1.0"
+edition     = "2021"
+description = "Erasure Coding CLI & library with Python bindings"
+license     = "Apache-2.0"
+repository  = "https://github.com/yourorg/ec_rust"
+readme      = "README.md"
+authors     = ["Your Name <you@example.com>"]
+
+[dependencies]
+# SIMD-enabled Reed–Solomon（バージョン 5.x 系）
+reed-solomon-erasure = { version = "5.0", default-features = false, features = ["simd-accel", "std"] }
+
+# Python バインディング
+pyo3                 = { version = "0.18", features = ["extension-module"] }
+
+# CLI
+clap                 = { version = "4.5", features = ["derive"] }
+anyhow               = "1.0"
+
+# 汎用ユーティリティ
+serde                = { version = "1.0", features = ["derive"] }
+thiserror            = "1.0"
+hex                  = "0.4"
+blake2               = "0.10"
+toml                 = "0.7"
+rayon                = "1.7"
+
+# HTTP ステータスコード対応
+http                 = "0.2"
+
+# セキュリティ／シード用
+hmac                 = "0.12"
+sha2                 = "0.10"
+zeroize              = "1.5"
+
+[dev-dependencies]
+assert_cmd           = "2.0"
+predicates           = "2.1"
+tempfile             = "3.3"
+
+[features]
+# デフォルトで Reed–Solomon 実装を有効化
+default = ["reed_solomon"]
+
+# crate 側の "reed_solomon" feature を ON にすると
+# reed-solomon-erasure の simd-accel（SIMD最適化）が有効になる
+reed_solomon = ["reed-solomon-erasure/simd-accel"]
+
+[lib]
+name       = "ec_rust"
+crate-type = ["cdylib", "rlib"]
+path       = "src/lib.rs"
+
+[[bin]]
+name = "ec_rust"
+path = "src/cli.rs"
+
+[[bin]]
+name = "main_ec"
+path = "src/main_ec.rs"

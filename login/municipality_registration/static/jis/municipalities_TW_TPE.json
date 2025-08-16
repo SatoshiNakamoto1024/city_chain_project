@@ -1,0 +1,12 @@
+[
+  { "code": "TPE01", "name": "Zhongzheng District" },
+  { "code": "TPE02", "name": "Datong District" },
+  { "code": "TPE03", "name": "Zhongshan District" },
+  { "code": "TPE04", "name": "Songshan District" },
+  { "code": "TPE05", "name": "Da’an District" },
+  { "code": "TPE06", "name": "Wanhua District" },
+  { "code": "TPE07", "name": "Xinyi District" },
+  { "code": "TPE08", "name": "Shilin District" },
+  { "code": "TPE09", "name": "Beitou District" },
+  { "code": "TPE10", "name": "Nangang District" }
+]

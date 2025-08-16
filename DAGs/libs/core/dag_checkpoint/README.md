@@ -1,0 +1,1 @@
+dag_checkpoint (2) – CKPT Tx	Checkpoint Tx 発行

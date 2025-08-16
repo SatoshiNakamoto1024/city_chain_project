@@ -1,0 +1,12 @@
+[
+  { "code": "2507000", "name": "Boston" },
+  { "code": "2511000", "name": "Cambridge" },
+  { "code": "2550000", "name": "Worcester" },
+  { "code": "2559000", "name": "Springfield" },
+  { "code": "2509500", "name": "Lowell" },
+  { "code": "2501850", "name": "Brockton" },
+  { "code": "2502600", "name": "Chelsea" },
+  { "code": "2502140", "name": "Somerville" },
+  { "code": "2554000", "name": "Lynn" },
+  { "code": "2559001", "name": "New Bedford" }
+]

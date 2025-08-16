@@ -1,0 +1,35 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_storage\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "poh_storage"
+version         = "0.1.0"
+description = "PoH transaction local persistence and recovery"
+authors         = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.8"
+dependencies = [
+  "aiofiles>=23.1.0",
+  "aiosqlite>=0.18.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+  "pytest-asyncio>=1.0",
+]
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["poh_storage*"]
+
+[project.scripts]
+poh-storage = "poh_storage.app_storage:main"
+
+[project.urls]
+"Source"        = "https://example.com/your-repo"
+"Bug Tracker"   = "https://example.com/your-repo/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["poh_storage/tests"]

@@ -1,0 +1,19 @@
+{
+  "complete": {
+    "asia-japan-ishikawa-kanazawa": "mongodb+srv://satoshi:greg1024@asia-japan-ishikawa-kan.ggn9p.mongodb.net/?retryWrites=true&w=majority&appName=asia-japan-ishikawa-kanazawa",
+    "asia-japan-tokyo-shibuya": "mongodb+srv://satoshi:greg1024@asia-japan-tokyo-shibuy.wh4p1.mongodb.net/?retryWrites=true&w=majority&appName=asia-japan-tokyo-shibuya",
+    "europe-ireland-connacht-sligo": "mongodb+srv://satoshi:greg1024@europe-ireland-connacht.npile.mongodb.net/?retryWrites=true&w=majority&appName=europe-ireland-connacht-sligo",
+    "europe-france-iledefrance-paris": "mongodb+srv://satoshi:greg1024@europe-france-iledefran.i4gun.mongodb.net/?retryWrites=true&w=majority&appName=europe-france-iledefrance-paris",  
+    "oceania-australia-nsw-sydney": "mongodb+srv://satoshi:greg1024@oceania-australia-nsw-s.x4kro.mongodb.net/?retryWrites=true&w=majority&appName=oceania-australia-nsw-sydney",
+    "oceania-newzealand-auckland-auckland": "mongodb+srv://satoshi:greg1024@oceania-newzealand-auck.e94y1.mongodb.net/?retryWrites=true&w=majority&appName=oceania-newzealand-auckland-auckland", 
+    "africa-southafrica-westerncape-capetown": "mongodb+srv://satoshi:greg1024@africa-southafrica-west.drxhy.mongodb.net/?retryWrites=true&w=majority&appName=africa-southafrica-westerncape-capetown",
+    "africa-kenya-nairobi-westlands": "mongodb+srv://satoshi:greg1024@africa-kenya-nairobi-we.lxbty.mongodb.net/?retryWrites=true&w=majority&appName=africa-kenya-nairobi-westlands",
+    "northamerica-usa-massachusetts-boston": "mongodb+srv://satoshi:greg1024@northamerica-usa-massac.xmfa8.mongodb.net/?retryWrites=true&w=majority&appName=northamerica-usa-massachusetts-boston",
+    "northamerica-canada-ottawa-kanata": "mongodb+srv://satoshi:greg1024@northamerica-canada-ott.ewhiy.mongodb.net/?retryWrites=true&w=majority&appName=northamerica-canada-ottawa-kanata",
+    "southamerica-arg-buenosaires-buenosaires": "mongodb+srv://satoshi:greg1024@southamerica-arg-buenos.9zjns.mongodb.net/?retryWrites=true&w=majority&appName=southamerica-arg-buenosaires-buenosaires",
+    "southamerica-brazil-saopaulo-santos": "mongodb+srv://satoshi:greg1024@southamerica-brazil-sao.hurvn.mongodb.net/?retryWrites=true&w=majority&appName=southamerica-brazil-saopaulo-santos",
+    "antarctica-british-researchstation-rothera": "mongodb+srv://satoshi:greg1024@antarctica-british-rese.s87ru.mongodb.net/?retryWrites=true&w=majority&appName=antarctica-british-researchstation-rothera",
+    "antarctica-usa-researchstation-mcmurdo": "mongodb+srv://satoshi:greg1024@antarctica-usa-research.vbwi6.mongodb.net/?retryWrites=true&w=majority&appName=antarctica-usa-researchstation-mcmurdo",
+    "default-default-default-default": "mongodb+srv://satoshi:greg1024@default-default-default.zkchx.mongodb.net/?retryWrites=true&w=majority&appName=default-default-default-default"
+  }
+}

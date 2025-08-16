@@ -1,0 +1,56 @@
+# D:\city_chain_project\Algorithm\EC\ec_rust_src\src\config.toml
+# ──────────────────────────────────────────────────────────────
+# EC (Erasure Coding) Service Configuration
+# ──────────────────────────────────────────────────────────────
+
+# ─── シャード分割パラメータ ───
+[data_shards]
+# データ用シャード数 (k)
+value = 4
+
+[parity_shards]
+# パリティ用シャード数 (m)
+value = 2
+
+# 総シャード数上限 (k + m <= max_total_shards)
+max_total_shards = 32
+
+# ─── 非同期分割フラグ ───
+[split]
+async_enabled = true       # Tokio/Rayon 並列処理
+concurrency = 8           # 並列スレッド数上限
+max_shard_size_bytes = 10485760  # 10 MiB
+
+# ─── 保存・保持ポリシー ───
+[storage]
+mongodb_url = "mongodb://localhost:27017"
+mongodb_db = "ec_shards"
+mongodb_collection = "shard_data"
+retention_days = 180      # 日数
+
+# ─── メトリクス設定 ───
+[metrics]
+enabled = true
+report_interval_seconds = 60
+
+# ─── 分散ティア定義 ───
+[[distribution.tiers]]
+name = "city"
+weight = 10
+timeout_ms = 200
+parallelism = 4
+retention_days = 90
+
+[[distribution.tiers]]
+name = "continent"
+weight = 5
+timeout_ms = 300
+parallelism = 8
+retention_days = 180
+
+[[distribution.tiers]]
+name = "global"
+weight = 1
+timeout_ms = 500
+parallelism = 16
+retention_days = 365

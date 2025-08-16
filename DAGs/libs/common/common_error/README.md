@@ -1,0 +1,1 @@
+common_error	③	anyhow / thiserror の共通ラッパ

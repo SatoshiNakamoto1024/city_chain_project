@@ -1,0 +1,52 @@
+<!-- registraion/templates/qr_reader.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>QRコード読取（クライアント証明書登録）</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    #reader { width: 300px; margin: auto; }
+    #result { margin-top: 20px; word-break: break-word; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h2>QRコードをスキャンして2台目端末を登録</h2>
+  <div id="reader"></div>
+  <div id="result"></div>
+
+  <script>
+    function onScanSuccess(decodedText, decodedResult) {
+      console.log(`Decoded text: ${decodedText}`);
+      document.getElementById("result").innerText = "読み取った内容:\n" + decodedText;
+
+      // 読み取ったBase64文字列をそのまま送信
+      fetch("/registration", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          qr_code: decodedText,                // ← ここがBase64証明書
+          device_name: "SecondDeviceCamera"    // 任意の端末名
+        })
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          alert("端末登録成功！\nDevice ID: " + result.device_id);
+          window.location.href = "/login";
+        } else {
+          alert("登録失敗: " + result.error);
+        }
+      })
+      .catch(err => alert("通信エラー: " + err));
+
+      // 停止（1回だけ読み取り）
+      html5QrcodeScanner.clear();
+    }
+
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+  </script>
+</body>
+</html>

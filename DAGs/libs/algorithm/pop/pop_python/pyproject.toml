@@ -1,0 +1,62 @@
+# D:\city_chain_project\Algorithm\PoP\pop_python\pyproject.toml
+[build-system]
+# セットアップツールに setuptools を使う
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# ------------------------------------------------------------------
+[project]
+name = "pop_python"
+version = "0.1.0"
+description = "Proof-of-Presence high-level Python SDK"
+authors = [
+  { name="Your Org", email="dev@example.com" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+
+# ── ランタイム依存関係 ───────────────────────
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.27",
+  "shapely>=2.0",
+  "numpy>=1.26",
+  "requests>=2.32",
+  # Rust バックエンド wheel は任意インストールなので here には書かない
+]
+
+# ------------------------------------------------------------------
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.23",
+  "black>=24",
+  "mypy>=1.10",
+]
+docs = ["mkdocs-material", "mkdocstrings[python]"]
+rust = ["pop-rust>=0.1.0"]
+
+
+# ------------------------------------------------------------------
+[project.urls]
+Homepage = "https://github.com/your-org/pop"
+Source   = "https://github.com/your-org/pop"
+
+# ------------------------------------------------------------------
+# setuptools の自動パッケージ検索は package-dir 配下一式
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.package-data]
+"pop_python" = ["config/*.json", "static/*.html"]
+
+# ------------------------------------------------------------------
+# 実行可能スクリプト (pip install 時に作られる CLI)
+[project.scripts]
+pop-api  = "pop_python.app_pop:app"          # uvicorn を別途実行
+geo-api  = "pop_python.geolocation.app_geolocation:app"
+
+# buildするには
+# pip install build
+# python -m build      # dist/*.whl が出来る
+# 成功すると、Successfully built pop_python-0.1.0.tar.gz and pop_python-0.1.0-py3-none-any.whl

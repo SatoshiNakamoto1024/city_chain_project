@@ -1,0 +1,1 @@
+common_error_codes	③	ECxxxxx 等コード→HTTP ステータス

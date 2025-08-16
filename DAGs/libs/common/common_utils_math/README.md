@@ -1,0 +1,1 @@
+common_utils_math	②	GF(256)・modexp 小数演算

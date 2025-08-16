@@ -1,0 +1,39 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_config\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "poh_config"
+version         = "0.1.0"
+description     = "PoH configuration loader (TOML/JSON/YAML) with"
+authors         = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.8"
+dependencies = [
+  "tomli>=2.0.0",        # TOML parser
+  "toml>=0.10.2",
+  "PyYAML>=6.0",         # YAML parser
+  "watchfiles>=0.19.0",   # Async file watcher
+  "aiohttp>=3.8.0",      
+  "protobuf==5.27.0",          # ← ここで安全版に固定
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+  "pytest-asyncio>=1.0",
+]
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["poh_config*"]
+
+[project.scripts]
+poh-config = "poh_config.app_config:main"
+
+[project.urls]
+"Source"        = "https://example.com/your-repo"
+"Bug Tracker"   = "https://example.com/your-repo/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["poh_config/tests"]

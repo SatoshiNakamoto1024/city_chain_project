@@ -1,0 +1,37 @@
+# D:\city_chain_project\Algorithm\EC\ec_rust_src\pyproject.toml
+[project]
+name = "ec_rust"
+version = "0.1.0"
+authors = [
+  { name = "Nakamoto Satoshi", email = "you@example.com" }
+]
+description = "Reed-Solomon Erasure Coding for Python"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["Reed-Solomon", "ec", "sharding", "python", "rust"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License"
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/yourorg/ec_rust"
+Repository = "https://github.com/yourorg/ec_rust"
+Documentation = "https://yourorg.github.io/ec_rust/"
+Issues = "https://github.com/yourorg/ec_rust/issues"
+
+[build-system]
+requires = ["maturin>=1.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+bindings = "pyo3"
+features = []
+cargo-extra-args = ["--locked"]

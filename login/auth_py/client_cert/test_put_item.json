@@ -1,0 +1,6 @@
+{
+    "uuid": {"S": "test-uuid-002"},
+    "session_id": {"S": "CLIENT_CERT"},
+    "revoked": {"BOOL": false}
+  }
+  

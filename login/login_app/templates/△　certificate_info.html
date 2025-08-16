@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>クライアント証明書情報</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .info {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .back-button {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #aaa;
+      border: none;
+      cursor: pointer;
+    }
+    .back-button:hover {
+      background-color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>クライアント証明書情報</h2>
+    {% if cert %}
+      <div class="info">シリアル番号: {{ cert.serial_number }}</div>
+      <div class="info">有効期間: {{ cert.valid_from }} ～ {{ cert.valid_to }}</div>
+      <div class="info">フィンガープリント: {{ cert.fingerprint }}</div>
+      <div class="info">Base64エンコード: {{ cert.cert_base64 }}</div>
+    {% else %}
+      <p>証明書情報が見つかりません</p>
+    {% endif %}
+    <button class="back-button" onclick="window.location.href='/'">戻る</button>
+  </div>
+</body>
+</html>

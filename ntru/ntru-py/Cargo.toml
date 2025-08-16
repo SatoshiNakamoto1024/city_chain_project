@@ -1,0 +1,15 @@
+[package]
+name = "ntrust_native_py"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ntrust_native_py"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.18", features = ["extension-module"] }
+ntrust-native = { path = "ntru-rs/ntrust-native" }
+
+[build-dependencies]
+maturin = "0.14"

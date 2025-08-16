@@ -1,0 +1,1 @@
+dag_shard_zeroize (2)	シャード zeroize

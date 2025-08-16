@@ -1,0 +1,124 @@
+# .github/workflows/ci.yml
+#
+# ─────────────────────────────────────────────────────────────────────────────
+#  PoH‑ACK – Continuous Integration  (Rust 🌳  +  Python 🐍)
+#  ---------------------------------------------------------------------------
+#  ✔️  Build & test Rust core (`poh_ack_rust`)
+#  ✔️  Build CPython abi3 wheel with maturin & install in‑place (`maturin develop`)
+#  ✔️  Install pure‑Python helpers (`poh_ack_python`) with test extras
+#  ✔️  Run unit‑tests  +  end‑to‑end integration script
+#  ✔️  Publish build artefacts (wheel + binary) for inspection
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: [ main, develop, feature/** ]
+    tags:     [ "v*.*.*" ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  # Path shortcuts
+  RUST_CRATE:  poh_ack_rust
+  PY_PKG:      poh_ack_python
+  INTEG:       poh_ack_integration.py
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    # Test against the most‑used Py3 versions even though the wheel itself is abi3‑py312
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.10", "3.11", "3.12" ]
+
+    steps:
+      # ────────────────────────────────────────────────────────────────
+      # Checkout repo
+      # ────────────────────────────────────────────────────────────────
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      # ────────────────────────────────────────────────────────────────
+      # Rust tool‑chain & caching
+      # ────────────────────────────────────────────────────────────────
+      - name: 🦀 Set up Rust (stable)
+        uses: actions/setup-rust@v1
+        with:
+          profile: minimal
+          rust-version: stable
+
+      - name: ♻️ Cargo cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          # cache target/ for both debug & release (keyed by Cargo.lock + tool‑chain)
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      # ────────────────────────────────────────────────────────────────
+      # Rust tests
+      # ────────────────────────────────────────────────────────────────
+      - name: 🔧 Cargo test
+        working-directory: ${{ env.RUST_CRATE }}
+        run: cargo test --all --all-features --locked
+
+      # optional: clippy / fmt
+      # - name: 🔍 cargo clippy
+      #   working-directory: ${{ env.RUST_CRATE }}
+      #   run: cargo clippy --all-targets --all-features -- -D warnings
+
+      # ────────────────────────────────────────────────────────────────
+      # Build Python wheel (abi3) & install in editable‑mode
+      # ────────────────────────────────────────────────────────────────
+      - name: 🐍 Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: ⚙️ Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin~=1.4
+
+      - name: 🏗️ Build & develop‑install Rust wheel
+        working-directory: ${{ env.RUST_CRATE }}
+        run: |
+          maturin develop --release --locked  --features python
+
+      # ────────────────────────────────────────────────────────────────
+      # Install pure‑Python package & test deps
+      # ────────────────────────────────────────────────────────────────
+      - name: 🐍 Install Python helpers + test extras
+        working-directory: ${{ env.PY_PKG }}
+        run: |
+          pip install -e .[test]
+
+      # ────────────────────────────────────────────────────────────────
+      # Run pytest  + integration script
+      # ────────────────────────────────────────────────────────────────
+      - name: ✅ Unit tests (pytest)
+        working-directory: ${{ env.PY_PKG }}
+        run: pytest -q
+
+      - name: 🔗 Integration test (Rust ↔ Python)
+        run: |
+          # ensure Rust binary built (debug is enough)
+          cargo build --bin main_ack --manifest-path ${{ env.RUST_CRATE }}/Cargo.toml
+          python ${{ env.INTEG }}
+
+      # ────────────────────────────────────────────────────────────────
+      # Archive artefacts (wheel, binary) – optional but handy
+      # ────────────────────────────────────────────────────────────────
+      - name: 📦 Upload artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: poh-ack-${{ matrix.python-version }}
+          path: |
+            ${{ env.RUST_CRATE }}/target/release/main_ack
+            ${{ env.RUST_CRATE }}/target/wheels/*.whl
+          if-no-files-found: ignore

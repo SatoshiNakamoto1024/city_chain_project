@@ -1,0 +1,66 @@
+{
+    "asia": {
+      "host": "127.0.0.2",
+      "port": 3323,
+      "username": "immudb",
+      "password": "greg1024",
+      "database": "defaultdb",
+      "dir": "/home/satoshi/immudb_data/tests/asia"
+    },
+    "europe": {
+      "host": "127.0.0.3",
+      "port": 3324,
+      "username": "immudb",
+      "password": "greg1024",
+      "database": "defaultdb",
+      "dir": "/home/satoshi/immudb_data/tests/europe"
+    },
+    "oceania": {
+      "host": "127.0.0.4",
+      "port": 3325,
+      "username": "immudb",
+      "password": "greg1024",
+      "database": "defaultdb",
+      "dir": "/home/satoshi/immudb_data/tests/oceania"
+    },
+    "africa": {
+      "host": "127.0.0.5",
+      "port": 3326,
+      "username": "immudb",
+      "password": "greg1024",
+      "database": "defaultdb",
+      "dir": "/home/satoshi/immudb_data/tests/africa"
+    },
+    "northamerica": {
+      "host": "127.0.0.6",
+      "port": 3327,
+      "username": "immudb",
+      "password": "greg1024",
+      "database": "defaultdb",
+      "dir": "/home/satoshi/immudb_data/tests/northamerica"
+    },
+    "southamerica": {
+      "host": "127.0.0.7",
+      "port": 3328,
+      "username": "immudb",
+      "password": "greg1024",
+      "database": "defaultdb",
+      "dir": "/home/satoshi/immudb_data/tests/southamerica"
+    },
+    "antarctica": {
+      "host": "127.0.0.8",
+      "port": 3329,
+      "username": "immudb",
+      "password": "greg1024",
+      "database": "defaultdb",
+      "dir": "/home/satoshi/immudb_data/tests/antarctica"
+    },
+    "default": {
+      "host": "127.0.0.1",
+      "port": 3322,
+      "username": "immudb",
+      "password": "greg1024",
+      "database": "defaultdb",
+      "dir": "/home/satoshi/immudb_data/tests/defaultdb"
+    }
+}

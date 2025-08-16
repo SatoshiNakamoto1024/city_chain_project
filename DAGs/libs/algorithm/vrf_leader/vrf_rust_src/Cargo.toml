@@ -1,0 +1,21 @@
+# D:\city_chain_project\Algorithm\VRF\vrf_rust_src\Cargo.toml
+[package]
+name    = "vrf_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pyo3    = { version = "0.18", features = ["extension-module"] }
+vrf     = "0.2.5"          # ECVRF via OpenSSL :contentReference[oaicite:0]{index=0}
+openssl = "0.10"      # 乱数鍵ペア生成のため
+anyhow  = "1.0"            # エラー簡易ラップ用
+hex     = "0.4"            # バイナリ→16進文字列表示
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name       = "vrf_rust"
+path       = "src/lib.rs"
+
+[[bin]]
+name = "main_vrf"
+path = "src/main_vrf.rs"

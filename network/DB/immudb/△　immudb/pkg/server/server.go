@@ -1,0 +1,1809 @@
+/*
+Copyright 2024 Codenotary Inc. All rights reserved.
+
+SPDX-License-Identifier: BUSL-1.1
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://mariadb.com/bsl11/
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package server
+
+import (
+	"context"
+	"crypto/x509"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net"
+	"os"
+	"os/signal"
+	"path"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"time"
+	"unicode"
+
+	"github.com/codenotary/immudb/pkg/server/sessions"
+	"github.com/codenotary/immudb/pkg/truncator"
+
+	"github.com/codenotary/immudb/embedded/remotestorage"
+	"github.com/codenotary/immudb/embedded/store"
+	"github.com/codenotary/immudb/pkg/errors"
+	"github.com/codenotary/immudb/pkg/replication"
+
+	pgsqlsrv "github.com/codenotary/immudb/pkg/pgsql/server"
+
+	"github.com/codenotary/immudb/pkg/stream"
+
+	"github.com/codenotary/immudb/pkg/database"
+
+	"github.com/codenotary/immudb/embedded/logger"
+	"github.com/codenotary/immudb/pkg/signer"
+
+	"github.com/codenotary/immudb/cmd/helper"
+	"github.com/codenotary/immudb/cmd/version"
+	"github.com/codenotary/immudb/pkg/api/protomodel"
+	"github.com/codenotary/immudb/pkg/api/schema"
+	"github.com/codenotary/immudb/pkg/auth"
+	"github.com/golang/protobuf/ptypes/empty"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
+)
+
+const (
+	//KeyPrefixUser All user keys in the key/value store are prefixed by this keys to distinguish them from keys that have other purposes
+	KeyPrefixUser = iota + 1
+	//KeyPrefixDBSettings is used for entries related to database settings
+	KeyPrefixDBSettings
+)
+
+var startedAt time.Time
+
+var immudbTextLogo = " _                               _ _     \n" +
+	"(_)                             | | |    \n" +
+	" _ _ __ ___  _ __ ___  _   _  __| | |__  \n" +
+	"| | '_ ` _ \\| '_ ` _ \\| | | |/ _` | '_ \\ \n" +
+	"| | | | | | | | | | | | |_| | (_| | |_) |\n" +
+	"|_|_| |_| |_|_| |_| |_|\\__,_|\\__,_|_.__/ \n"
+
+// Initialize initializes dependencies, set up multi database capabilities and stats
+func (s *ImmuServer) Initialize() error {
+	// Print to stdout in case of text logger, or in case logs are being written to file
+	// This is to avoid mixing text output with json in case the log output is piped
+	if (s.Options.IsJSONLogger() && s.Options.IsFileLogger()) || !s.Options.IsJSONLogger() {
+		fmt.Fprintf(os.Stdout, "\n%s\n%s\n%s\n\n", immudbTextLogo, version.VersionStr(), s.Options)
+	}
+
+	// Print the logo to the file in case of a text output only
+	if s.Options.IsJSONLogger() {
+		s.Logger.Infof("\n%s\n%s\n\n", version.VersionStr(), s.Options)
+	} else if s.Options.IsFileLogger() {
+		s.Logger.Infof("\n%s\n%s\n%s\n\n", immudbTextLogo, version.VersionStr(), s.Options)
+	}
+
+	// Alert the user to certificates that are either expired or approaching expiration
+	s.checkTLSCerts()
+
+	if s.Options.GetMaintenance() && s.Options.GetAuth() {
+		return ErrAuthMustBeDisabled
+	}
+
+	adminPassword, err := auth.DecodeBase64Password(s.Options.AdminPassword)
+	if err != nil {
+		return logErr(s.Logger, "%v", err)
+	}
+
+	if len(adminPassword) == 0 {
+		s.Logger.Errorf(ErrEmptyAdminPassword.Error())
+		return ErrEmptyAdminPassword
+	}
+
+	dataDir := s.Options.Dir
+	err = os.MkdirAll(dataDir, store.DefaultFileMode)
+	if err != nil {
+		return logErr(s.Logger, "Unable to create data dir: %v", err)
+	}
+
+	systemDbRootDir := s.OS.Join(dataDir, s.Options.GetDefaultDBName())
+
+	if s.UUID, err = getOrSetUUID(dataDir, systemDbRootDir, s.Options.RemoteStorageOptions.S3ExternalIdentifier); err != nil {
+		return logErr(s.Logger, "Unable to get or set uuid: %v", err)
+	}
+
+	s.remoteStorage, err = s.createRemoteStorageInstance()
+	if err != nil {
+		return logErr(s.Logger, "Unable to open remote storage: %v", err)
+	}
+
+	err = s.initializeRemoteStorage(s.remoteStorage)
+	if err != nil {
+		return logErr(s.Logger, "unable to initialize remote storage: %v", err)
+	}
+
+	// NOTE: MaxActiveDatabases might have changed since the server instance was created
+	s.dbList.Resize(s.Options.MaxActiveDatabases)
+
+	if err = s.loadSystemDatabase(dataDir, s.remoteStorage, adminPassword, s.Options.ForceAdminPassword); err != nil {
+		return logErr(s.Logger, "unable to load system database: %v", err)
+	}
+
+	if err = s.loadDefaultDatabase(dataDir, s.remoteStorage); err != nil {
+		return logErr(s.Logger, "unable to load default database: %v", err)
+	}
+
+	defaultDB, _ := s.dbList.GetByIndex(defaultDbIndex)
+
+	dbSize, _ := defaultDB.TxCount()
+	if dbSize <= 1 {
+		s.Logger.Infof("started with an empty default database")
+	}
+
+	if s.sysDB.IsReplica() {
+		s.Logger.Infof("recovery mode. Only '%s' and '%s' databases are loaded", SystemDBName, DefaultDBName)
+	} else {
+		if err = s.loadUserDatabases(dataDir, s.remoteStorage); err != nil {
+			return logErr(s.Logger, "unable load databases: %v", err)
+		}
+	}
+
+	s.multidbmode = s.mandatoryAuth()
+	if !s.Options.GetAuth() && s.multidbmode {
+		return ErrAuthMustBeEnabled
+	}
+
+	s.SessManager, err = sessions.NewManager(s.Options.SessionsOptions)
+	if err != nil {
+		return err
+	}
+
+	grpcSrvOpts := []grpc.ServerOption{}
+	if s.Options.TLSConfig != nil {
+		grpcSrvOpts = []grpc.ServerOption{grpc.Creds(credentials.NewTLS(s.Options.TLSConfig))}
+	}
+
+	if s.Options.SigningKey != "" {
+		if signer, err := signer.NewSigner(s.Options.SigningKey); err != nil {
+			return logErr(s.Logger, "unable to configure the cryptographic signer: %v", err)
+		} else {
+			s.StateSigner = NewStateSigner(signer)
+		}
+	}
+
+	if s.Options.usingCustomListener {
+		s.Logger.Infof("using custom listener")
+		s.Listener = s.Options.listener
+	} else {
+		s.Listener, err = net.Listen(s.Options.Network, s.Options.Bind())
+		if err != nil {
+			return logErr(s.Logger, "immudb unable to listen: %v", err)
+		}
+	}
+
+	if s.remoteStorage != nil {
+		err := s.updateRemoteUUID(s.remoteStorage)
+		if err != nil {
+			return logErr(s.Logger, "unable to persist uuid on the remote storage: %v", err)
+		}
+	}
+
+	auth.AuthEnabled = s.Options.GetAuth()
+	auth.DevMode = s.Options.DevMode
+	auth.UpdateMetrics = func(ctx context.Context) { Metrics.UpdateClientMetrics(ctx) }
+
+	if err = s.setupPidFile(); err != nil {
+		return err
+	}
+
+	if s.Options.StreamChunkSize < stream.MinChunkSize {
+		return errors.New(stream.ErrChunkTooSmall).WithCode(errors.CodInvalidParameterValue)
+	}
+
+	//===> !NOTE: See Histograms section here:
+	// https://github.com/grpc-ecosystem/go-grpc-prometheus
+	// TL;DR:
+	// Prometheus histograms are a great way to measure latency distributions of
+	// your RPCs. However, since it is bad practice to have metrics of high
+	// cardinality the latency monitoring metrics are disabled by default. To
+	// enable them the following has to be called during initialization code:
+	if !s.Options.NoHistograms {
+		grpc_prometheus.EnableHandlingTimeHistogram()
+	}
+	//<===
+
+	uuidContext := NewUUIDContext(s.UUID)
+
+	uis := []grpc.UnaryServerInterceptor{
+		ErrorMapper, // converts errors in gRPC ones. Need to be the first
+		s.AccessLogInterceptor,
+		s.KeepAliveSessionInterceptor,
+		uuidContext.UUIDContextSetter,
+		grpc_prometheus.UnaryServerInterceptor,
+		auth.ServerUnaryInterceptor,
+		s.SessionAuthInterceptor,
+		s.InjectRequestMetadataUnaryInterceptor,
+	}
+	sss := []grpc.StreamServerInterceptor{
+		ErrorMapperStream, // converts errors in gRPC ones. Need to be the first
+		s.AccessLogStreamInterceptor,
+		s.KeepALiveSessionStreamInterceptor,
+		uuidContext.UUIDStreamContextSetter,
+		grpc_prometheus.StreamServerInterceptor,
+		auth.ServerStreamInterceptor,
+		s.InjectRequestMetadataStreamInterceptor,
+	}
+
+	grpcSrvOpts = append(
+		grpcSrvOpts,
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(uis...)),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(sss...)),
+		grpc.MaxRecvMsgSize(s.Options.MaxRecvMsgSize),
+	)
+
+	s.GrpcServer = grpc.NewServer(grpcSrvOpts...)
+	if s.Options.GRPCReflectionServerEnabled {
+		reflection.Register(s.GrpcServer)
+	}
+
+	schema.RegisterImmuServiceServer(s.GrpcServer, s)
+	protomodel.RegisterDocumentServiceServer(s.GrpcServer, s)
+	protomodel.RegisterAuthorizationServiceServer(s.GrpcServer, &authenticationServiceImp{server: s})
+	grpc_prometheus.Register(s.GrpcServer)
+
+	if s.Options.PgsqlServer {
+		s.PgsqlSrv = pgsqlsrv.New(
+			pgsqlsrv.Host(s.Options.Address),
+			pgsqlsrv.Port(s.Options.PgsqlServerPort),
+			pgsqlsrv.ImmudbPort(s.Listener.Addr().(*net.TCPAddr).Port),
+			pgsqlsrv.TLSConfig(s.Options.TLSConfig),
+			pgsqlsrv.Logger(s.Logger),
+			pgsqlsrv.DatabaseList(s.dbList),
+			pgsqlsrv.LogRequestMetadata(s.Options.LogRequestMetadata),
+		)
+
+		if err = s.PgsqlSrv.Initialize(); err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func (s *ImmuServer) checkTLSCerts() {
+	if s.Options.TLSConfig == nil {
+		return
+	}
+
+	now := time.Now()
+	for _, cert := range s.Options.TLSConfig.Certificates {
+		if len(cert.Certificate) == 0 {
+			s.Logger.Errorf("tls config contains an invalid certificate")
+			continue
+		}
+
+		x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
+		if err != nil {
+			s.Logger.Errorf("could not parse certificate: %s", err)
+			continue
+		}
+
+		if now.Before(x509Cert.NotBefore) || now.After(x509Cert.NotAfter) {
+			s.Logger.Warningf("certificate with serial number %s is expired", x509Cert.SerialNumber.String())
+		} else if !now.Before(x509Cert.NotAfter.Add(-30 * 24 * time.Hour)) {
+			s.Logger.Warningf("certificate with serial number %s is about to expire: %s left", x509Cert.SerialNumber.String(), x509Cert.NotAfter.Sub(now).String())
+		}
+	}
+}
+
+// Start starts the immudb server
+// Loads and starts the System DB, default db and user db
+func (s *ImmuServer) Start() (err error) {
+	s.mux.Lock()
+	s.pgsqlMux.Lock()
+
+	startedAt = time.Now()
+
+	if s.Options.MetricsServer {
+		s.metricsServer = StartMetrics(
+			1*time.Minute,
+			s.Options.MetricsBind(),
+			s.Options.TLSConfig,
+			s.Logger,
+			s.metricFuncServerUptimeCounter,
+			s.metricFuncComputeDBSizes,
+			s.metricFuncComputeDBEntries,
+			s.metricFuncComputeLoadedDBSize,
+			s.metricFuncComputeSessionCount,
+			s.Options.PProf)
+
+		defer func() {
+			if err := s.metricsServer.Close(); err != nil {
+				s.Logger.Errorf("failed to shutdown metric server: %s", err)
+			}
+		}()
+	}
+
+	s.installShutdownHandler()
+
+	go func() {
+		if err := s.GrpcServer.Serve(s.Listener); err != nil {
+			s.mux.Unlock()
+			log.Fatal(err)
+		}
+	}()
+
+	if err = s.SessManager.StartSessionsGuard(); err != nil {
+		log.Fatal(err)
+	}
+	s.Logger.Infof("sessions guard started")
+
+	if s.Options.PgsqlServer {
+		go func() {
+			s.Logger.Infof("pgsql server is running at port %d", s.Options.PgsqlServerPort)
+			if err := s.PgsqlSrv.Serve(); err != nil {
+				s.pgsqlMux.Unlock()
+				log.Fatal(err)
+			}
+		}()
+	}
+
+	if s.Options.WebServer {
+		if err := s.setUpWebServer(context.Background()); err != nil {
+			log.Fatalf("failed to setup web API/console server: %v", err)
+		}
+		defer func() {
+			if err := s.webServer.Close(); err != nil {
+				s.Logger.Errorf("failed to shutdown web API/console server: %s", err)
+			}
+		}()
+	}
+
+	go s.printUsageCallToAction()
+
+	s.mux.Unlock()
+	s.pgsqlMux.Unlock()
+	<-s.quit
+
+	return err
+}
+
+func logErr(log logger.Logger, formattedMessage string, err error) error {
+	if err != nil {
+		log.Errorf(formattedMessage, err)
+	}
+	return err
+}
+
+func (s *ImmuServer) setupPidFile() error {
+	var err error
+	if s.Options.Pidfile != "" {
+		if s.Pid, err = NewPid(s.Options.Pidfile, s.OS); err != nil {
+			return logErr(s.Logger, "failed to write pidfile: %s", err)
+		}
+	}
+	return err
+}
+
+func (s *ImmuServer) setUpWebServer(ctx context.Context) error {
+	server, err := startWebServer(
+		ctx,
+		s.Options.Bind(),
+		s.Options.WebBind(),
+		s.Options.TLSConfig,
+		s,
+		s.Logger,
+	)
+	if err != nil {
+		return err
+	}
+	s.webServer = server
+	return nil
+}
+
+func (s *ImmuServer) printUsageCallToAction() {
+	time.Sleep(200 * time.Millisecond)
+	immuadminCLI := helper.Blue + "immuadmin" + helper.Green
+	immuclientCLI := helper.Blue + "immuclient" + helper.Green
+	defaultUsername := helper.Blue + auth.SysAdminUsername + helper.Green
+
+	// Print to stdout in case of text logger, or in case logs are being written to file
+	// This is to avoid mixing text output with json in case the log output is piped
+	if (s.Options.IsJSONLogger() && s.Options.IsFileLogger()) || !s.Options.IsJSONLogger() {
+		fmt.Fprintf(os.Stdout,
+			"%syou can now use %s and %s CLIs to login with the %s superadmin user and start using immudb.%s\n",
+			helper.Green, immuadminCLI, immuclientCLI, defaultUsername, helper.Reset)
+	}
+
+	if s.Options.IsFileLogger() {
+		s.Logger.Infof(
+			"you can now use immuadmin and immuclient CLIs to login with the %s superadmin user and start using immudb.\n",
+			auth.SysAdminUsername)
+	}
+}
+
+func (s *ImmuServer) resetAdminPassword(ctx context.Context, adminPassword string) (bool, error) {
+	if s.sysDB.IsReplica() {
+		return false, errors.New("database is running as a replica")
+	}
+
+	adminUser, err := s.getUser(ctx, []byte(auth.SysAdminUsername))
+	if err != nil {
+		return false, fmt.Errorf("could not read sysadmin user data: %v", err)
+	}
+
+	err = adminUser.ComparePasswords([]byte(adminPassword))
+	if err == nil {
+		// Password is as expected, do not overwrite it to avoid unnecessary
+		// transactions in systemdb
+		return false, nil
+	}
+
+	_, err = adminUser.SetPassword([]byte(adminPassword))
+	if err != nil {
+		return false, err
+	}
+
+	err = s.saveUser(ctx, adminUser)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (s *ImmuServer) loadSystemDatabase(
+	dataDir string,
+	remoteStorage remotestorage.Storage,
+	adminPassword string,
+	forceAdminPasswordReset bool,
+) error {
+	if s.dbList.Length() != 0 {
+		panic("loadSystemDatabase should be called before any other database loading")
+	}
+
+	dbOpts, err := s.loadDBOptions(s.Options.GetSystemAdminDBName(), false)
+	if err != nil {
+		return fmt.Errorf("%w: while loading '%s' database settings", err, s.Options.GetSystemAdminDBName())
+	}
+
+	systemDBRootDir := s.OS.Join(dataDir, s.Options.GetSystemAdminDBName())
+	_, err = s.OS.Stat(systemDBRootDir)
+	if err == nil {
+		s.sysDB, err = database.OpenDB(dbOpts.Database, s.multidbHandler(), s.databaseOptionsFrom(dbOpts), s.Logger)
+		if err != nil {
+			s.Logger.Errorf("database '%s' was not correctly initialized.\n"+"Use replication to recover from external source or start without data folder.", dbOpts.Database)
+			return err
+		}
+
+		if forceAdminPasswordReset {
+			changed, err := s.resetAdminPassword(context.Background(), adminPassword)
+			if err != nil {
+				s.Logger.Errorf("can not reset admin password, %v", err)
+				return ErrCantUpdateAdminPassword
+			}
+
+			if changed {
+				s.Logger.Warningf("admin password was reset to the value specified in options")
+			} else {
+				s.Logger.Infof("admin password update was not needed")
+			}
+
+		} else if adminPassword != auth.SysAdminPassword {
+			// Add warning that the password is not changed even though manually specified
+			user, err := s.getUser(context.Background(), []byte(auth.SysAdminUsername))
+			if err != nil {
+				s.Logger.Errorf("can not validate admin user: %v", err)
+				return err
+			}
+			err = user.ComparePasswords([]byte(adminPassword))
+			if err != nil {
+				s.Logger.Warningf(
+					"admin password was not updated, " +
+						"use the force-admin-password option to forcibly reset it",
+				)
+			}
+		}
+
+		if dbOpts.isReplicatorRequired() {
+			err = s.startReplicationFor(s.sysDB, dbOpts)
+			if err != nil {
+				s.Logger.Errorf("error starting replication for database '%s'. Reason: %v", s.sysDB.GetName(), err)
+			}
+		}
+
+		return nil
+	}
+
+	if !s.OS.IsNotExist(err) {
+		return err
+	}
+
+	s.sysDB, err = database.NewDB(dbOpts.Database, s.multidbHandler(), s.databaseOptionsFrom(dbOpts), s.Logger)
+	if err != nil {
+		return err
+	}
+
+	//sys admin can have an empty array of databases as it has full access
+	if !s.sysDB.IsReplica() {
+		s.sysDB.SetSyncReplication(false)
+
+		adminUsername, _, err := s.insertNewUser(context.Background(), []byte(auth.SysAdminUsername), []byte(adminPassword), auth.PermissionSysAdmin, "*", "")
+		if err != nil {
+			return logErr(s.Logger, "%v", err)
+		}
+
+		if s.Options.ReplicationOptions.SyncReplication {
+			s.sysDB.SetSyncReplication(true)
+		}
+
+		s.Logger.Infof("admin user '%s' successfully created", adminUsername)
+	}
+
+	if dbOpts.isReplicatorRequired() {
+		err = s.startReplicationFor(s.sysDB, dbOpts)
+		if err != nil {
+			s.Logger.Errorf("error starting replication for database '%s'. Reason: %v", s.sysDB.GetName(), err)
+		}
+	}
+
+	return nil
+}
+
+// loadDefaultDatabase
+func (s *ImmuServer) loadDefaultDatabase(dataDir string, remoteStorage remotestorage.Storage) error {
+	if s.dbList.Length() != 0 {
+		panic("loadDefaultDatabase should be called right after loading systemDatabase")
+	}
+
+	dbOpts, err := s.loadDBOptions(s.Options.GetDefaultDBName(), false)
+	if err != nil {
+		return fmt.Errorf("%w: while loading '%s' database settings", err, s.Options.GetDefaultDBName())
+	}
+
+	defaultDbRootDir := s.OS.Join(dataDir, s.Options.GetDefaultDBName())
+
+	_, err = s.OS.Stat(defaultDbRootDir)
+	if err == nil {
+		db := s.dbList.Put(dbOpts.Database, s.databaseOptionsFrom(dbOpts))
+
+		if dbOpts.isReplicatorRequired() {
+			err = s.startReplicationFor(db, dbOpts)
+			if err != nil {
+				s.Logger.Errorf("error starting replication for database '%s'. Reason: %v", db.GetName(), err)
+			}
+		}
+
+		return nil
+	}
+
+	if !s.OS.IsNotExist(err) {
+		return err
+	}
+
+	opts := s.databaseOptionsFrom(dbOpts)
+	os.MkdirAll(path.Join(opts.GetDBRootPath(), dbOpts.Database), os.ModePerm)
+
+	db := s.dbList.Put(dbOpts.Database, opts)
+
+	if dbOpts.isReplicatorRequired() {
+		err = s.startReplicationFor(db, dbOpts)
+		if err != nil {
+			s.Logger.Errorf("error starting replication for database '%s'. Reason: %v", db.GetName(), err)
+		}
+	}
+
+	return nil
+}
+
+func (s *ImmuServer) loadUserDatabases(dataDir string, remoteStorage remotestorage.Storage) error {
+	var dirs []string
+
+	//get first level sub directories of data dir
+	files, err := ioutil.ReadDir(s.Options.Dir)
+	if err != nil {
+		return err
+	}
+
+	for _, f := range files {
+		if !f.IsDir() ||
+			f.Name() == s.Options.GetSystemAdminDBName() ||
+			f.Name() == s.Options.GetDefaultDBName() ||
+			f.Name() == s.Options.LogDir {
+			continue
+		}
+
+		dirs = append(dirs, f.Name())
+	}
+
+	// load databases that are inside each directory
+	for _, val := range dirs {
+		//dbname is the directory name where it is stored
+		//path iteration above stores the directories as data/db_name
+		pathparts := strings.Split(val, string(filepath.Separator))
+		dbname := pathparts[len(pathparts)-1]
+
+		dbOpts, err := s.loadDBOptions(dbname, true)
+		if err != nil {
+			return err
+		}
+
+		s.logDBOptions(dbname, dbOpts)
+
+		var db database.DB
+		if dbOpts.Autoload.isEnabled() {
+			db = s.dbList.Put(dbname, s.databaseOptionsFrom(dbOpts))
+		} else {
+			s.Logger.Infof("database '%s' is closed (autoload is disabled)", dbname)
+			s.dbList.PutClosed(dbname, s.databaseOptionsFrom(dbOpts))
+			continue
+		}
+
+		if dbOpts.isReplicatorRequired() {
+			err = s.startReplicationFor(db, dbOpts)
+			if err != nil {
+				s.Logger.Errorf("error starting replication for database '%s'. Reason: %v", db.GetName(), err)
+			}
+		}
+
+		if dbOpts.isDataRetentionEnabled() {
+			err = s.startTruncatorFor(db, dbOpts)
+			if err != nil {
+				s.Logger.Errorf("error starting truncation for database '%s'. Reason: %v", db.GetName(), err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *ImmuServer) replicationInProgressFor(db string) bool {
+	s.replicationMutex.Lock()
+	defer s.replicationMutex.Unlock()
+
+	_, ok := s.replicators[db]
+	return ok
+}
+
+func (s *ImmuServer) startReplicationFor(db database.DB, dbOpts *dbOptions) error {
+	if !dbOpts.isReplicatorRequired() {
+		s.Logger.Infof("replication for database '%s' is not required.", db.GetName())
+		return ErrReplicatorNotNeeded
+	}
+
+	s.replicationMutex.Lock()
+	defer s.replicationMutex.Unlock()
+
+	replicatorOpts := replication.DefaultOptions().
+		WithPrimaryDatabase(dbOpts.PrimaryDatabase).
+		WithPrimaryHost(dbOpts.PrimaryHost).
+		WithPrimaryPort(dbOpts.PrimaryPort).
+		WithPrimaryUsername(dbOpts.PrimaryUsername).
+		WithPrimaryPassword(dbOpts.PrimaryPassword).
+		WithPrefetchTxBufferSize(dbOpts.PrefetchTxBufferSize).
+		WithReplicationCommitConcurrency(dbOpts.ReplicationCommitConcurrency).
+		WithAllowTxDiscarding(dbOpts.AllowTxDiscarding).
+		WithSkipIntegrityCheck(dbOpts.SkipIntegrityCheck).
+		WithWaitForIndexing(dbOpts.WaitForIndexing).
+		WithStreamChunkSize(s.Options.StreamChunkSize)
+
+	f, err := replication.NewTxReplicator(s.UUID, db, replicatorOpts, s.Logger)
+	if err != nil {
+		return err
+	}
+
+	err = f.Start()
+	if err != nil {
+		return err
+	}
+
+	s.replicators[db.GetName()] = f
+
+	return nil
+}
+
+func (s *ImmuServer) stopReplicationFor(db string) error {
+	s.replicationMutex.Lock()
+	defer s.replicationMutex.Unlock()
+
+	replicator, ok := s.replicators[db]
+	if !ok {
+		return ErrReplicationNotInProgress
+	}
+
+	err := replicator.Stop()
+	if err == replication.ErrAlreadyStopped {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	delete(s.replicators, db)
+
+	return nil
+}
+
+func (s *ImmuServer) stopReplication() {
+	s.replicationMutex.Lock()
+	defer s.replicationMutex.Unlock()
+
+	for db, f := range s.replicators {
+		err := f.Stop()
+		if err != nil {
+			s.Logger.Warningf("error stopping replication for '%s'. Reason: %v", db, err)
+		}
+	}
+}
+
+// Stop stops the immudb server
+func (s *ImmuServer) Stop() error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	s.Logger.Infof("stopping immudb:\n%v", s.Options)
+
+	defer func() { s.quit <- struct{}{} }()
+
+	if !s.Options.usingCustomListener {
+		s.GrpcServer.Stop()
+		defer func() { s.GrpcServer = nil }()
+	}
+
+	s.SessManager.StopSessionsGuard()
+
+	s.stopReplication()
+
+	s.stopTruncation()
+
+	return s.CloseDatabases()
+}
+
+// CloseDatabases closes all opened databases including the consinstency checker
+func (s *ImmuServer) CloseDatabases() error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	if err := s.dbList.CloseAll(ctx); err != nil {
+		return err
+	}
+
+	if s.sysDB != nil {
+		s.sysDB.Close()
+	}
+	return nil
+}
+
+func (s *ImmuServer) updateConfigItem(key string, newOrUpdatedLine string, unchanged func(string) bool) error {
+	configFilepath := s.Options.Config
+
+	if strings.TrimSpace(configFilepath) == "" {
+		return fmt.Errorf("config file does not exist")
+	}
+
+	configBytes, err := s.OS.ReadFile(configFilepath)
+	if err != nil {
+		return fmt.Errorf("error reading config file '%s'. Reason: %v", configFilepath, err)
+	}
+
+	configLines := strings.Split(string(configBytes), "\n")
+
+	write := false
+	for i, l := range configLines {
+		l = strings.TrimSpace(l)
+		if strings.HasPrefix(l, key+"=") || strings.HasPrefix(l, key+" =") {
+			kv := strings.Split(l, "=")
+			if unchanged(kv[1]) {
+				return fmt.Errorf("server config already has '%s'", newOrUpdatedLine)
+			}
+			configLines[i] = newOrUpdatedLine
+			write = true
+			break
+		}
+	}
+
+	if !write {
+		configLines = append(configLines, newOrUpdatedLine)
+	}
+
+	if err := s.OS.WriteFile(configFilepath, []byte(strings.Join(configLines, "\n")), 0644); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateAuthConfig is DEPRECATED
+func (s *ImmuServer) UpdateAuthConfig(ctx context.Context, req *schema.AuthConfig) (*empty.Empty, error) {
+	return nil, ErrNotSupported
+}
+
+// UpdateMTLSConfig is DEPRECATED
+func (s *ImmuServer) UpdateMTLSConfig(ctx context.Context, req *schema.MTLSConfig) (*empty.Empty, error) {
+	return nil, ErrNotSupported
+}
+
+// ServerInfo returns information about the server instance.
+func (s *ImmuServer) ServerInfo(ctx context.Context, req *schema.ServerInfoRequest) (*schema.ServerInfoResponse, error) {
+	dbSize, err := s.totalDBSize()
+	if err != nil {
+		return nil, err
+	}
+
+	numTransactions, err := s.numTransactions()
+	if err != nil {
+		return nil, err
+	}
+
+	return &schema.ServerInfoResponse{
+		Version:           version.Version,
+		StartedAt:         startedAt.Unix(),
+		NumTransactions:   int64(numTransactions),
+		NumDatabases:      int32(s.dbList.Length()),
+		DatabasesDiskSize: dbSize,
+	}, err
+}
+
+func (s *ImmuServer) numTransactions() (uint64, error) {
+	s.dbListMutex.Lock()
+	defer s.dbListMutex.Unlock()
+
+	var count uint64
+	for i := 0; i < s.dbList.Length(); i++ {
+		db, err := s.dbList.GetByIndex(i)
+		if err == database.ErrDatabaseNotExists {
+			continue
+		}
+		if err != nil {
+			return 0, err
+		}
+
+		state, err := db.CurrentState()
+		if err != nil {
+			return 0, err
+		}
+		count += state.TxId
+	}
+	return count, nil
+}
+
+func (s *ImmuServer) totalDBSize() (int64, error) {
+	s.dbListMutex.Lock()
+	defer s.dbListMutex.Unlock()
+
+	var size int64
+	for i := 0; i < s.dbList.Length(); i++ {
+		db, err := s.dbList.GetByIndex(i)
+		if err == database.ErrDatabaseNotExists {
+			continue
+		}
+		if err != nil {
+			return -1, err
+		}
+
+		dbName := db.GetName()
+		dbSize, err := dirSize(filepath.Join(s.Options.Dir, dbName))
+		if err != nil {
+			return -1, err
+		}
+		size += int64(dbSize)
+	}
+	return size, nil
+}
+
+// Health ...
+func (s *ImmuServer) Health(ctx context.Context, _ *empty.Empty) (*schema.HealthResponse, error) {
+	return &schema.HealthResponse{Status: true, Version: Version.Version}, nil
+}
+
+func (s *ImmuServer) installShutdownHandler() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-c
+		s.Logger.Infof("caught SIGTERM")
+		if err := s.Stop(); err != nil {
+			s.Logger.Errorf("shutdown error: %v", err)
+		}
+		s.Logger.Infof("shutdown completed")
+	}()
+}
+
+// CreateDatabase Create a new database instance
+func (s *ImmuServer) CreateDatabase(ctx context.Context, req *schema.Database) (*empty.Empty, error) {
+	if req == nil {
+		return nil, ErrIllegalArguments
+	}
+
+	_, err := s.CreateDatabaseV2(ctx, &schema.CreateDatabaseRequest{Name: req.DatabaseName})
+	if err != nil {
+		return nil, err
+	}
+
+	return &empty.Empty{}, nil
+}
+
+// CreateDatabaseWith Create a new database instance
+func (s *ImmuServer) CreateDatabaseWith(ctx context.Context, req *schema.DatabaseSettings) (*empty.Empty, error) {
+	if req == nil {
+		return nil, ErrIllegalArguments
+	}
+
+	_, err := s.CreateDatabaseV2(ctx, &schema.CreateDatabaseRequest{
+		Name:     req.DatabaseName,
+		Settings: dbSettingsToDBNullableSettings(req),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &empty.Empty{}, nil
+}
+
+// CreateDatabaseV2 Create a new database instance
+func (s *ImmuServer) CreateDatabaseV2(ctx context.Context, req *schema.CreateDatabaseRequest) (res *schema.CreateDatabaseResponse, err error) {
+	if req == nil {
+		return nil, ErrIllegalArguments
+	}
+
+	s.Logger.Infof("creating database '%s'...", req.Name)
+
+	defer func() {
+		if err == nil {
+			s.Logger.Infof("database '%s' successfully created", req.Name)
+		} else {
+			s.Logger.Infof("database '%s' could not be created. Reason: %v", req.Name, err)
+		}
+	}()
+
+	if s.Options.GetMaintenance() {
+		return nil, ErrNotAllowedInMaintenanceMode
+	}
+
+	if !s.Options.GetAuth() {
+		return nil, ErrAuthMustBeEnabled
+	}
+
+	_, user, err := s.getLoggedInUserdataFromCtx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not get loggedin user data")
+	}
+
+	if !user.IsSysAdmin {
+		return nil, fmt.Errorf("loggedin user does not have permissions for this operation")
+	}
+
+	if req.Name == s.Options.defaultDBName || req.Name == s.Options.systemAdminDBName {
+		return nil, ErrReservedDatabase
+	}
+
+	req.Name = strings.ToLower(req.Name)
+	if err = isValidDBName(req.Name); err != nil {
+		return nil, err
+	}
+
+	s.dbListMutex.Lock()
+	defer s.dbListMutex.Unlock()
+
+	// check if database exists
+	if s.dbList.GetId(req.Name) >= 0 {
+		if !req.IfNotExists {
+			return nil, database.ErrDatabaseAlreadyExists
+		}
+
+		dbOpts, err := s.loadDBOptions(req.Name, false)
+		if err != nil {
+			return nil, fmt.Errorf("%w: while loading database settings", err)
+		}
+
+		return &schema.CreateDatabaseResponse{
+			Name:           req.Name,
+			Settings:       dbOpts.databaseNullableSettings(),
+			AlreadyExisted: true,
+		}, nil
+	}
+
+	dbOpts := s.defaultDBOptions(req.Name, user.Username)
+
+	if req.Settings != nil {
+		err = s.overwriteWith(dbOpts, req.Settings, false)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = s.saveDBOptions(dbOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := s.databaseOptionsFrom(dbOpts)
+	os.MkdirAll(path.Join(opts.GetDBRootPath(), dbOpts.Database), os.ModePerm)
+	db := s.dbList.Put(dbOpts.Database, s.databaseOptionsFrom(dbOpts))
+
+	s.multidbmode = true
+
+	s.logDBOptions(db.GetName(), dbOpts)
+
+	err = s.startReplicationFor(db, dbOpts)
+	if err != nil && err != ErrReplicatorNotNeeded {
+		return nil, fmt.Errorf("%w: while starting replication", err)
+	}
+
+	err = s.startTruncatorFor(db, dbOpts)
+	if err != nil && err != ErrTruncatorNotNeeded {
+		return nil, fmt.Errorf("%w: while starting truncation", err)
+	}
+
+	return &schema.CreateDatabaseResponse{
+		Name:     req.Name,
+		Settings: dbOpts.databaseNullableSettings(),
+	}, nil
+}
+
+func (s *ImmuServer) LoadDatabase(ctx context.Context, req *schema.LoadDatabaseRequest) (res *schema.LoadDatabaseResponse, err error) {
+	if req == nil {
+		return nil, ErrIllegalArguments
+	}
+
+	s.Logger.Infof("loading database '%s'...", req.Database)
+
+	defer func() {
+		if err == nil {
+			s.Logger.Infof("database '%s' successfully loaded", req.Database)
+		} else {
+			s.Logger.Infof("database '%s' could not be loaded. Reason: %v", req.Database, err)
+		}
+	}()
+
+	if req.Database == s.Options.defaultDBName || req.Database == s.Options.systemAdminDBName {
+		return nil, ErrReservedDatabase
+	}
+
+	if !s.Options.GetAuth() {
+		return nil, ErrAuthMustBeEnabled
+	}
+
+	_, user, err := s.getLoggedInUserdataFromCtx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not get loggedin user data")
+	}
+
+	//if the requesting user has admin permission on this database
+	if (!user.IsSysAdmin) &&
+		(!user.HasPermission(req.Database, auth.PermissionAdmin)) {
+		return nil, fmt.Errorf("the database '%s' does not exist or you do not have admin permission on this database", req.Database)
+	}
+
+	s.dbListMutex.Lock()
+	defer s.dbListMutex.Unlock()
+
+	db, err := s.dbList.GetByName(req.Database)
+	if err != nil {
+		return nil, err
+	}
+
+	if !db.IsClosed() {
+		return nil, ErrDatabaseAlreadyLoaded
+	}
+
+	dbOpts, err := s.loadDBOptions(req.Database, false)
+	if err == store.ErrKeyNotFound {
+		return nil, fmt.Errorf("%w: while opening database '%s'", database.ErrDatabaseNotExists, req.Database)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("%w: while loading database settings", err)
+	}
+
+	s.dbList.Put(req.Database, s.databaseOptionsFrom(dbOpts))
+
+	if dbOpts.isReplicatorRequired() {
+		err = s.startReplicationFor(db, dbOpts)
+		if err != nil && err != ErrReplicatorNotNeeded {
+			return nil, fmt.Errorf("%w: while starting replication", err)
+		}
+	}
+
+	err = s.startTruncatorFor(db, dbOpts)
+	if err != nil && err != ErrTruncatorNotNeeded {
+		return nil, fmt.Errorf("%w: while starting truncation", err)
+	}
+
+	return &schema.LoadDatabaseResponse{
+		Database: req.Database,
+	}, nil
+}
+
+func (s *ImmuServer) UnloadDatabase(ctx context.Context, req *schema.UnloadDatabaseRequest) (res *schema.UnloadDatabaseResponse, err error) {
+	if req == nil {
+		return nil, ErrIllegalArguments
+	}
+
+	s.Logger.Infof("unloading database '%s'...", req.Database)
+
+	defer func() {
+		if err == nil {
+			s.Logger.Infof("database '%s' successfully unloaded", req.Database)
+		} else {
+			s.Logger.Infof("database '%s' could not be unloaded. Reason: %v", req.Database, err)
+		}
+	}()
+
+	if req.Database == s.Options.defaultDBName || req.Database == s.Options.systemAdminDBName {
+		return nil, ErrReservedDatabase
+	}
+
+	if !s.Options.GetAuth() {
+		return nil, ErrAuthMustBeEnabled
+	}
+
+	_, user, err := s.getLoggedInUserdataFromCtx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not get loggedin user data")
+	}
+
+	//if the requesting user has admin permission on this database
+	if (!user.IsSysAdmin) &&
+		(!user.HasPermission(req.Database, auth.PermissionAdmin)) {
+		return nil, fmt.Errorf("the database '%s' does not exist or you do not have admin permission on this database", req.Database)
+	}
+
+	s.dbListMutex.Lock()
+	defer s.dbListMutex.Unlock()
+
+	db, err := s.dbList.GetByName(req.Database)
+	if err != nil {
+		return nil, err
+	}
+
+	if db.IsClosed() {
+		return nil, store.ErrAlreadyClosed
+	}
+
+	dbOpts, err := s.loadDBOptions(req.Database, false)
+	if err != nil {
+		return nil, fmt.Errorf("%w: while reading database settings", err)
+	}
+
+	if dbOpts.isReplicatorRequired() {
+		err = s.stopReplicationFor(req.Database)
+		if err != nil && err != ErrReplicationNotInProgress {
+			return nil, fmt.Errorf("%w: while stopping replication", err)
+		}
+	}
+
+	if dbOpts.isDataRetentionEnabled() {
+		err = s.stopTruncatorFor(req.Database)
+		if err != nil && err != ErrTruncatorNotInProgress {
+			return nil, fmt.Errorf("%w: while stopping truncation", err)
+		}
+	}
+
+	err = db.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return &schema.UnloadDatabaseResponse{
+		Database: req.Database,
+	}, nil
+}
+
+func (s *ImmuServer) DeleteDatabase(ctx context.Context, req *schema.DeleteDatabaseRequest) (res *schema.DeleteDatabaseResponse, err error) {
+	if req == nil {
+		return nil, ErrIllegalArguments
+	}
+
+	s.Logger.Infof("deleting database '%s'...", req.Database)
+
+	defer func() {
+		if err == nil {
+			s.Logger.Infof("database '%s' successfully deleted", req.Database)
+		} else {
+			s.Logger.Infof("database '%s' could not be deleted. Reason: %v", req.Database, err)
+		}
+	}()
+
+	if !s.Options.GetAuth() {
+		return nil, ErrAuthMustBeEnabled
+	}
+
+	if req.Database == s.Options.defaultDBName || req.Database == s.Options.systemAdminDBName {
+		return nil, ErrReservedDatabase
+	}
+
+	_, user, err := s.getLoggedInUserdataFromCtx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not get loggedin user data")
+	}
+
+	//if the requesting user has admin permission on this database
+	if (!user.IsSysAdmin) &&
+		(!user.HasPermission(req.Database, auth.PermissionAdmin)) {
+		return nil, fmt.Errorf("the database '%s' does not exist or you do not have admin permission on this database", req.Database)
+	}
+
+	s.dbListMutex.Lock()
+	defer s.dbListMutex.Unlock()
+
+	db, err := s.dbList.Delete(req.Database)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.deleteDBOptionsFor(req.Database)
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.RemoveAll(db.Path())
+	if err != nil {
+		return nil, err
+	}
+
+	return &schema.DeleteDatabaseResponse{
+		Database: req.Database,
+	}, nil
+}
+
+// UpdateDatabase Updates database settings
+func (s *ImmuServer) UpdateDatabase(ctx context.Context, req *schema.DatabaseSettings) (*empty.Empty, error) {
+	if req == nil {
+		return nil, ErrIllegalArguments
+	}
+
+	_, err := s.UpdateDatabaseV2(ctx, &schema.UpdateDatabaseRequest{
+		Database: req.DatabaseName,
+		Settings: dbSettingsToDBNullableSettings(req),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &empty.Empty{}, nil
+}
+
+// UpdateDatabaseV2 Updates database settings
+func (s *ImmuServer) UpdateDatabaseV2(ctx context.Context, req *schema.UpdateDatabaseRequest) (res *schema.UpdateDatabaseResponse, err error) {
+	if req == nil {
+		return nil, ErrIllegalArguments
+	}
+
+	s.Logger.Infof("updating database settings for '%s'...", req.Database)
+
+	defer func() {
+		if err == nil {
+			s.Logger.Infof("database '%s' successfully updated", req.Database)
+		} else {
+			s.Logger.Infof("database '%s' could not be updated. Reason: %v", req.Database, err)
+		}
+	}()
+
+	if s.Options.GetMaintenance() {
+		return nil, ErrNotAllowedInMaintenanceMode
+	}
+
+	if !s.Options.GetAuth() {
+		return nil, ErrAuthMustBeEnabled
+	}
+
+	if req.Database == s.Options.defaultDBName || req.Database == s.Options.systemAdminDBName {
+		return nil, ErrReservedDatabase
+	}
+
+	_, user, err := s.getLoggedInUserdataFromCtx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not get loggedin user data")
+	}
+
+	//if the requesting user has admin permission on this database
+	if (!user.IsSysAdmin) &&
+		(!user.HasPermission(req.Database, auth.PermissionAdmin)) {
+		return nil, fmt.Errorf("the database '%s' does not exist or you do not have admin permission on this database", req.Database)
+	}
+
+	s.dbListMutex.Lock()
+	defer s.dbListMutex.Unlock()
+
+	dbOpts, err := s.loadDBOptions(req.Database, false)
+	if err == store.ErrKeyNotFound {
+		return nil, database.ErrDatabaseNotExists
+	}
+	if err != nil {
+		return nil, fmt.Errorf("%w: while loading database settings", err)
+	}
+
+	db, err := s.dbList.GetByName(req.Database)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Settings.ReplicationSettings != nil && !db.IsClosed() {
+		err = s.stopReplicationFor(req.Database)
+		if err != nil && err != ErrReplicationNotInProgress {
+			return nil, fmt.Errorf("%w: while stopping replication", err)
+		}
+	}
+
+	if req.Settings.TruncationSettings != nil && !db.IsClosed() {
+		err = s.stopTruncatorFor(req.Database)
+		if err != nil && err != ErrTruncatorNotInProgress {
+			return nil, fmt.Errorf("%w: while stopping truncation", err)
+		}
+	}
+
+	err = s.overwriteWith(dbOpts, req.Settings, true)
+	if err != nil {
+		return nil, err
+	}
+
+	dbOpts.UpdatedBy = user.Username
+
+	err = s.saveDBOptions(dbOpts)
+	if err != nil {
+		return nil, fmt.Errorf("%w: while saving updated settings", err)
+	}
+
+	s.logDBOptions(db.GetName(), dbOpts)
+
+	if !db.IsClosed() {
+		db.AsReplica(dbOpts.Replica, dbOpts.SyncReplication, dbOpts.SyncAcks)
+	}
+
+	if req.Settings.ReplicationSettings != nil && !db.IsClosed() {
+		err = s.startReplicationFor(db, dbOpts)
+		if err != nil && err != ErrReplicatorNotNeeded {
+			return nil, fmt.Errorf("%w: while staring replication", err)
+		}
+	}
+
+	if req.Settings.TruncationSettings != nil && !db.IsClosed() {
+		err = s.startTruncatorFor(db, dbOpts)
+		if err != nil && err != ErrTruncatorNotNeeded {
+			return nil, fmt.Errorf("%w: while starting truncation", err)
+		}
+	}
+
+	return &schema.UpdateDatabaseResponse{
+		Database: req.Database,
+		Settings: dbOpts.databaseNullableSettings(),
+	}, nil
+}
+
+func (s *ImmuServer) GetDatabaseSettings(ctx context.Context, _ *empty.Empty) (*schema.DatabaseSettings, error) {
+	res, err := s.GetDatabaseSettingsV2(ctx, &schema.DatabaseSettingsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	ret := &schema.DatabaseSettings{
+		DatabaseName: res.Database,
+	}
+
+	if res.Settings.ReplicationSettings != nil {
+		if res.Settings.ReplicationSettings.Replica != nil {
+			ret.Replica = res.Settings.ReplicationSettings.Replica.Value
+		}
+		if res.Settings.ReplicationSettings.PrimaryDatabase != nil {
+			ret.PrimaryDatabase = res.Settings.ReplicationSettings.PrimaryDatabase.Value
+		}
+		if res.Settings.ReplicationSettings.PrimaryHost != nil {
+			ret.PrimaryHost = res.Settings.ReplicationSettings.PrimaryHost.Value
+		}
+		if res.Settings.ReplicationSettings.PrimaryPort != nil {
+			ret.PrimaryPort = res.Settings.ReplicationSettings.PrimaryPort.Value
+		}
+		if res.Settings.ReplicationSettings.PrimaryUsername != nil {
+			ret.PrimaryUsername = res.Settings.ReplicationSettings.PrimaryUsername.Value
+		}
+		if res.Settings.ReplicationSettings.PrimaryPassword != nil {
+			ret.PrimaryPassword = res.Settings.ReplicationSettings.PrimaryPassword.Value
+		}
+	}
+
+	if res.Settings.FileSize != nil {
+		ret.FileSize = res.Settings.FileSize.Value
+	}
+	if res.Settings.MaxKeyLen != nil {
+		ret.MaxKeyLen = res.Settings.MaxKeyLen.Value
+	}
+	if res.Settings.MaxValueLen != nil {
+		ret.MaxValueLen = res.Settings.MaxValueLen.Value
+	}
+	if res.Settings.MaxTxEntries != nil {
+		ret.MaxTxEntries = res.Settings.MaxTxEntries.Value
+	}
+	if res.Settings.ExcludeCommitTime != nil {
+		ret.ExcludeCommitTime = res.Settings.ExcludeCommitTime.Value
+	}
+
+	return ret, nil
+}
+
+func (s *ImmuServer) GetDatabaseSettingsV2(ctx context.Context, _ *schema.DatabaseSettingsRequest) (*schema.DatabaseSettingsResponse, error) {
+	db, err := s.getDBFromCtx(ctx, "DatabaseSettings")
+	if err != nil {
+		return nil, err
+	}
+
+	dbOpts, err := s.loadDBOptions(db.GetName(), false)
+	if err != nil {
+		return nil, err
+	}
+
+	return &schema.DatabaseSettingsResponse{
+		Database: db.GetName(),
+		Settings: dbOpts.databaseNullableSettings(),
+	}, nil
+}
+
+// DatabaseList returns a list of databases based on the requesting user permissions
+func (s *ImmuServer) DatabaseList(ctx context.Context, _ *empty.Empty) (*schema.DatabaseListResponse, error) {
+	dbsWithSettings, err := s.DatabaseListV2(ctx, &schema.DatabaseListRequestV2{})
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &schema.DatabaseListResponse{}
+	if len(dbsWithSettings.Databases) > 0 {
+		resp.Databases = make([]*schema.Database, len(dbsWithSettings.Databases))
+	}
+
+	for i, db := range dbsWithSettings.Databases {
+		resp.Databases[i] = &schema.Database{DatabaseName: db.Name}
+	}
+	return resp, nil
+}
+
+// DatabaseList returns a list of databases based on the requesting user permissions
+func (s *ImmuServer) DatabaseListV2(ctx context.Context, req *schema.DatabaseListRequestV2) (*schema.DatabaseListResponseV2, error) {
+	if !s.Options.GetAuth() {
+		return nil, fmt.Errorf("this command is available only with authentication on")
+	}
+
+	resp := &schema.DatabaseListResponseV2{}
+
+	databases, err := s.listLoggedInUserDatabases(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, db := range databases {
+		dbName := db.GetName()
+
+		dbOpts, err := s.loadDBOptions(dbName, false)
+		if err != nil {
+			return nil, err
+		}
+
+		size, err := dirSize(filepath.Join(s.Options.Dir, dbName))
+		if err != nil {
+			return nil, err
+		}
+
+		state, err := db.CurrentState()
+		if err != nil {
+			return nil, err
+		}
+
+		info := &schema.DatabaseInfo{
+			Name:            db.GetName(),
+			Settings:        dbOpts.databaseNullableSettings(),
+			Loaded:          !db.IsClosed(),
+			DiskSize:        uint64(size),
+			NumTransactions: state.TxId,
+			CreatedAt:       uint64(dbOpts.CreatedAt.Unix()),
+			CreatedBy:       dbOpts.CreatedBy,
+		}
+		resp.Databases = append(resp.Databases, info)
+	}
+	return resp, nil
+}
+
+func (s *ImmuServer) listLoggedInUserDatabases(ctx context.Context) ([]database.DB, error) {
+	_, loggedInuser, err := s.getLoggedInUserdataFromCtx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("please login")
+	}
+
+	databases := make([]database.DB, 0, s.dbList.Length())
+	if loggedInuser.IsSysAdmin || s.Options.GetMaintenance() {
+		for i := 0; i < s.dbList.Length(); i++ {
+			db, err := s.dbList.GetByIndex(i)
+			if err == database.ErrDatabaseNotExists {
+				continue
+			}
+			if err != nil {
+				return nil, err
+			}
+			databases = append(databases, db)
+		}
+	} else {
+		for _, perm := range loggedInuser.Permissions {
+			db, err := s.dbList.GetByName(perm.Database)
+			if err == database.ErrDatabaseNotExists {
+				continue
+			}
+			if err != nil {
+				return nil, err
+			}
+			databases = append(databases, db)
+		}
+	}
+	return databases, nil
+}
+
+// UseDatabase ...
+func (s *ImmuServer) UseDatabase(ctx context.Context, req *schema.Database) (*schema.UseDatabaseReply, error) {
+	if req == nil {
+		return nil, ErrIllegalArguments
+	}
+
+	user := &auth.User{}
+	var err error
+
+	if s.Options.GetAuth() {
+		_, user, err = s.getLoggedInUserdataFromCtx(ctx)
+		if err != nil {
+			if strings.HasPrefix(fmt.Sprintf("%s", err), "token has expired") {
+				return nil, status.Error(codes.PermissionDenied, err.Error())
+			}
+			return nil, status.Errorf(codes.Unauthenticated, "Please login")
+		}
+	} else {
+		if !s.Options.GetMaintenance() {
+			return nil, fmt.Errorf("this command is available only with authentication on")
+		}
+
+		user.IsSysAdmin = true
+		user.Username = ""
+		s.addUserToLoginList(user)
+	}
+
+	dbid := sysDBIndex
+	db := s.sysDB
+
+	if req.DatabaseName != SystemDBName {
+		//check if database exists
+		dbid = s.dbList.GetId(req.DatabaseName)
+		if dbid < 0 {
+			return nil, errors.New(fmt.Sprintf("'%s' does not exist", req.DatabaseName)).WithCode(errors.CodInvalidDatabaseName)
+		}
+
+		db, err = s.dbList.GetByIndex(dbid)
+		if err != nil {
+			return nil, err
+		}
+
+		if db.IsClosed() {
+			return nil, store.ErrAlreadyClosed
+		}
+	}
+
+	//check if this user has permission on this database
+	//if sysadmin allow to continue
+	if (!user.IsSysAdmin) &&
+		(!user.HasPermission(req.DatabaseName, auth.PermissionAdmin)) &&
+		(!user.HasPermission(req.DatabaseName, auth.PermissionR)) &&
+		(!user.HasPermission(req.DatabaseName, auth.PermissionRW)) {
+
+		return nil, status.Errorf(codes.PermissionDenied, "Logged in user does not have permission on this database")
+	}
+
+	token, err := auth.GenerateToken(*user, int64(dbid), s.Options.TokenExpiryTimeMin)
+	if err != nil {
+		return nil, err
+	}
+
+	if auth.GetAuthTypeFromContext(ctx) == auth.SessionAuth {
+		sessionID, err := sessions.GetSessionIDFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		sess, err := s.SessManager.GetSession(sessionID)
+		if err != nil {
+			return nil, err
+		}
+		sess.SetDatabase(db)
+	}
+
+	return &schema.UseDatabaseReply{
+		Token: token,
+	}, nil
+}
+
+// getDBFromCtx checks if user (loggedin from context) has access to methodName.
+// returns selected database
+func (s *ImmuServer) getDBFromCtx(ctx context.Context, methodName string) (database.DB, error) {
+	//if auth is disabled and there is not user created databases returns defaultdb
+	if !s.Options.auth && !s.multidbmode && !s.Options.GetMaintenance() {
+		db, _ := s.dbList.GetByIndex(defaultDbIndex)
+		return db, nil
+	}
+
+	if s.Options.GetMaintenance() && !auth.IsMaintenanceMethod(methodName) {
+		return nil, ErrNotAllowedInMaintenanceMode
+	}
+
+	ind, usr, err := s.getLoggedInUserdataFromCtx(ctx)
+	if err != nil {
+		if strings.HasPrefix(fmt.Sprintf("%s", err), "token has expired") {
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		}
+		if s.Options.GetMaintenance() && !s.Options.auth {
+			return nil, fmt.Errorf("please select database first")
+		}
+		return nil, err
+	}
+
+	if ind < 0 {
+		return nil, fmt.Errorf("please select a database first")
+	}
+
+	// systemdb is always read-only from external access
+	if ind == sysDBIndex && !auth.IsMaintenanceMethod(methodName) {
+		return nil, ErrPermissionDenied
+	}
+
+	var db database.DB
+
+	if ind == sysDBIndex {
+		db = s.sysDB
+	} else {
+		db, err = s.dbList.GetByIndex(ind)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if usr.IsSysAdmin {
+		return db, nil
+	}
+
+	if ok := auth.HasPermissionForMethod(usr.WhichPermission(db.GetName()), methodName); !ok {
+		return nil, ErrPermissionDenied
+	}
+
+	return db, nil
+}
+
+// isValidDBName checks if the provided database name meets the requirements
+func isValidDBName(dbName string) error {
+	if len(dbName) < 1 || len(dbName) > 128 {
+		return fmt.Errorf("database name length outside of limits")
+	}
+
+	var hasSpecial bool
+
+	for _, ch := range dbName {
+		switch {
+		case unicode.IsLower(ch):
+		case unicode.IsDigit(ch):
+		case ch == '_':
+		case unicode.IsPunct(ch) || unicode.IsSymbol(ch):
+			hasSpecial = true
+		default:
+			return fmt.Errorf("unrecognized character in database name")
+		}
+	}
+
+	if hasSpecial {
+		return fmt.Errorf("punctuation marks and symbols are not allowed in database name")
+	}
+
+	return nil
+}
+
+// checkMandatoryAuth checks if auth should be madatory for immudb to start
+func (s *ImmuServer) mandatoryAuth() bool {
+	if s.Options.GetMaintenance() {
+		return false
+	}
+
+	//check if there are user created databases, should be zero for auth to be off
+	if s.dbList.Length() > 1 {
+		return true
+	}
+
+	//check if there is only sysadmin on systemdb and no other user
+	itemList, err := s.sysDB.Scan(context.Background(), &schema.ScanRequest{
+		Prefix: []byte{KeyPrefixUser},
+	})
+
+	if err != nil {
+		s.Logger.Errorf("error getting users: %v", err)
+		return true
+	}
+
+	for _, val := range itemList.Entries {
+		if len(val.Key) > 2 {
+			if auth.SysAdminUsername != string(val.Key[1:]) {
+				//another user detected
+				return true
+			}
+		}
+	}
+
+	//systemdb exists but there are no other users created
+	return false
+}
+
+func (s *ImmuServer) TruncateDatabase(ctx context.Context, req *schema.TruncateDatabaseRequest) (res *schema.TruncateDatabaseResponse, err error) {
+	if req == nil {
+		return nil, ErrIllegalArguments
+	}
+
+	s.Logger.Infof("truncating database '%s'...", req.Database)
+
+	defer func() {
+		if err == nil {
+			s.Logger.Infof("database '%s' successfully truncated", req.Database)
+		} else {
+			s.Logger.Infof("database '%s' could not be truncated. Reason: %v", req.Database, err)
+		}
+	}()
+
+	if !s.Options.GetAuth() {
+		return nil, ErrAuthMustBeEnabled
+	}
+
+	if req.Database == s.Options.defaultDBName || req.Database == s.Options.systemAdminDBName {
+		return nil, ErrReservedDatabase
+	}
+
+	_, user, err := s.getLoggedInUserdataFromCtx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not get loggedin user data")
+	}
+
+	//if the requesting user has admin permission on this database
+	if (!user.IsSysAdmin) &&
+		(!user.HasPermission(req.Database, auth.PermissionAdmin)) {
+		return nil, fmt.Errorf("the database '%s' does not exist or you do not have admin permission on this database", req.Database)
+	}
+
+	if req.RetentionPeriod < 0 || (req.RetentionPeriod > 0 && req.RetentionPeriod < store.MinimumRetentionPeriod.Milliseconds()) {
+		return nil, fmt.Errorf(
+			"%w: invalid retention period for database '%s'. RetentionPeriod should at least '%v' hours",
+			ErrIllegalArguments, req.Database, store.MinimumRetentionPeriod)
+	}
+
+	s.dbListMutex.Lock()
+	defer s.dbListMutex.Unlock()
+
+	db, err := s.dbList.GetByName(req.Database)
+	if err != nil {
+		return nil, err
+	}
+
+	rp := time.Duration(req.RetentionPeriod) * time.Millisecond
+
+	// check if truncator already exists for the database
+	var t *truncator.Truncator
+
+	t, err = s.getTruncatorFor(db.GetName())
+	if err == ErrTruncatorDoesNotExist {
+		t = truncator.NewTruncator(db, rp, 0, s.Logger)
+	}
+
+	err = t.Truncate(ctx, rp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &schema.TruncateDatabaseResponse{
+		Database: req.Database,
+	}, nil
+}

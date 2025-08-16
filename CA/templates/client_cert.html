@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>CA 管理画面</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    p {
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #eee;
+    }
+    button {
+      padding: 5px 10px;
+      margin: 2px;
+      cursor: pointer;
+    }
+    #refresh {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CA 管理画面</h1>
+  <p>この画面は開発用です。証明書の一覧や状態確認、失効操作などを行います。</p>
+  <div style="text-align: center;">
+    <button id="refresh">証明書一覧を更新</button>
+  </div>
+  <table id="certTable">
+    <thead>
+      <tr>
+        <th>UUID</th>
+        <th>発行日時</th>
+        <th>有効期限</th>
+        <th>状態</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 証明書データがここに表示されます -->
+    </tbody>
+  </table>
+
+  <script>
+    const BASE_URL = 'http://localhost:6001';  // Flask側と合わせる
+
+    // 証明書一覧を取得してテーブルに表示する関数
+    function loadCertificates() {
+        fetch(`${BASE_URL}/list_cert`)
+        .then(response => response.json())
+        .then(data => {
+          const tbody = document.querySelector('#certTable tbody');
+          tbody.innerHTML = '';
+          data.forEach(cert => {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${cert.uuid}</td>
+              <td>${cert.issued_at || '-'}</td>
+              <td>${cert.valid_to || '-'}</td>
+              <td>${cert.revoked ? '失効済み' : '有効'}</td>
+              <td>
+                <button onclick="revokeCert('${cert.uuid}')">失効</button>
+                <button onclick="downloadCert('${cert.uuid}')">ダウンロード</button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        })
+        .catch(error => console.error('Error loading certificates:', error));
+    }
+
+    // 指定した UUID の証明書を失効する関数
+    function revokeCert(uuid) {
+      if (confirm("この証明書を失効しますか？")) {
+        fetch(`${BASE_URL}/revoke_cert`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uuid: uuid })
+        })
+        .then(response => response.json())
+        .then(data => {
+          alert('証明書が失効されました。');
+          loadCertificates();
+        })
+        .catch(error => {
+          console.error('Error revoking certificate:', error);
+          alert('証明書の失効に失敗しました。');
+        });
+      }
+    }
+
+    // 指定した UUID の証明書をダウンロードする関数
+    function downloadCert(uuid) {
+      window.open('/download_cert?uuid=' + uuid, '_blank');
+    }
+
+    // 初期ロード
+    loadCertificates();
+
+    // 更新ボタンのイベントハンドラ
+    document.getElementById('refresh').addEventListener('click', loadCertificates);
+  </script>
+</body>
+</html>

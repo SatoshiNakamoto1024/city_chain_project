@@ -1,0 +1,39 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_batcher\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "poh-batcher"
+version         = "0.1.0"
+description     = "Async ACK batch compressor for Proof‑of‑History"
+requires-python = ">=3.8"
+license         = {file = "LICENSE"}
+authors         = [{name = "CityChain Dev", email = "dev@example.com"}]
+dependencies    = [
+  "pydantic>=2.0",
+  "poh-ack>=0.1.0",
+  "rich>=13.7",
+  "PyYAML>=6.0",         # YAML parser
+  "watchfiles>=0.19.0",   # Async file watcher
+  "aiohttp>=3.8.0",      
+  "protobuf==5.27.0",          # ← ここで安全版に固定
+]
+
+[project.optional-dependencies]
+zstd = ["zstandard>=0.22"]
+dev  = ["pytest>=8", "pytest-asyncio>=1.0", "zstandard>=0.22,<1"]
+
+[project.scripts]
+poh-batcher = "poh_batcher.cli:main"
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["poh_batcher*"]
+
+[project.urls]
+"Source"        = "https://example.com/your-repo"
+"Bug Tracker"   = "https://example.com/your-repo/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["poh_batcher/tests"]

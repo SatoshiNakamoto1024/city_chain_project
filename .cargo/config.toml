@@ -1,0 +1,9 @@
+# D:\city_chain_project\.cargo\config.toml
+[build]
+target-dir = "target-release"   # <- debug 用と分離
+
+[profile.release]
+# LTO は prefer-dynamic と相性が悪いので off
+# lto = "thin"   <- コメントアウト
+codegen-units = 1
+opt-level     = "z"

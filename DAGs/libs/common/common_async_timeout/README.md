@@ -1,0 +1,1 @@
+common_async_timeout	②	cancellable timeout ラッパ

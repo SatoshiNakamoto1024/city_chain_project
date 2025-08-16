@@ -1,0 +1,1 @@
+io_storage_backup (1)	受信側 DB オフサイトバックアップ

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>財務諸表</title>
+</head>
+<body>
+    <h1>財務諸表 ({{ date.strftime('%Y-%m-%d') }})</h1>
+
+    <h2>貸借対照表</h2>
+    <table border="1">
+        <tr>
+            <th>科目</th>
+            <th>金額</th>
+        </tr>
+        <tr>
+            <td>資産合計</td>
+            <td>{{ financial_data['assets'] }}</td>
+        </tr>
+        <tr>
+            <td>負債合計</td>
+            <td>{{ financial_data['liabilities'] }}</td>
+        </tr>
+        <tr>
+            <td>純資産合計</td>
+            <td>{{ financial_data['equity'] }}</td>
+        </tr>
+    </table>
+
+    <h2>損益計算書</h2>
+    <table border="1">
+        <tr>
+            <th>科目</th>
+            <th>金額</th>
+        </tr>
+        <tr>
+            <td>収益合計</td>
+            <td>{{ financial_data['revenue'] }}</td>
+        </tr>
+        <tr>
+            <td>費用合計</td>
+            <td>{{ financial_data['expenses'] }}</td>
+        </tr>
+        <tr>
+            <td>純利益</td>
+            <td>{{ financial_data['net_profit'] }}</td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "complete": {
+    "asia": "mongodb+srv://satoshi:greg1024@asia.kzxnr.mongodb.net/?retryWrites=true&w=majority&appName=asia",
+    "europe": "mongodb+srv://satoshi:greg1024@europe.jedwh.mongodb.net/?retryWrites=true&w=majority&appName=europe",
+    "oceania": "mongodb+srv://satoshi:greg1024@oceania.hybzs.mongodb.net/?retryWrites=true&w=majority&appName=oceania",
+    "africa": "mongodb+srv://satoshi:greg1024@africa.vek6o.mongodb.net/?retryWrites=true&w=majority&appName=africa",
+    "northamerica": "mongodb+srv://satoshi:greg1024@northamerica.zej9p.mongodb.net/?retryWrites=true&w=majority&appName=northamerica",
+    "southamerica": "mongodb+srv://satoshi:greg1024@southamerica.7noxw.mongodb.net/?retryWrites=true&w=majority&appName=southamerica",
+    "antarctica": "mongodb+srv://satoshi:greg1024@antarctica.0rshi.mongodb.net/?retryWrites=true&w=majority&appName=antarctica",
+    "default": "mongodb+srv://satoshi:greg1024@default.ab4td.mongodb.net/?retryWrites=true&w=majority&appName=default"
+  }
+}

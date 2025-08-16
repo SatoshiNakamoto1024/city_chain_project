@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  MATURIN_OUTPUT_DIR: wheelhouse
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        rust-toolchain: ["stable"]
+
+    steps:
+    # 1. Checkout & cache
+    - uses: actions/checkout@v4
+
+    - name: Cache Cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-reg-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache Cargo build
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-${{ github.sha }}
+
+    # 2. Rust setup & test
+    - name: Install Rust
+      uses: actions/setup-rust@v1
+      with:
+        rust-version: ${{ matrix.rust-toolchain }}
+
+    - name: cargo fmt & clippy (lint)
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+      run: |
+        cargo fmt --all -- --check
+        cargo clippy --all-targets -- -D warnings
+
+    - name: cargo test
+      run: cargo test --all --verbose
+
+    # 3. Python setup & wheel build
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install build & test deps
+      run: |
+        python -m pip install --upgrade pip
+        pip install maturin pytest pytest-asyncio
+
+    - name: Build wheel with maturin (release)
+      run: maturin build --release --strip -o ${{ env.MATURIN_OUTPUT_DIR }}
+
+    - name: Install wheels
+      run: |
+        pip install ${{ env.MATURIN_OUTPUT_DIR }}/*.whl
+        pip install -e rvh_faultset_python
+
+    # 4. Python tests (Rust backend)
+    - name: pytest (Rust backend)
+      run: pytest rvh_faultset_python/rvh_faultset/tests -q
+
+    # 5. Python tests (pure-Python fallback)
+    - name: pytest (pure-Python fallback)
+      if: always()  # adjust/remove once env‐var support is wired up
+      shell: bash
+      run: |
+        export RVH_FAULTSET_FORCE_PYTHON=1
+        pytest rvh_faultset_python/rvh_faultset/tests -q
+
+    # 6. Upload wheels (optional)
+    - name: Upload wheel artifact
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+      uses: actions/upload-artifact@v4
+      with:
+        name: rvh_faultset-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: ${{ env.MATURIN_OUTPUT_DIR }}/*.whl

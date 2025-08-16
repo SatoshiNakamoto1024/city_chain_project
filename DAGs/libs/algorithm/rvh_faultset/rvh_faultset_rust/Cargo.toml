@@ -1,0 +1,44 @@
+# D:\city_chain_project\DAGs\libs\algorithm\rvh_faultset\rvh_faultset_rust\Cargo.toml
+[package]
+name        = "rvh_faultset_rust"
+version     = "0.1.0"
+edition     = "2021"
+license     = "Apache-2.0"
+description = "Latency-aware fault-set selection (Rust core + PyO3 async bindings)"
+repository  = "https://github.com/yourorg/rvh_faultset"
+
+[dependencies]
+thiserror   = "1.0"
+serde       = { version = "1.0", features = ["derive"] }
+rayon       = "1.10"
+
+# PyO3 0.25 + async runtimes (Tokio)
+tokio                   = { version = "1", features = ["rt-multi-thread", "macros"] }
+pyo3                   = { version = "0.25", features = ["extension-module", "anyhow"] }
+pyo3-async-runtimes    = { version = "0.25", features = ["tokio-runtime"] }
+
+# CLI / utils
+clap   = { version = "4.5", features = ["derive"] }
+indoc  = "1"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+walkdir    = "2.5"
+criterion = "0.4"
+pyo3         = { version = "0.25", features = ["auto-initialize"] }
+serde_json   = "1"
+
+[lib]
+name       = "rvh_faultset_rust"
+crate-type = ["cdylib", "rlib"]
+path       = "src/lib.rs"
+
+[[bin]]
+name = "main_faultset"
+path = "src/main_faultset.rs"
+
+[[bench]]
+name    = "bench_faultset"
+harness = false
+path    = "benches/bench_faultset.rs"

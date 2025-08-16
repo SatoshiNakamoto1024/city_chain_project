@@ -1,0 +1,35 @@
+# D:\city_chain_project\DAGs\libs\algorithm\poh_types\pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "poh_types"
+version         = "0.1.0"
+description = "Common data structures for Proof-of-Hold (PoH) transactions"
+authors         = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.8"
+dependencies = [
+  "aiofiles>=23.1.0",
+  "aiosqlite>=0.18.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+  "pytest-asyncio>=1.0",
+]
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["poh_types*"]
+
+[project.scripts]
+poh-types = "poh_types.cli:main"
+
+[project.urls]
+"Source"        = "https://example.com/your-repo"
+"Bug Tracker"   = "https://example.com/your-repo/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["poh_types/tests"]

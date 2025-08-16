@@ -1,0 +1,14 @@
+# Flask: Webアプリケーションフレームワーク
+Flask==3.1.0
+
+# pymongo: MongoDBと連携するためのPythonクライアント
+pymongo==4.3.3
+
+# grpcio: gRPCのPython実装
+grpcio==1.51.1
+
+# grpcio-tools: gRPC用のコード生成ツール
+grpcio-tools==1.51.1
+
+# protobuf: Protocol Buffersのライブラリ（grpcio-toolsが内部で使用）
+protobuf==4.21.6

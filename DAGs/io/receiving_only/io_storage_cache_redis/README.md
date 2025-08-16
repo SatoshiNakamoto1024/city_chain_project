@@ -1,0 +1,1 @@
+③	io_storage_cache_redis	Redis キャッシュ (Tx メタ・TTL)

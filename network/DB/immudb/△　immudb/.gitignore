@@ -1,0 +1,56 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+coverage.txt
+
+# Output of goyacc
+embedded/sql/y.output
+
+# Editor
+.vscode
+.idea
+*.iml
+*.swp
+
+# Environment
+.env
+
+# macOS
+.DS_Store
+
+# Binaries
+/immuclient
+/immuadmin
+/immutest
+/immudb
+/nimmu
+/bm
+/immutc
+
+/dist
+
+# Working files
+.root*
+immudb.pid
+/data
+
+# Vendor
+vendor
+
+# immudb auth
+immudb_pwd
+token
+token_admin
+
+swagger/dist
+swagger/swaggerembedded
+webconsole/webconsoleembedded

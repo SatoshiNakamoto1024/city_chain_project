@@ -1,0 +1,1 @@
+io_file_transport (1)	オフライン・ファイルバッチ送信

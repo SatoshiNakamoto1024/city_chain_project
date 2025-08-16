@@ -1,0 +1,33 @@
+<!-- templates/admin_reset_devices.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>管理者：全端末リセット</title>
+</head>
+<body>
+  <h1>管理者：全端末リセット</h1>
+  <form id="reset-form">
+    <label>ユーザーUUID：<input type="text" id="uuid" required></label>
+    <button type="submit">全失効</button>
+  </form>
+  <div id="result" style="margin-top:1em;"></div>
+  <script>
+    document.getElementById("reset-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const uuid = document.getElementById("uuid").value;
+      const res = await fetch("/admin/reset_devices", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("admin_jwt")}`
+        },
+        body: JSON.stringify({ uuid })
+      });
+      const data = await res.json();
+      document.getElementById("result").innerText =
+        res.ok ? "全端末を失効しました" : `Error: ${data.error}`;
+    });
+  </script>
+</body>
+</html>

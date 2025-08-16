@@ -1,0 +1,12 @@
+[
+  { "code": "75056", "name": "Paris" },
+  { "code": "78646", "name": "Versailles" },
+  { "code": "92012", "name": "Boulogne-Billancourt" },
+  { "code": "93066", "name": "Saint-Denis" },
+  { "code": "93002", "name": "Argenteuil" },
+  { "code": "93050", "name": "Montreuil" },
+  { "code": "92050", "name": "Nanterre" },
+  { "code": "94028", "name": "Créteil" },
+  { "code": "93001", "name": "Aubervilliers" },
+  { "code": "93005", "name": "Aulnay-sous-Bois" }
+]
