@@ -9,7 +9,7 @@ jobs:
   call-reusable:
     uses: ./.github/workflows/_release-images-reusable.yml
     with:
-      registry: ghcr.io/SatoshiNakamoto1024
+      registry: ghcr.io/satoshinakamoto1024
       version: ${{ github.ref_name }}
       http_target: poh_holdmetrics-http-svc
       grpc_target: poh_holdmetrics-grpc-svc

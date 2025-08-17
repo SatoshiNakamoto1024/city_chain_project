@@ -44,14 +44,19 @@ jobs:
       # Rust 拡張 wheel（Linux x64; manylinux でなくてOK。必要なら --manylinux 2014 に）
       - name: Build rust wheels
         run: |
+          mkdir -p "$GITHUB_WORKSPACE/dist"
           maturin build \
             -m "${{ inputs.cargo_manifest }}" \
-            --release --features python
+            --release --features python \
+            --out "$GITHUB_WORKSPACE/dist"
 
       # Python ラッパー（sdist + wheel）
       - name: Build python wrapper (sdist+wheel)
         working-directory: ${{ inputs.python_wrapper_dir }}
-        run: python -m build
+        run: |
+          python -m build
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          cp -v dist/* "$GITHUB_WORKSPACE/dist/"
 
       # TestPyPI へアップロード（絶対パス/ワークスペース基点で確実に解決）
       - name: Upload to TestPyPI
@@ -59,10 +64,8 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
-          cd "${GITHUB_WORKSPACE}"
           twine upload --repository-url https://test.pypi.org/legacy/ \
-            "target/wheels/"*.whl \
-            "${{ inputs.python_wrapper_dir }}/dist/"*
+            "$GITHUB_WORKSPACE/dist/"*
 
       # GitHub Release の Assets にも添付（入手しやすく）
       - name: Attach wheels to GitHub Release
