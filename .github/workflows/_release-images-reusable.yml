@@ -6,19 +6,15 @@ on:
       registry:
         type: string
         required: true
-        # 例: ghcr.io/ユーザー名 or 組織名
       version:
         type: string
         required: true
-        # 例: v0.1.7 （不要なら latest のみでもOK）
       http_target:
         type: string
         required: true
-        # 例: poh_holdmetrics-http-svc
       grpc_target:
         type: string
         required: true
-        # 例: poh_holdmetrics-grpc-svc
 
 jobs:
   build-push:
@@ -42,10 +38,11 @@ jobs:
       - name: Generate bake/compose
         run: python tools/gen.py --services services.yaml --out .
 
-      # まずは latest だけで安定化 → 通ったら2タグに拡張
+      # ★ default グループを使わず、サービスのターゲットだけ名指し
       - name: Build & Push images (latest only)
         run: |
           docker buildx bake -f docker-bake.generated.hcl --push \
+            ${{ inputs.http_target }} ${{ inputs.grpc_target }} \
             --set ${{ inputs.http_target }}.tags=${{ inputs.registry }}/poh_holdmetrics-http:latest \
             --set ${{ inputs.grpc_target }}.tags=${{ inputs.registry }}/poh_holdmetrics-grpc:latest
 

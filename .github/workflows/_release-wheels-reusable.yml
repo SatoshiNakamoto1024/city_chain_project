@@ -6,11 +6,9 @@ on:
       cargo_manifest:
         type: string
         required: true
-        # 例: DAGs/.../your_crate_rust/Cargo.toml
       python_wrapper_dir:
         type: string
         required: true
-        # 例: DAGs/.../your_crate_python
     secrets:
       TEST_PYPI_API_TOKEN:
         required: true
@@ -21,7 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # protoc は Ubuntu ランナーに入れる（prost-build 等の前提）
       - name: Install protoc (Ubuntu)
         run: |
           sudo apt-get update
@@ -41,7 +38,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install maturin==1.5.1 build twine
 
-      # Rust 拡張 wheel（Linux x64; manylinux でなくてOK。必要なら --manylinux 2014 に）
+      # ★ Rust wheel を常に $GITHUB_WORKSPACE/dist へ
       - name: Build rust wheels
         run: |
           mkdir -p "$GITHUB_WORKSPACE/dist"
@@ -49,29 +46,33 @@ jobs:
             -m "${{ inputs.cargo_manifest }}" \
             --release --features python \
             --out "$GITHUB_WORKSPACE/dist"
+          ls -al "$GITHUB_WORKSPACE/dist"
 
-      # Python ラッパー（sdist + wheel）
+      # ★ Python ラッパーも同じ dist へ
       - name: Build python wrapper (sdist+wheel)
         working-directory: ${{ inputs.python_wrapper_dir }}
         run: |
-          python -m build
-          mkdir -p "$GITHUB_WORKSPACE/dist"
-          cp -v dist/* "$GITHUB_WORKSPACE/dist/"
+          python -m build --outdir "$GITHUB_WORKSPACE/dist"
+          ls -al "$GITHUB_WORKSPACE/dist"
 
-      # TestPyPI へアップロード（絶対パス/ワークスペース基点で確実に解決）
+      # ★ dist からまとめてアップロード
       - name: Upload to TestPyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
-          twine upload --repository-url https://test.pypi.org/legacy/ \
-            "$GITHUB_WORKSPACE/dist/"*
+          python - <<'PY'
+          import os, glob, sys
+          d = os.environ["GITHUB_WORKSPACE"] + "/dist"
+          files = sorted(glob.glob(d+"/*"))
+          if not files:
+            print("No artifacts under", d, file=sys.stderr); sys.exit(2)
+          print("Artifacts:", *files, sep="\n")
+          PY
+          twine upload --repository-url https://test.pypi.org/legacy/ "$GITHUB_WORKSPACE/dist/*"
 
-      # GitHub Release の Assets にも添付（入手しやすく）
       - name: Attach wheels to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: |
-            target/wheels/*.whl
-            ${{ inputs.python_wrapper_dir }}/dist/*
+          files: ${{ github.workspace }}/dist/*
