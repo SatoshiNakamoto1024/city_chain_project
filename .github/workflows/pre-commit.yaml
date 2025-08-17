@@ -12,7 +12,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install pre-commit
-        run: pip install pre-commit
-      - name: Run pre-commit
-        run: pre-commit run --all-files
+      - run: pip install pre-commit
+      # 変更ファイルのみ対象にする（PR時やpush時の無駄撃ち防止）
+      - name: Run pre-commit (changed files only)
+        run: |
+          git fetch origin ${{ github.base_ref || 'main' }} --depth=1 || true
+          BASE_REF=${{ github.base_ref || 'origin/main' }}
+          CHANGED=$(git diff --name-only "$BASE_REF"...HEAD | tr '\n' ' ')
+          if [ -z "$CHANGED" ]; then
+            echo "No changed files"; exit 0
+          fi
+          pre-commit run --files $CHANGED

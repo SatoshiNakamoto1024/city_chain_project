@@ -5,11 +5,16 @@ on:
     tags:
       - "v*"
 
+# ← ここが重要（呼び出し側で packages: write を許可）
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   call-reusable:
     uses: ./.github/workflows/_release-images-reusable.yml
     with:
-      registry: ghcr.io/satoshinakamoto1024
+      registry: ghcr.io/satoshinakamoto1024     # ← 小文字必須！
       version: ${{ github.ref_name }}
-      http_target: poh_holdmetrics-http-svc
+      http_target: poh_holdmetrics-http-svc     # gen.py の target 名に一致
       grpc_target: poh_holdmetrics-grpc-svc

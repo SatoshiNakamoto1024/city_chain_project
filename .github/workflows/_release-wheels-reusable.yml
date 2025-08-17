@@ -61,15 +61,12 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
-          python - <<'PY'
-          import os, glob, sys
-          d = os.environ["GITHUB_WORKSPACE"] + "/dist"
-          files = sorted(glob.glob(d+"/*"))
-          if not files:
-            print("No artifacts under", d, file=sys.stderr); sys.exit(2)
-          print("Artifacts:", *files, sep="\n")
-          PY
-          twine upload --repository-url https://test.pypi.org/legacy/ "$GITHUB_WORKSPACE/dist/*"
+          cd "${GITHUB_WORKSPACE}"
+          echo "Artifacts:"
+          ls -1 "${GITHUB_WORKSPACE}/dist/"
+          # 既にあるものはスキップ（デバッグ時に再実行で落ちないように）
+          python -m twine upload --skip-existing --repository-url https://test.pypi.org/legacy/ \
+            "${GITHUB_WORKSPACE}/dist/"*
 
       - name: Attach wheels to GitHub Release
         uses: softprops/action-gh-release@v2
