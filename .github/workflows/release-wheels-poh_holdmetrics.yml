@@ -2,8 +2,11 @@ name: Release Wheels (poh_holdmetrics)
 
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
+
+permissions:
+  contents: write    # ← Release作成に必要
+  packages: read
 
 jobs:
   call-reusable:
