@@ -32,56 +32,56 @@ ec_rust_src/
 **まとめると「コア機能（Reed–Solomon の k-of-n 分割・復元）は動くが、周辺機能や運用面でまだ足りない」**という状況です。
 
 項目	状態	ギャップ／要対応
-コアアルゴリズム	
+コアアルゴリズム
 ✔ Reed–Solomon（シンクロナス）実装済み
-✔ 基本的な Rust 単体テスト有り	
+✔ 基本的な Rust 単体テスト有り
 ・LDPC/Fountain は未実装
 ・復元失敗時の詳細リカバリロジック不足
 
-API 安定性	
-✔ encode_rs/decode_rs、上位の encode_shards/decode_shards で呼び出しやすい	
+API 安定性
+✔ encode_rs/decode_rs、上位の encode_shards/decode_shards で呼び出しやすい
 ・非同期／ストリーミング API がない
 ・大容量データ向けのチャンク処理未整備
 
-設定／拡張性	
+設定／拡張性
 ✔ TOML ベースの設定ロード
-✔ feature フラグで切り替え可	
+✔ feature フラグで切り替え可
 ・設定パラメータのドキュメント不足
 ・動的プラグイン切り替えインターフェイス未整備
 
-エラー処理	
-✔ ECError／ECErrorCode で大枠のマッピング	
+エラー処理
+✔ ECError／ECErrorCode で大枠のマッピング
 ・細かなエラー原因（例：X シャードが足りない、パラメータ不整合等）を返す仕組み弱い
 ・HTTP サービス化時のハンドリング例不足
 
-パフォーマンス最適化	
+パフォーマンス最適化
 ✔ SIMD（simd-accel）対応済み
-✔ Rayon 並列 map helper 有り	
+✔ Rayon 並列 map helper 有り
 ・エンコード／デコードのマルチスレッド化
 ・ベンチマーク自動化 & CI 連携が未整備
 
-メトリクス／ログ	
-✔ 累積時間計測用の metrics::record	
+メトリクス／ログ
+✔ 累積時間計測用の metrics::record
 ・Prometheus／OpenTelemetry 連携サンプルなし
 ・出力フォーマット／ログライブラリ未統一
 
-Python バインディング	
+Python バインディング
 ✔ PyO3 + Maturin の骨格実装
-✔ 単純なラッパー関数提供	
+✔ 単純なラッパー関数提供
 ・Python 側での pytest カバレッジ不足
 ・asyncio 版ラッパーなし
 ・wheel 配布／バージョニング未整備
 
-CLI	
-✔ ec_rust／main_ec のサブコマンド実装	
+CLI
+✔ ec_rust／main_ec のサブコマンド実装
 ・サブコマンド例しかなく、運用用オプション（ログ、verbose、config path）が少ない
 
-CI／デリバリ	
-⚠ 未設定（GitHub Actions や GitLab CI のワークフローがない）	
+CI／デリバリ
+⚠ 未設定（GitHub Actions や GitLab CI のワークフローがない）
 ・自動ビルド、テスト、ベンチ→成果物公開までのパイプラインが必須
 
-ドキュメント	
-⚠ README ＋各ファイルの doc コメントはあるが、ユーザー向けガイドなし	
+ドキュメント
+⚠ README ＋各ファイルの doc コメントはあるが、ユーザー向けガイドなし
 ・Quickstart、API リファレンス、パラメータチュートリアルが要追加
 
 本番導入までに必要な主なタスク
@@ -177,7 +177,7 @@ CI では cargo test --workspace --all-features --no-fail-fast を並列化
 テスト＆ベンチで他 crate を呼びたい	dev-dependencies に <crate-name> = { path = "../ldpc" } のように書くか
 workspace 内なら 自動で解決
 
-feature 爆発	
+feature 爆発
 アルゴリズム固有のオプション（SIMD など）は各 crate の features に閉じ込める。
 core には出来るだけ置かない
 
@@ -352,5 +352,3 @@ members = [
 まとめ
 最初に作るなら…	後でスケールしたら…
 core を用意し、トレイトとエラー型を集約	汎用ヘルパーが増えてきた時点で common を切り出す
-
-

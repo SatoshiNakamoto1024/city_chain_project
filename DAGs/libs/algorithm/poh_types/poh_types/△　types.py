@@ -1,7 +1,7 @@
 # D:\city_chain_project\DAGs\libs\algorithm\poh_types\poh_types\types.py
 from __future__ import annotations
 import json
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 from typing import ClassVar
 from .exceptions import PoHTypesError
 

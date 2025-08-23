@@ -1,0 +1,73 @@
+# /city_chain_project/compose.yml
+version: "3.9"
+
+# すべてのサービスが共有するネットワーク
+networks:
+  city_chain_net: {}
+
+# よく使うヘルスチェックをアンカーで共通化
+x-healthcheck-tcp: &health_tcp
+  interval: 5s
+  timeout: 2s
+  retries: 20
+
+# build 設定のテンプレ（build の中でマージする用）
+x-build-app: &build_app
+  context: .
+  dockerfile: ./Dockerfile
+  target: runtime
+  args:
+    PROFILE: release
+
+services:
+  # ───────────────── infra（ローカル用は overlay で） ─────────────────
+  mongo:
+    image: mongo:7
+    networks: [city_chain_net]
+    # healthcheck や ports は compose.local.yml で上書き
+
+  # ───────────────── poh_holdmetrics (gRPC) ─────────────────
+  poh_holdmetrics-grpc:
+    build:
+      <<: *build_app
+      args:
+        CRATE_PATH: DAGs/libs/algorithm/poh_holdmetrics
+        CRATE_KIND: rust
+        FEATURES: ""
+        BIN_NAME: main_holdmetrics
+        PROFILE: release
+    image: "${REGISTRY:-local}/poh_holdmetrics-grpc:latest"
+    environment:
+      SERVICE_MODE: "grpc"
+      GRPC_ADDRESS: "0.0.0.0:60051"
+      MONGO_URI: "mongodb://mongo:27017"
+    ports:
+      - "60051:60051"
+      - "9100:9100"
+    command: ["/app/bin/main_holdmetrics","--grpc-addr","0.0.0.0:60051"]
+    networks: [city_chain_net]
+
+  # ───────────────── poh_holdmetrics (HTTP) ─────────────────
+  poh_holdmetrics-http:
+    build:
+      <<: *build_app           # ← アンカーは build の中だけで使う
+      args:
+        CRATE_PATH: DAGs/libs/algorithm/poh_holdmetrics
+        CRATE_KIND: mixed
+        FEATURES: "python"
+        PROFILE: release
+    image: "${REGISTRY:-local}/poh_holdmetrics-http:latest"
+    environment:
+      SERVICE_MODE: "http"
+      HTTP_PORT: "8000"
+      # MONGODB_URL は overlay（compose.local.yml / compose.atlas.yml）や orchestrator で注入
+      MONGODB_DB: ${MONGODB_DB:-holdmetrics_prod}
+    command: ["python","-m","uvicorn","poh_holdmetrics.api.http_server:app","--host","0.0.0.0","--port","8000"]
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD","python","-c","import socket; s=socket.socket(); s.settimeout(2); s.connect(('127.0.0.1',8000)); s.close()"]
+      <<: *health_tcp
+    networks: [city_chain_net]
+
+  # 他クレートは同様に build: <<: *build_app を使って増やす

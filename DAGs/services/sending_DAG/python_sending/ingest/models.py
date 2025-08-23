@@ -2,9 +2,11 @@ from pydantic import BaseModel, Field
 from typing import Literal
 from datetime import datetime
 
+
 class BaseTx(BaseModel):
     tx_id: str = Field(..., min_length=1)
     timestamp: datetime
+
 
 class FreshTx(BaseTx):
     type: Literal["FRESH_TX"]
@@ -12,6 +14,7 @@ class FreshTx(BaseTx):
     receiver: str
     amount: float = Field(..., gt=0)
     payload: dict
+
 
 class PoHRequestTx(BaseTx):
     type: Literal["POH_REQUEST"]

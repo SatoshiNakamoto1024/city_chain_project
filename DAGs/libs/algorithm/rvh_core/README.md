@@ -46,7 +46,7 @@ rvh_core/                               ← リポジトリ・ルート
 │       ├── test_import.rs         ← 単純import
 │       ├── test_cli.rs            ← CLI encode/decode round-trip
 │       └── test_py_bindings.rs    ← pyo3 経由で呼び出し
-│ 
+│
 ├── rvh_core_python/               ← Python “呼び出し側” パッケージ
 │   ├── pyproject.toml             ← [build-system] hatchling / setuptools
 │   ├── README.md                  ← pip install rvh_python

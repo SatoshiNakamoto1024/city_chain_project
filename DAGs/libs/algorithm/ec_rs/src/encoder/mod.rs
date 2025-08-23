@@ -1,7 +1,7 @@
 // D:\city_chain_project\Algorithm\EC\ec_rust_src\src\encoder\mod.rs
 //! Systematic QC-LDPC encoder
 //!
-//! 1. Data 部分をそのままコピー  
+//! 1. Data 部分をそのままコピー
 //! 2. H の “data-part” と掛け算して parity を得る
 
 use rayon::prelude::*;

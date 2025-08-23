@@ -13,7 +13,6 @@ python -m network.DAGs.common.transport.app_transport
 from __future__ import annotations
 import contextlib
 import logging
-import grpc
 from fastapi import FastAPI, HTTPException, Query
 import sys
 import os
@@ -60,6 +59,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Transport Demo", lifespan=lifespan)
 # ← httpx 0.28+ の“auto”判定でも起動するよう fallback
 app.router.lifespan_context = lifespan
+
 
 # ──────────────────────────────────────────
 # 1. /grpc_echo  : HTTP→gRPC ブリッジ

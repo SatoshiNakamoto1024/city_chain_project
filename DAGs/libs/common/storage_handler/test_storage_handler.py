@@ -10,7 +10,6 @@ E2E テスト: StorageHandler HTTP API
 from __future__ import annotations
 import base64
 import pytest
-from pathlib import Path
 from httpx import AsyncClient, ASGITransport
 import sys
 import os

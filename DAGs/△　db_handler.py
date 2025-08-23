@@ -14,6 +14,7 @@ client = MongoClient(MONGODB_URI)
 db = client[DATABASE_NAME]
 collection = db[COLLECTION_NAME]
 
+
 def save_transaction(transaction):
     try:
         result = collection.insert_one(transaction)
@@ -22,6 +23,7 @@ def save_transaction(transaction):
     except Exception as e:
         logger.error("トランザクション保存エラー: %s", e)
         return None
+
 
 if __name__ == "__main__":
     sample = {"tx_id": "sample_tx", "data": "example"}

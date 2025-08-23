@@ -5,6 +5,7 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     """Application settings for PoH_REQUEST."""
 
@@ -40,6 +41,7 @@ class Settings(BaseSettings):
         env_file=".env",
         case_sensitive=False,
     )
+
 
 # singleton
 settings = Settings()

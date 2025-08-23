@@ -25,6 +25,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from db.sync_client import SyncMongoClient
 from db.async_client import AsyncMongoClient
 
+
 # ─────────── Sync───────────
 @contextmanager
 def get_sync_client(uri: str | None = None, db_name: str | None = None
@@ -34,6 +35,7 @@ def get_sync_client(uri: str | None = None, db_name: str | None = None
         yield cli
     finally:
         cli.close()
+
 
 # ─────────── Async──────────
 @asynccontextmanager
@@ -45,9 +47,10 @@ async def get_async_client(uri: str | None = None, db_name: str | None = None
     finally:
         await cli.aclose()
 
+
 __all__ = [
-    "SyncMongoClient",
     "AsyncMongoClient",
-    "get_sync_client",
+    "SyncMongoClient",
     "get_async_client",
+    "get_sync_client",
 ]

@@ -7,9 +7,7 @@ MongoDB がない環境でも落ちないよう `save_completed_tx_to_mongo`
 """
 
 import os
-import json
 import pytest
-from types import SimpleNamespace as NS
 
 import common as C
 

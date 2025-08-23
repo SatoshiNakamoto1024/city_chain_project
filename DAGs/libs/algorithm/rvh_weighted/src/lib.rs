@@ -1,8 +1,8 @@
 // D:\city_chain_project\DAGs\libs\algorithm\rvh_weighted\src\lib.rs
-//! rvh_weighted – **重み付き HRW (Highest-Random-Weight)**  
+//! rvh_weighted – **重み付き HRW (Highest-Random-Weight)**
 //!
-//! * stake / capacity / RTT を 0-1 スケーリングして合成  
-//! * SIMD 128-bit ハッシュは `rvh_simd::score_u128_simd()` を再利用  
+//! * stake / capacity / RTT を 0-1 スケーリングして合成
+//! * SIMD 128-bit ハッシュは `rvh_simd::score_u128_simd()` を再利用
 //!
 //! ```rust
 //! use rvh_weighted::{NodeInfo, weighted_select};
@@ -16,8 +16,8 @@
 //! ```
 
 //! rvh_weighted – **Weighted HRW (Highest‐Random‐Weight)**
-//! * stake / capacity / RTT を 0-1 スケーリングして合成  
-//! * SIMD 128-bit ハッシュは `rvh_simd::score128()` を再利用  
+//! * stake / capacity / RTT を 0-1 スケーリングして合成
+//! * SIMD 128-bit ハッシュは `rvh_simd::score128()` を再利用
 #![warn(missing_docs)]
 
 pub mod utils;

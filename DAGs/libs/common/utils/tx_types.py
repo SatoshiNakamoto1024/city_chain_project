@@ -13,7 +13,7 @@ class TxType(Enum):
     """サポートするトランザクションの種別"""
 
     TRANSFER = "TRANSFER"           # 単純送金
-    CONTRACT_CALL = "CONTRACT_CALL" # スマコン呼び出し
+    CONTRACT_CALL = "CONTRACT_CALL"  # スマコン呼び出し
     STAKE = "STAKE"                 # ステーキング
     UNSTAKE = "UNSTAKE"             # ステーキング解除
     VOTE = "VOTE"                   # 投票

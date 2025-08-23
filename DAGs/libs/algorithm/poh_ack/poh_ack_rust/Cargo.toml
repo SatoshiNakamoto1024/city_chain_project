@@ -48,7 +48,7 @@ pyo3-async-runtimes  = { workspace = true, features = ["tokio-runtime"] }
 
 [dev-dependencies]
 once_cell       = "1.19"
-tempfile        = "3"  
+tempfile        = "3"
 rand            = "0.8"
 tokio-test      = "0.4"
 criterion       = { version = "0.5", features = ["html_reports","async_tokio"] }
@@ -65,7 +65,7 @@ pyo3-build-config = "0.25"
 [[test]]
 name = "test_py_bindings"
 path = "tests/test_py_bindings.rs"
-required-features = ["python-embed"] 
+required-features = ["python-embed"]
 
 [[bench]]
 name    = "bench_verifier"

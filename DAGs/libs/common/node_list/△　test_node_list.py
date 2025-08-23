@@ -3,8 +3,6 @@
 最低限のユニットテスト
 - Redis backend をモックして Heartbeat→取得→Registry 反映を検証
 """
-import asyncio
-import types
 import time
 import pytest
 
@@ -14,6 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from node_list.registry import get_registry
 from node_list.manager import NodeListManager
 from node_list.schemas import NodeInfo
+
 
 # -----------------------------------------------------------------
 # Redis backend モック
@@ -35,6 +34,7 @@ class FakeRedisBackend:
     async def list_nodes(self):
         now = time.time()
         return [NodeInfo(node_id=n, last_seen=now) for n in sorted(self._set)]
+
 
 # -----------------------------------------------------------------
 # テスト本体

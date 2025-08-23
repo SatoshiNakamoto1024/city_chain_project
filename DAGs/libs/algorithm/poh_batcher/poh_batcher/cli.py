@@ -13,6 +13,7 @@ from .batcher import AsyncBatcher
 from .storage import storage_from_url
 from .types import PackedBatch, AckItem
 
+
 @click.command()
 @click.option(
     "--batch-size", "-n", default=500, show_default=True,

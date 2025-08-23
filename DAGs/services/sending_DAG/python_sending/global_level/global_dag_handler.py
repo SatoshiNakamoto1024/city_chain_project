@@ -18,10 +18,8 @@ from flask import Flask, request, jsonify
 from city_dag_storage import CityDAGStorage
 from common.config import get_rust_api
 from common.db_handler import save_completed_tx_to_mongo
-from common import reward_system
 
 from DPoS.python import dpos_election, dpos_monitor, dpos_advanced
-from network.sending_DAG.python_sending.common.grpc import grpc_client
 
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
@@ -30,6 +28,7 @@ ch = logging.StreamHandler()
 fmt = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s')
 ch.setFormatter(fmt)
 logger.addHandler(ch)
+
 
 class GlobalDAGHandler:
     def __init__(self):
@@ -45,7 +44,7 @@ class GlobalDAGHandler:
         candidates = [
             {"rep_id": "GlobRep1", "metrics": {"access_rate": 1.0, "mem_capacity": 300, "harmony_score": 0.9, "bandwidth": 12, "uptime": 0.98, "error_rate": 0.02}},
             {"rep_id": "GlobRep2", "metrics": {"access_rate": 0.8, "mem_capacity": 280, "harmony_score": 0.8, "bandwidth": 10, "uptime": 0.95, "error_rate": 0.05}},
-            {"rep_id": "GlobRep3", "metrics": {"access_rate": 0.7, "mem_capacity": 200, "harmony_score": 1.0, "bandwidth": 9,  "uptime": 0.90, "error_rate": 0.08}}
+            {"rep_id": "GlobRep3", "metrics": {"access_rate": 0.7, "mem_capacity": 200, "harmony_score": 1.0, "bandwidth": 9, "uptime": 0.90, "error_rate": 0.08}}
         ]
         picks = dpos_election.pick_representatives("global", "Earth", candidates, 3, self.adv_manager)
         logger.info("[GlobalDAG] Elected global reps: %s", picks)
@@ -122,7 +121,9 @@ class GlobalDAGHandler:
         self.storage.remove_node(batch_id)
         logger.info("[GlobalDAG] Batch %s completed and removed.", batch_id)
 
+
 global_handler = GlobalDAGHandler()
+
 
 @app.route("/push_continent_batch", methods=["POST"])
 def push_continent_batch():
@@ -133,6 +134,7 @@ def push_continent_batch():
     b_data = data.get("batched_data", [])
     global_handler.add_continent_batch(c_batch_id, c_hash, c_name, b_data)
     return jsonify({"status": "global_received", "continent_batch_id": c_batch_id})
+
 
 if __name__ == "__main__":
     app.run(port=7001, debug=True)

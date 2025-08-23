@@ -23,11 +23,11 @@ from uuid import uuid4
 from config import BATCH_INTERVAL, NUM_SHARDS, REDUNDANCY, available_nodes
 from dag.dag_storage import DAGNode
 from dag.dag_handler import DAGHandler
-from consensus.distributed_storage import distribute_and_save_transaction
 
 # ----------------------------
 # ネットワーク状態のシミュレーション
 # ----------------------------
+
 
 def simulate_network_conditions(nodes):
     """
@@ -52,6 +52,7 @@ def simulate_network_conditions(nodes):
 # シャーディングとノード割り当ての処理（ダイナミック版）
 # ----------------------------
 
+
 def split_data(data, n):
     """
     データを n 個の断片に均等に分割する関数（シンプルな均等分割の例）
@@ -62,6 +63,7 @@ def split_data(data, n):
     if length % n != 0:
         shards[-1] += data[n * chunk_size:]
     return shards
+
 
 def select_nodes_for_shard_dynamic(shard, redundancy, nodes):
     """
@@ -80,6 +82,7 @@ def select_nodes_for_shard_dynamic(shard, redundancy, nodes):
     # 上位 redundancy 個を選ぶ
     selected = [n["node_id"] for _, n in scored_nodes[:redundancy]]
     return selected
+
 
 def shard_and_assign_dynamic(data, num_shards, redundancy, nodes):
     """
@@ -103,6 +106,7 @@ def shard_and_assign_dynamic(data, num_shards, redundancy, nodes):
 # テスト実行部
 # ----------------------------
 
+
 def create_dummy_transaction():
     """
     ダミーの送信トランザクション（DAGNode）を生成する関数
@@ -117,29 +121,30 @@ def create_dummy_transaction():
     node.hash = hash_val  # 生成したハッシュを設定
     return node
 
+
 def test_distributed_storage():
     # DAGHandler の初期化（バッチ保持時間 BATCH_INTERVAL 秒）
     dag_handler = DAGHandler(batch_interval=BATCH_INTERVAL)
     transactions = []
     results = []
-    
+
     # 20個のダミー送信トランザクションを生成
     for _ in range(20):
         node = create_dummy_transaction()
         transactions.append(node)
-    
+
     # 各トランザクションについて DAGHandler に登録し、1秒後のバッチ処理を待つ
     for node in transactions:
         tx_id, tx_hash = dag_handler.add_transaction(node.sender, node.receiver, node.amount, tx_type="send")
         print(f"登録: tx_id={tx_id}, tx_hash={tx_hash}")
         time.sleep(1.1)  # バッチ処理が実行されるまで待機
-        
+
         # シミュレーション：トランザクションのハッシュ値を利用して、動的なシャーディング割り当てを実行
         # （実際の分散保存処理は dag_handler 内や consensus で行われるが、ここではダイナミックな割り当てを確認）
         assignments = shard_and_assign_dynamic(node.hash, NUM_SHARDS, REDUNDANCY, available_nodes)
         print(f"Transaction {tx_id} のシャード割り当て結果:")
         print(json.dumps(assignments, indent=2))
-        
+
         result = {
             "tx_id": tx_id,
             "status": "distributed",
@@ -147,9 +152,10 @@ def test_distributed_storage():
             "assignment": assignments
         }
         results.append(result)
-    
+
     print("=== テスト結果 ===")
     print(json.dumps(results, indent=2))
+
 
 if __name__ == "__main__":
     test_distributed_storage()

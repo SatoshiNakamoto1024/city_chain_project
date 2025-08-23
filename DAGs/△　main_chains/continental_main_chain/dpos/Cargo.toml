@@ -9,7 +9,7 @@ path = "src/lib.rs"                # ライブラリのエントリポイント�
 
 [dependencies]
 chrono = "0.4"                     # 必要な依存関係
-actix-web = "4"                    
+actix-web = "4"
 actix-rt = "2"
 serde = { version = "1.0", features = ["derive"] }  # JSON処理用（必要なら追加）
 serde_json = "1.0"                 # JSONシリアライズ用（必要なら追加）

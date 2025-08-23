@@ -8,7 +8,7 @@ node_list モジュールは “全世界のオンライン中ノード一覧”
             └── node_list/             ← ここ！
                 ├── __init__.py
                 ├── config.py          # 環境変数読み込みと共通定数をまとめる
-                ├── schemas.py         # 型安全に取り回すため,dataclass / TypedDict       
+                ├── schemas.py         # 型安全に取り回すため,dataclass / TypedDict
                 ├── manager.py         # Presence Service 経由で “オンライン中ノード” を取得
                 ├── registry.py        # 自前キャッシュ／プッシュ更新用 in-memory レジストリ
                 └── tests/
@@ -164,6 +164,3 @@ sending_DAG / receiving_DAG / analytics… あらゆる部分が同じ API で�
 
 これで “ネットワーク全体の動的なノードカタログ” が完成し、
 今後の DAG 処理や負荷分散ロジックをシンプルに実装できるようになりました。
-
-
-

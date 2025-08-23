@@ -5,7 +5,7 @@
 //! Rust ⇔ PyO3 経由で Python 関数を呼び出す結合テスト。
 //! Tokio のテストマクロで非同期に動かしつつ、
 //! Python 側の asyncio で awaitable を実行します。
-use std::ffi::CString; 
+use std::ffi::CString;
 use pyo3::types::PyList;        // 追加
 use pyo3::types::PyDict;
 use pyo3::prelude::*;
@@ -126,7 +126,7 @@ async fn test_python_module() -> PyResult<()> {
         let cdylib = find_cdylib();
         let pyd = ensure_pyd(&cdylib);
         add_pythonpath(pyd.parent().unwrap());
-        
+
         // このように `with_gil` の中に移動して表示させる
         // いま動いている Python にも同じディレクトリを挿入する
         {

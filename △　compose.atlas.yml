@@ -1,0 +1,19 @@
+# /city_chain_project/compose.atlas.yml
+version: "3.9"
+
+services:
+  # Atlas運用ではローカル mongo を起動しない（depends_on も解除）
+  mongo:
+    deploy:
+      replicas: 0
+
+  poh_holdmetrics-http:
+    environment:
+      # orchestra が選んだ 1本の URL を注入（.env でも OK）
+      MONGODB_URL: ${MONGODB_URL}
+    depends_on: {}   # ← 依存を無効化（mongoに依存しない）
+
+  poh_holdmetrics-grpc:
+    environment:
+      MONGODB_URL: ${MONGODB_URL}
+    depends_on: {}

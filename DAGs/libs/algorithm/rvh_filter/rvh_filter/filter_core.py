@@ -14,8 +14,10 @@ from typing import Callable, Iterable, List, Pattern, Set, TypeVar, Optional
 
 T = TypeVar("T")  # for generic predicate
 
+
 class FilterError(ValueError):
     """rvh_filter が投げる例外"""
+
 
 def _compile(patterns: Optional[Iterable[str]]) -> List[Pattern]:
     if not patterns:
@@ -24,6 +26,7 @@ def _compile(patterns: Optional[Iterable[str]]) -> List[Pattern]:
         return [re.compile(p) for p in patterns]
     except re.error as exc:  # pragma: no cover
         raise FilterError(f"Invalid regex pattern: {exc}") from exc
+
 
 def filter_nodes(
     nodes: Iterable[str],
@@ -50,6 +53,7 @@ def filter_nodes(
         kept.append(n)
     return kept
 
+
 async def filter_nodes_async(
     nodes: Iterable[str],
     *,
@@ -67,6 +71,7 @@ async def filter_nodes_async(
         regex_deny=regex_deny,
         predicate=predicate,
     )
+
 
 class NodeFilter:
     """
@@ -90,6 +95,7 @@ class NodeFilter:
             regex_deny=[r.pattern for r in self._re],
             predicate=self._pred,
         )
+
 
 class AsyncNodeFilter:
     """

@@ -1,5 +1,6 @@
 # Algorithm/VRF/test_vrf_integration.py
-import sys, pathlib
+import sys
+import pathlib
 sys.path.append(str(pathlib.Path(__file__).resolve().parent))
 print("sys.path =", sys.path)
 import vrf_python
@@ -9,6 +10,7 @@ import pytest
 
 from vrf_python.vrf_builder import generate_keypair, prove_vrf
 from vrf_python.vrf_validator import verify_vrf
+
 
 def test_end_to_end_roundtrip():
     """
@@ -27,6 +29,7 @@ def test_end_to_end_roundtrip():
     # 3) 検証して同じハッシュが返ること
     hash2 = verify_vrf(pub_hex, proof_hex, msg)
     assert hash1 == hash2, "Round-trip VRF hash mismatch"
+
 
 def test_integration_negative_tampered_proof():
     """
@@ -47,6 +50,7 @@ def test_integration_negative_tampered_proof():
     with pytest.raises(RuntimeError):
         verify_vrf(pub_hex, tampered_hex, msg)
 
+
 def test_integration_negative_wrong_pubkey():
     """
     別の公開鍵で同じ証明を検証しようとして失敗することを確認。
@@ -60,6 +64,7 @@ def test_integration_negative_wrong_pubkey():
     # pub2 で検証するとエラー
     with pytest.raises(RuntimeError):
         verify_vrf(pub2, proof_hex, msg)
+
 
 def test_integration_string_message_support():
     """

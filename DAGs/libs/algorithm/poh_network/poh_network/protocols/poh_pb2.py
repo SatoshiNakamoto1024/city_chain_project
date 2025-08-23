@@ -11,8 +11,6 @@ from google.protobuf.internal import builder as _builder
 _sym_db = _symbol_database.Default()
 
 
-
-
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1fpoh_network/protocols/poh.proto\x12\x03poh\"\x07\n\x05\x45mpty\"{\n\x02Tx\x12\r\n\x05tx_id\x18\x01 \x01(\t\x12\x11\n\tholder_id\x18\x02 \x01(\t\x12\x11\n\ttimestamp\x18\x03 \x01(\x01\x12\x0f\n\x07payload\x18\x04 \x01(\x0c\x12\x1c\n\x07sig_alg\x18\n \x01(\x0e\x32\x0b.poh.SigAlg\x12\x11\n\tsignature\x18\x0b \x01(\x0c\"\x1f\n\x07TxBatch\x12\x14\n\x03txs\x18\x01 \x03(\x0b\x32\x07.poh.Tx\">\n\x03\x41\x63k\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x11\n\terror_msg\x18\x02 \x01(\t\x12\x13\n\x0bprocessed_n\x18\x03 \x01(\r\"2\n\x04Peer\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x19\n\x05proto\x18\x02 \x01(\x0e\x32\n.poh.Proto\"$\n\x08PeerList\x12\x18\n\x05peers\x18\x01 \x03(\x0b\x32\t.poh.Peer*=\n\x06SigAlg\x12\x16\n\x12SIGALG_UNSPECIFIED\x10\x00\x12\x0b\n\x07\x45\x44\x32\x35\x35\x31\x39\x10\x01\x12\x0e\n\nDILITHIUM3\x10\x02*;\n\x05Proto\x12\x15\n\x11PROTO_UNSPECIFIED\x10\x00\x12\x08\n\x04GRPC\x10\x01\x12\x08\n\x04HTTP\x10\x02\x12\x07\n\x03UDP\x10\x03\x32\xe3\x01\n\nPohService\x12\x1e\n\tBroadcast\x12\x07.poh.Tx\x1a\x08.poh.Ack\x12(\n\x0e\x42roadcastBatch\x12\x0c.poh.TxBatch\x1a\x08.poh.Ack\x12 \n\x08StreamTx\x12\x07.poh.Tx\x1a\x07.poh.Tx(\x01\x30\x01\x12\x1c\n\x04Ping\x12\n.poh.Empty\x1a\x08.poh.Ack\x12#\n\x0cRegisterPeer\x12\t.poh.Peer\x1a\x08.poh.Ack\x12&\n\tListPeers\x12\n.poh.Empty\x1a\r.poh.PeerListb\x06proto3')
 
 _globals = globals()
@@ -20,22 +18,22 @@ _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'poh_network.protocols.poh_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
-  _globals['_SIGALG']._serialized_start=361
-  _globals['_SIGALG']._serialized_end=422
-  _globals['_PROTO']._serialized_start=424
-  _globals['_PROTO']._serialized_end=483
-  _globals['_EMPTY']._serialized_start=40
-  _globals['_EMPTY']._serialized_end=47
-  _globals['_TX']._serialized_start=49
-  _globals['_TX']._serialized_end=172
-  _globals['_TXBATCH']._serialized_start=174
-  _globals['_TXBATCH']._serialized_end=205
-  _globals['_ACK']._serialized_start=207
-  _globals['_ACK']._serialized_end=269
-  _globals['_PEER']._serialized_start=271
-  _globals['_PEER']._serialized_end=321
-  _globals['_PEERLIST']._serialized_start=323
-  _globals['_PEERLIST']._serialized_end=359
-  _globals['_POHSERVICE']._serialized_start=486
-  _globals['_POHSERVICE']._serialized_end=713
+  _globals['_SIGALG']._serialized_start = 361
+  _globals['_SIGALG']._serialized_end = 422
+  _globals['_PROTO']._serialized_start = 424
+  _globals['_PROTO']._serialized_end = 483
+  _globals['_EMPTY']._serialized_start = 40
+  _globals['_EMPTY']._serialized_end = 47
+  _globals['_TX']._serialized_start = 49
+  _globals['_TX']._serialized_end = 172
+  _globals['_TXBATCH']._serialized_start = 174
+  _globals['_TXBATCH']._serialized_end = 205
+  _globals['_ACK']._serialized_start = 207
+  _globals['_ACK']._serialized_end = 269
+  _globals['_PEER']._serialized_start = 271
+  _globals['_PEER']._serialized_end = 321
+  _globals['_PEERLIST']._serialized_start = 323
+  _globals['_PEERLIST']._serialized_end = 359
+  _globals['_POHSERVICE']._serialized_start = 486
+  _globals['_POHSERVICE']._serialized_end = 713
 # @@protoc_insertion_point(module_scope)

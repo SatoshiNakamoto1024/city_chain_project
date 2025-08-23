@@ -44,7 +44,7 @@ sequenceDiagram
 
 スコア計算
 score　=　（距離(km)　×　𝑊dist）　+　（オンライン率 × 𝑊online）　+　（TTL ×　𝑊ttl）/3600
- 
+
 係数は config.py で環境変数上書き可。
 
 2️⃣ コードで使う

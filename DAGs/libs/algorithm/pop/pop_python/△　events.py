@@ -14,10 +14,11 @@ from typing import List, Dict, Any, Optional
 # ────────────────────────────────────────────────────────────────
 # 外部設定ファイルのパス
 # ────────────────────────────────────────────────────────────────
-BASE_DIR   = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CONFIG_DIR = os.path.join(BASE_DIR, "config")
-CITY_EVENTS_FILE     = os.path.join(CONFIG_DIR, "city_events.json")
+CITY_EVENTS_FILE = os.path.join(CONFIG_DIR, "city_events.json")
 LOCATION_EVENTS_FILE = os.path.join(CONFIG_DIR, "location_events.json")
+
 
 def _load_json(path: str) -> List[Dict[str, Any]]:
     if not os.path.exists(path):
@@ -25,14 +26,17 @@ def _load_json(path: str) -> List[Dict[str, Any]]:
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
+
 def _save_json(path: str, data: List[Dict[str, Any]]) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
+
 # 起動時に一度だけ読み込む
-CITY_BONUS_EVENTS     = _load_json(CITY_EVENTS_FILE)
+CITY_BONUS_EVENTS = _load_json(CITY_EVENTS_FILE)
 LOCATION_BONUS_EVENTS = _load_json(LOCATION_EVENTS_FILE)
+
 
 # ────────────────────────────────────────────────────────────────
 # ボーナスマルチプライヤ計算
@@ -45,6 +49,7 @@ def check_city_event(city_id: Optional[str]) -> float:
                 return float(ev.get("multiplier", 1.0))
     return 1.0
 
+
 def check_location_event(lat: float, lon: float) -> float:
     now = time.time()
     pt = Point(lon, lat)
@@ -54,6 +59,7 @@ def check_location_event(lat: float, lon: float) -> float:
             if poly.contains(pt):
                 return float(ev.get("multiplier", 1.0))
     return 1.0
+
 
 # ────────────────────────────────────────────────────────────────
 # 管理者画面からのイベント追加 API 用
@@ -75,6 +81,7 @@ def add_city_event(ev: Dict[str, Any]) -> None:
     events.append(ev)
     _save_json(CITY_EVENTS_FILE, events)
     CITY_BONUS_EVENTS = events
+
 
 def add_location_event(ev: Dict[str, Any]) -> None:
     """

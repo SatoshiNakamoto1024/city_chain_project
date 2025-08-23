@@ -42,6 +42,7 @@ LATENCY_HIST = Histogram(
     buckets=(.005, .01, .025, .05, .1, .25, .5, 1, 2, 5),
 )
 
+
 def init_metrics() -> None:
     """Prometheus HTTP エンドポイントを立てる (一度だけ)"""
     global _METRICS_STARTED

@@ -12,7 +12,7 @@ poh_holdmetrics/                                 ← リポジトリルート
 ├── poh_holdmetrics_rust/                        ← Rust コア & PyO3 バインディング
 │   ├── Cargo.toml                               ← crate 名: poh_holdmetrics_rust
 │   ├── pyproject.toml                           ← maturin-build設定（abi3-py312）
-│   ├── build.rs 
+│   ├── build.rs
 │   ├── benches/
 │   │   ├── bench_holdmetrics_calc.rs            ← スコア計算性能測定
 │   │   └── bench_holdmetrics_parallel.rs        ← 並列集計ベンチ
@@ -65,7 +65,7 @@ poh_holdmetrics/                                 ← リポジトリルート
         │   ├── hold.proto
         │   └── hold_pb2_grpc.py
         │
-        ├── storage/                               
+        ├── storage/
         │   ├── immudb.py
         │   └── mongodb.py
         │
@@ -303,26 +303,15 @@ python -m poh_holdmetrics.app_holdmetrics grpc
 これで HoldMetricsStub.Stats() が正しく呼び出せ、
 pytest の test_grpc_stats_broadcast はエラーなく通るようになります。
 
-#　Windows cmdを別に起動してgrpcの起動チェック
-(.venv312) D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python>python -X dev -c "import grpc,poh_holdmetrics.protocols.hold_pb2 as pb,poh_holdmetrics.protocols.hold_pb2_grpc as api; ch=grpc.insecure_channel('127.0.0.1:60061'); stub=api.HoldMetricsStub(ch); it=stub.Stats(pb.google_dot_protobuf_dot_empty__pb2.Empty()); first=next(it); print('OK holder_id=', first.holder_id, 'score=', first.weighted_score)"
-
-OK holder_id=  score= 0.0　とでればいい。
-
-つぎは、非同期でのgrpcのチェックをcheck_grpc.pyを使ってチェックする
-(.venv312) D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\api>python check_grpc.py
-
-OK holder_id=  score= 0.0　とでればいい。
-
 #　linux でgrpcの起動
 (linux-dev) satoshi@LAPTOP-88SH779D:/mnt/d/city_chain_project/DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python$ python -m poh_holdmetrics.app_holdmetrics grpc
 INFO:poh_holdmetrics.api.grpc_server:gRPC server started on 0.0.0.0:60051
 と起動メッセージを吐いて常駐したので gRPC スタブがバインドされ、Stats RPC も受け付ける状態 になっています。あとはクライアント側（テストスクリプトや grpcurl 等）から次のように呼び出せば動作確認できます。
 
-#　Windowsで　HTTpサーバー軌道
+#　HTTpサーバー軌道
 2) 別ターミナルで HTTP サーバ起動
 同じ仮想環境を有効化：
-D:\city_chain_project\.venv312\Scripts\activate
-cd D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python
+cd \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python
 
 余計な環境変数はクリア（以前の protobuf/GIL 問題の回避）：
 set PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=
@@ -343,95 +332,31 @@ python -m poh_holdmetrics.app_holdmetrics http
 INFO:     Uvicorn running on http://127.0.0.1:8000
 
 
-# Wsl側から、mongod をローカルで起動
-# 変数にパスを入れておく（打ち間違い防止）
-mkdir -p /home/satoshi/work/city_chain_project/network/DB/mongodb/data
-chmod 700 /home/satoshi/work/city_chain_project/network/DB/mongodb/data
+# Wsl側から、mongodDBアトラスにアクセス
+Atlas で test_mongo_storage_integration を“実行”したい場合
 
-今の ~/mongo/mongod.conf をこう直せば動きます
-mkdir -p ~/mongo
-cat > ~/mongo/mongod.conf <<'EOF'
-storage:
-  dbPath: /home/satoshi/work/city_chain_project/network/DB/mongodb/data
+依存（SRV解決に必須）
+cd poh_holdmetrics_python
+pip install -e .[test,storage]   # ← pymongo, motor, dnspython を入れる
+ もしくは
+pip install "pymongo[srv]>=4" dnspython>=2.0
 
-net:
-  bindIp: 127.0.0.1
-  port: 27017
+Atlas 側
+接続ユーザー/パス作成（readWrite 権限でOK）
+Network Access に自分のIPを許可（開発中は 0.0.0.0/0 でも可）
+接続文字列（mongodb+srv://user:pass@.../）をメモ
 
-processManagement:
-  fork: false
-EOF
+環境変数（asiaを例で使う場合）
+export MONGODB_URI='mongodb+srv://satoshi:greg1024@asia.kzxnr.mongodb.net/?retryWrites=true&w=majority'
+export MONGODB_DB='pytest_tmp'
 
-#　そして、起動は下記
-mongod --config ~/mongo/mongod.conf
-
-set "OLDPATH=%PATH%"
-set "PATH=%VIRTUAL_ENV%\Scripts;%SystemRoot%\System32;%SystemRoot%"
-pytest -vv -s poh_holdmetrics/tests/test_storage.py
-set "PATH=%OLDPATH%"
-これで確認できる。
-
-# WSL側から mongod を動かす（最も楽）
-公式 tarball を展開
-cd ~
-wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2204-7.0.14.tgz
-tar xf mongodb-linux-x86_64-ubuntu2204-7.0.14.tgz
-
-sudo mv mongodb-linux-x86_64-ubuntu2204-7.0.14/bin/* /usr/local/bin/
-
-そして、Ubuntu 24.04 (noble) 用 apt レポジトリはまだ無いので tarball が安全。
-データディレクトリ作成 & 起動
-sudo mkdir -p /opt/mongodb/7.0.14
-sudo tar xf mongodb-linux-x86_64-ubuntu2204-7.0.14.tgz -C /opt/mongodb/7.0.14 --strip-components=1
-sudo ln -s /opt/mongodb/7.0.14/bin/* /usr/local/bin/
-
-■　パターンB：WSL(Ubuntu)に Linux版 mongod を入れてWSL内で起動（おすすめ）
-Windowsとは独立した高速なMongoをWSL内に持てる。DBはLinux側に置こう（例：~/mongo-data）。
-# 1) MongoDBをWSLにインストール（簡易手順・systemdなしでもOK）
-sudo apt update
-sudo apt install -y mongodb # これで入るディストリもあるけど、無ければ "mongodb-org" の公式リポ手順を使う
-
-# 2) データ置き場（Linux側）を作成
-mkdir -p ~/mongo-data
-
-# 3) フォアグラウンドでまず起動確認（Ctrl+Cで止められる）
-mongod --dbpath ~/mongo-data --port 27017 --bind_ip 127.0.0.1
-
-# 4) 常駐させたいなら（fork + ログ出力）
-sudo mongod --dbpath ~/mongo-data --port 27017 --bind_ip 127.0.0.1 \
-  --fork --logpath ~/mongo-data/mongod.log
-
-動作確認：
-# mongosh が無ければ: sudo apt install -y mongodb-mongosh
-echo 'db.runCommand({ping:1})' | mongosh --quiet mongodb://127.0.0.1:27017
-
-テスト：
-source ~/envs/linux-dev/bin/activate
-pytest -vv -s DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/tests/test_storage.py
-
-systemd が有効なWSLなら sudo systemctl start mongod / enable mongod も使えるよ。
-
-■パターンC：DockerでMongo（いちばん手軽）
-あなたの環境はDocker整ってるから、これが一番楽かも。
-# 初回だけ：永続ボリューム作成
-docker volume create mongo-data
-
-# 起動
-docker run -d --name mongo \
-  -p 27017:27017 \
-  -v mongo-data:/data/db \
-  mongo:6.0
-
-すぐ確認するコマンド
-# 1) ログを見る（起動時の「waiting... started successfully」や接続ログが出てるはず）
-tail -n 50 ~/mongo-data/mongod.log
-
-# 2) プロセスとポート
-pgrep -af mongod
-sudo ss -ltnp | grep 27017
-
-テスト側：MONGODB_URL=mongodb://127.0.0.1:27017 で普通に接続。
-
+事前疎通チェック（1回だけ）
+python - <<'PY'
+import os
+from pymongo import MongoClient
+uri=os.environ["MONGODB_URI"]
+print("ping:", MongoClient(uri, serverSelectionTimeoutMS=5000).admin.command("ping"))
+PY
 
 #　念のためのワンコマ確認：
 パワーシェルを立ち上げて、poh_metrics_python\から下記をやってみて。
@@ -444,17 +369,7 @@ powershell -Command "Test-NetConnection -ComputerName 127.0.0.1 -Port 27017"
 （mongosh があれば mongosh --eval "db.runCommand({ping:1})" でもOK）
 
 
-✅  テスト環境から接続確認
-Python 側で接続できるか確認：
-python -c "
-import pymongo
-client = pymongo.MongoClient('mongodb://localhost:27017')
-print(client.admin.command('ping'))
-"
-結果例：
-{'ok': 1.0}
-が出れば OK。
-
+✅  テスト環境
 先に Rust拡張 を入れる（これが無いと poh_holdmetrics_python の依存解決で転ぶ）
 # レポジトリ ルートで
 maturin develop \
@@ -467,23 +382,6 @@ maturin develop \
 (linux-dev) satoshi@LAPTOP-88SH779D:/mnt/d/city_chain_project/DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python$ pytest poh_holdmetrics/tests/test_api.py::test_grpc_stats_broadcast -q
 .                                                                                                        [100%]
 1 passed in 2.03s
-
-2. grpcurl ワンライナーで手動確認
-# いまのカレントが poh_holdmetrics_python/ でも /mnt/d/... でも動くよう絶対パス版
-grpcurl -plaintext \
-  -import-path /mnt/d/city_chain_project/DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/protocols \
-  -proto hold.proto \
-  -d '{}' 127.0.0.1:60051 poh.HoldMetrics/Stats
-レスポンス例
-{
-  "holderId": "h",
-  "totalSeconds": "5",
-  "weightedScore": 10,
-  "updatedAt": {
-    "seconds": 1721572980,
-    "nanos": 0
-  }
-}
 
 3. 運用時の覚え書き
 項目	値	備考
@@ -560,3 +458,4 @@ poh_holdmetrics/tests/test_rust_bindings.py::test_rust_vs_python_param[1234.567-
 poh_holdmetrics/tests/test_scheduler.py::test_scheduler_start_stop <- ..\..\..\..\..\..\mnt\d\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\tests\test_scheduler.py PASSED
 poh_holdmetrics/tests/test_storage.py::test_mongo_storage_integration PASSED
 poh_holdmetrics/tests/test_tracker.py::test_tracker_basic <- ..\..\..\..\..\..\mnt\d\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\tests\test_tracker.py PASSED
+

@@ -3,8 +3,10 @@
 encryption.py
 AES-GCM によるフィールド暗号化・復号 + CSFLE 用データキー生成
 """
-import os, uuid
+import os
+import uuid
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
 
 def encrypt_field(plaintext: bytes, key: bytes) -> bytes:
     """
@@ -15,6 +17,7 @@ def encrypt_field(plaintext: bytes, key: bytes) -> bytes:
     ct = aes.encrypt(nonce, plaintext, None)
     return nonce + ct
 
+
 def decrypt_field(ciphertext: bytes, key: bytes) -> bytes:
     """
     AES-GCM で復号 → plaintext
@@ -22,6 +25,7 @@ def decrypt_field(ciphertext: bytes, key: bytes) -> bytes:
     nonce, ct = ciphertext[:12], ciphertext[12:]
     aes = AESGCM(key)
     return aes.decrypt(nonce, ct, None)
+
 
 def create_data_key() -> tuple[str, bytes]:
     """

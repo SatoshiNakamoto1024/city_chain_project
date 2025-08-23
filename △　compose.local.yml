@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  mongo:
+    # ローカル時だけ起動させる & ボリュームも付ける
+    ports: ["27017:27017"]
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL","mongosh --quiet --eval \"db.adminCommand({ ping: 1 })\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # ローカルではアプリをローカル mongod に向ける
+  poh_holdmetrics-http:
+    environment:
+      MONGODB_URL: mongodb://mongo:27017
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  poh_holdmetrics-grpc:
+    environment:
+      MONGODB_URL: mongodb://mongo:27017
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:
+    driver: local

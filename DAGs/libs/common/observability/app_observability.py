@@ -17,8 +17,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from observability.tracing import init_tracer_provider
-from observability.metrics import init_metrics, REQUEST_COUNTER, ACK_COUNTER
-from observability.exporters import init_exporters
+from observability.metrics import REQUEST_COUNTER, ACK_COUNTER
 from observability.middleware import ObservabilityMiddleware
 
 # ──────────────────────────────────────────

@@ -19,6 +19,11 @@ from pymongo.errors import ServerSelectionTimeoutError
 from poh_holdmetrics.storage.mongodb import MongoStorage
 from poh_holdmetrics.data_models import HoldEvent
 
+MURL = os.getenv("MONGODB_URL","") or os.getenv("MONGODB_URI","")
+USING_ATLAS = MURL.startswith("mongodb+srv://")
+
+pytestmark = []
+
 # ---------------------------------------------------------------------------
 #  環境変数 or デフォルト設定（URI/URL どちらでも拾えるように）
 # ---------------------------------------------------------------------------
@@ -49,8 +54,9 @@ SERVER_UP = _server_alive(MONGO_URI)
 #  テスト本体
 # ---------------------------------------------------------------------------
 @pytest.mark.asyncio
-@pytest.mark.xfail(not SERVER_UP, reason="mongod が起動していないためスキップ", strict=False)
 async def test_mongo_storage_integration() -> None:
+    if not _server_alive(MONGO_URI):
+        pytest.xfail("mongod/Atlas に到達できないためスキップ")
     """
     1) HoldEvent を1件保存
     2) get_stats で加算が反映されることを確認

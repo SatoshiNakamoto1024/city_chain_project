@@ -96,15 +96,15 @@ impl Transaction {
     fn verify_signature(&self, public_key: &[u8]) -> bool {
         let ntru_param = NtruParam::default(); // 適切なパラメータを選択
         let ntru_sign = NtruSign::new(&ntru_param);
-    
+
         let transaction_data = format!("{:?}", self);
-        
+
         // 公開鍵を使用して署名を検証
         match ntru_sign.verify(&transaction_data.as_bytes(), &self.signature, &public_key) {
             Ok(true) => true,
             _ => false,
         }
-    }    
+    }
 }
 
 type Blockchain = Arc<Mutex<Vec<Block>>>;
@@ -132,14 +132,14 @@ impl DPoS {
         if let Some(representative) = &self.approved_representative {
             let ntru_param = NtruParam::default(); // 適切なパラメータを選択
             let ntru_sign = NtruSign::new(&ntru_param);
-            
+
             // トランザクションデータを署名
             let transaction_data = format!("{:?}", transaction);
             let private_key = // ここで秘密鍵を適切に取得する
             let signature = ntru_sign.sign(&transaction_data.as_bytes(), &private_key).expect("Signing failed");
-            
+
             transaction.signature = signature;
-            
+
             Ok("Transaction approved")
         } else {
             Err("No representative elected")

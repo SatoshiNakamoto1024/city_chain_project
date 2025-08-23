@@ -16,13 +16,13 @@ import json
 from uuid import uuid4
 
 # 各モジュールのインポート
-from config import BATCH_INTERVAL  # BATCH_INTERVAL などの基本設定
 from dag.dag_storage import DAGNode
 from consensus.distributed_storage import DistributionAlgorithm
 from distributed_storage_system import store_transaction, restore_transaction
 
 # ※ ここでは、復元のテスト用に、DistributionAlgorithm を直接利用して
 #     分散保存先情報（distribution_info）を算出します。
+
 
 def create_dummy_transaction():
     """
@@ -38,6 +38,7 @@ def create_dummy_transaction():
     node.hash = hash_val  # 生成したハッシュを設定
     return node
 
+
 def test_restore_transaction():
     """
     ダミーのトランザクションを生成し、保存後に復元テストを実施します。
@@ -51,20 +52,21 @@ def test_restore_transaction():
     distribution_info = algo.compute_distribution(dag_node)
     print("算出された分散保存先情報:")
     print(json.dumps(distribution_info, indent=2))
-    
+
     # トランザクションの保存
     store_transaction(distribution_info, dag_node)
-    
+
     # 保存後、復元テストを実施
     restored_data = restore_transaction(distribution_info, dag_node.tx_id)
     print("復元されたトランザクションデータ:")
     print(json.dumps(restored_data, indent=2))
-    
+
     # 簡易的な一致チェック（tx_idが同じかどうか）
     if restored_data and restored_data.get("tx_id") == dag_node.tx_id:
         print("[Test] 復元テスト成功: トランザクションデータが一致しました。")
     else:
         print("[Test] 復元テスト失敗: データが一致しません。")
+
 
 if __name__ == "__main__":
     test_restore_transaction()

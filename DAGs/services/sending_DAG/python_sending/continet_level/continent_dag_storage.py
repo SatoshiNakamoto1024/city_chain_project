@@ -9,11 +9,12 @@ continent_dag_storage.py
 
 import time
 
+
 class ContinentDAGStorage:
     def __init__(self):
         self.nodes = {}       # batch_id -> dict( batch_hash, tx_list, etc. )
         self.timestamps = {}  # batch_id -> 登録時刻
-        self.continent_hash_map = {} # batch_id -> continent_hash
+        self.continent_hash_map = {}  # batch_id -> continent_hash
 
     def add_node(self, batch_id: str, batch_hash: str, tx_list: list, continent_hash: str):
         self.nodes[batch_id] = {

@@ -1,16 +1,16 @@
-# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\tracker.py
+# \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\tracker.py
 # -*- coding: utf-8 -*-
 """
 非同期保持トラッカー
 
-* Rust 拡張 `PyAggregator` があれば高速版を使用  
+* Rust 拡張 `PyAggregator` があれば高速版を使用
 * 無い場合は純 Python 実装にフォールバック
 """
 
 from __future__ import annotations
 
-import asyncio
-import time, os
+import time
+import os
 from collections import defaultdict
 from typing import Dict, List, Tuple
 
@@ -71,7 +71,7 @@ class AsyncTracker:
     *record_start* / *record_stop* あるいは *record()* で保持イベントを追加し、
     *snapshot()* で `List[tuple(holder_id, score)]` を得る。
     """
-    
+
     def __init__(self) -> None:
         self._agg = PyAggregator()
         self._pending: Dict[Tuple[str, str], Tuple[int, float]] = {}

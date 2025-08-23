@@ -31,7 +31,8 @@ logger.setLevel(logging.INFO)
 # 環境変数 (デフォルト値)
 # ───────────────────────────────
 DEFAULT_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-DEFAULT_DB  = os.getenv("DB_NAME", "federation_dag_db")
+DEFAULT_DB = os.getenv("DB_NAME", "federation_dag_db")
+
 
 # ───────────────────────────────
 # Public API
@@ -57,7 +58,7 @@ def save_completed_tx_to_mongo(
         省略時は環境変数 `MONGODB_URI` / `DB_NAME`
     """
     _uri = uri or DEFAULT_URI
-    _db  = db_name or DEFAULT_DB
+    _db = db_name or DEFAULT_DB
 
     try:
         with get_sync_client(uri=_uri, db_name=_db) as cli:

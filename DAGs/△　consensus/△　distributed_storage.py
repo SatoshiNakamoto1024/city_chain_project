@@ -7,6 +7,7 @@ import asyncio
 from distributed_storage_system import store_transaction
 from config import AVAILABLE_MUNICIPALITIES, AVAILABLE_CONTINENTS, CONTINENT_NODES
 
+
 class DistributionAlgorithm:
     def __init__(self, municipalities=AVAILABLE_MUNICIPALITIES,
                  continents=AVAILABLE_CONTINENTS,
@@ -61,6 +62,7 @@ class DistributionAlgorithm:
                 best_node = node["node_id"]
         return best_node if best_node is not None else "unknown"
 
+
 class ConsensusSimulator:
     def __init__(self, distribution_algo):
         self.distribution_algo = distribution_algo
@@ -90,6 +92,7 @@ class ConsensusSimulator:
         print(f"[Consensus] 最終合意: {json.dumps(final_proposal, indent=2)}")
         return final_proposal
 
+
 async def async_consensus_and_distribute(dag_node):
     algo = DistributionAlgorithm(AVAILABLE_MUNICIPALITIES, AVAILABLE_CONTINENTS, CONTINENT_NODES)
     consensus = ConsensusSimulator(algo)
@@ -102,9 +105,11 @@ async def async_consensus_and_distribute(dag_node):
     await loop.run_in_executor(None, store_transaction, final_distribution, dag_node)
     return final_distribution
 
+
 async def distribute_and_save_transaction(dag_node):
     final_distribution = await async_consensus_and_distribute(dag_node)
     return final_distribution
+
 
 if __name__ == "__main__":
     import asyncio

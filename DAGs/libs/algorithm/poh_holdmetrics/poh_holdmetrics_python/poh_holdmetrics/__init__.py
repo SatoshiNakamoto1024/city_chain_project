@@ -1,4 +1,4 @@
-# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\__init__.py
+# \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\__init__.py
 # -*- coding: utf-8 -*-
 """
 PoH-Hold-Metrics Python API (lightweight)
@@ -13,7 +13,8 @@ try:
 except PackageNotFoundError:
     __version__ = "0.0.0"
 
-__all__ = ["calculate_score", "AsyncTracker", "Scheduler", "__version__"]
+__all__ = ["AsyncTracker", "Scheduler", "__version__", "calculate_score"]
+
 
 def __getattr__(name):
     if name == "calculate_score":

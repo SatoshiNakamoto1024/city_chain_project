@@ -12,7 +12,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from object_processing.shard_router import IngressRouter
 from object_processing.event import BaseEvent
 from object_processing.shard_worker import start_workers
-from object_processing.config import SHARD_COUNT
 
 
 @pytest.mark.asyncio

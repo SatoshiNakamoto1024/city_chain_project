@@ -3,10 +3,11 @@
 """
 from collections import defaultdict
 
+
 class DAGStore:
     def __init__(self):
-        self.nodes   = {}              # tx_id -> tx_dict
-        self.edges   = defaultdict(set) # parent -> {child...}
+        self.nodes = {}              # tx_id -> tx_dict
+        self.edges = defaultdict(set)  # parent -> {child...}
 
     def add_node(self, tx):
         self.nodes[tx["tx_id"]] = tx

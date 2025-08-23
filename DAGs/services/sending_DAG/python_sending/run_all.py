@@ -15,6 +15,7 @@ import subprocess
 import time
 import sys
 
+
 def main():
     try:
         # city_main
@@ -38,6 +39,7 @@ def main():
         city_proc.terminate()
         continent_proc.terminate()
         global_proc.terminate()
+
 
 if __name__ == "__main__":
     main()

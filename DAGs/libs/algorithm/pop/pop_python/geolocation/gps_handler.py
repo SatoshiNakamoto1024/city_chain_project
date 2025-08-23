@@ -4,6 +4,7 @@
 GPS データの妥当性チェック
 """
 
+
 def validate_gps(lat: float, lon: float) -> bool:
     """
     緯度経度が有効な範囲内かをチェックします

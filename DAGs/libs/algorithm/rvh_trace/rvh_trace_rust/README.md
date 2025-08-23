@@ -38,37 +38,37 @@ rvh_faultset/                                     ← リポジトリルート
             └── test_faultset.py         　　　　　　　← pytest テスト
 
 🎯 rvh_trace_rust で出来ること
-a:機能	
-b:何が嬉しい？	
+a:機能
+b:何が嬉しい？
 c:どこで使う？
 
 a:1-shot 初期化 init_tracing(level)
-b:🔧 tracing の Subscriber と OTLP エクスポーターを 一度だけ 構築。Stdout フォーマット＋OpenTelemetry Collector 送信がワンライナー	
+b:🔧 tracing の Subscriber と OTLP エクスポーターを 一度だけ 構築。Stdout フォーマット＋OpenTelemetry Collector 送信がワンライナー
 c: アプリ起動時／テストの #[test] 前
 
-a:Span 生成 new_span(name)	
-b:Rust から tracing::span!(INFO, …) を安全ラップ	
+a:Span 生成 new_span(name)
+b:Rust から tracing::span!(INFO, …) を安全ラップ
 c:ロジックの入口・I/O 境界など
 
-a:スコープ実行 in_span(name, fields, f)	
+a:スコープ実行 in_span(name, fields, f)
 b:let _enter = span.enter(); のボイラープレートを隠蔽し、
-キー/値をまとめてレコード	
+キー/値をまとめてレコード
 c:小粒な処理を包む時
 
 a:マクロ
-b:record_span!("op", user = 42)	1 行で Span 作成＋enter。引数は ?Debug で自動フォーマット	
+b:record_span!("op", user = 42)	1 行で Span 作成＋enter。引数は ?Debug で自動フォーマット
 c:ハンドラ関数の先頭など
 
-a:PyO3 バインディング	
-b:rvh_trace.init_tracing() / rvh_trace.span() が Python から呼べる	
+a:PyO3 バインディング
+b:rvh_trace.init_tracing() / rvh_trace.span() が Python から呼べる
 c:pytest・Jupyter で Rust 側のトレースを共有
 
-a:CLI デモ cargo run --bin main_trace	
-b:Rust-only 環境で Collector 送信を試す	
+a:CLI デモ cargo run --bin main_trace
+b:Rust-only 環境で Collector 送信を試す
 c:動作確認・運用スクリプト
 
-a:Tokio-compatible	
-b:pyo3_asyncio 経由で asyncio⇄Tokio ブリッジを自動生成	
+a:Tokio-compatible
+b:pyo3_asyncio 経由で asyncio⇄Tokio ブリッジを自動生成
 c:Python async と Rust async の混在
 
 🛠️ 内部構成ざっくり
@@ -387,14 +387,14 @@ tokio の「現在のランタイム」が無いまま OpenTelemetry-OTLP 初期
 ① Python 側で import rvh_trace_rust → init_tracing("debug") を呼ぶ	この時点では Tokio ランタイムが存在しない
 ② init_tracing 内で Runtime::new() を生成して OnceCell に保持	しかし そのランタイムを「現在の」ランタイムとして enter していない
 ③ opentelemetry_otlp::new_pipeline().install_simple() が呼ばれる	OTLP exporter は gRPC(Tonic) のバックグラウンドタスクを tokio::spawn() で起動する
-④ tokio::spawn() が Handle::current() を取ろうとする	ハンドルが無いため panic: “there is no reactor running” が発生 
+④ tokio::spawn() が Handle::current() を取ろうとする	ハンドルが無いため panic: “there is no reactor running” が発生
 github.com
 docs.rs
 users.rust-lang.org
 
 同様の報告は OpenTelemetry/Tonic や tokio-postgres でも多数あり、
 「ランタイムを生成したら rt.enter() で 現在の ランタイムにしてから非同期初期化を行う」
-のが定石とされています 
+のが定石とされています
 github.com
 tokio.rs
 stackoverflow.com
@@ -424,7 +424,7 @@ pub fn init_tracing(filter: &str) -> Result<(), TraceError> {
 }
 
 Runtime::enter() により このスレッドがランタイムの Reactor/Timer を持つ 状態になるため、
-install_simple() 内の tokio::spawn() が安全に動ける 
+install_simple() 内の tokio::spawn() が安全に動ける
 docs.rs
 scs.pages.ub.uni-bielefeld.de
 
@@ -433,11 +433,11 @@ OTLP exporter のバックグラウンドタスクが生き続ける。
 
 2. 依存 crate 側の “別案” にしない理由
 opentelemetry-otlp には blocking 版 (install_batch) や
-tokio::spawn を使わない exporter は現状無い 
+tokio::spawn を使わない exporter は現状無い
 docs.rs
 
 pyo3_async_runtimes の future_into_py は「すでに動いているランタイム」を前提に
-spawn_local で Future を駆動する設計で、本件の panic とは別レイヤ 
+spawn_local で Future を駆動する設計で、本件の panic とは別レイヤ
 traffloat.github.io
 
 確認手順
@@ -454,24 +454,24 @@ PY
 ログが流れ、クラッシュしないことを確認。
 
 #　参考になった資料
-Tokio “no reactor running” パニックの原因と対策 
+Tokio “no reactor running” パニックの原因と対策
 github.com
 
-Tonic / OpenTelemetry で同様の症状が出る issue 列 
+Tonic / OpenTelemetry で同様の症状が出る issue 列
 docs.rs
 github.com
 
-Runtime::enter() の公式ドキュメントと例 
+Runtime::enter() の公式ドキュメントと例
 docs.rs
 reddit.com
 
-OpenTelemetry-OTLP install_simple が内部で tokio::spawn を使う実装部 
+OpenTelemetry-OTLP install_simple が内部で tokio::spawn を使う実装部
 docs.rs
 
-pyo3_async_runtimes::tokio::future_into_py の動作説明 
+pyo3_async_runtimes::tokio::future_into_py の動作説明
 traffloat.github.io
 
-StackOverflow の類似質問 (tokio-postgres 等) 
+StackOverflow の類似質問 (tokio-postgres 等)
 stackoverflow.com
 stackoverflow.com
 stackoverflow.com
@@ -537,7 +537,7 @@ Rustのテストで .pyd を探している	find_shared_lib() は不要、Python
 
 2 ️⃣　tracing::debug! + RUST_LOG でランタイム検出の流れをログ出力
 やること	手順	見えるもの
-コード側に debug ログを挿す	rust<br>// trace.rs (init_tracing の最初あたり)<br>tracing::debug!("Handle::try_current() = {:?}", tokio::runtime::Handle::try_current());<br>	
+コード側に debug ログを挿す	rust<br>// trace.rs (init_tracing の最初あたり)<br>tracing::debug!("Handle::try_current() = {:?}", tokio::runtime::Handle::try_current());<br>
 環境変数でログレベル指定	powershell<br>set RUST_LOG=rvh_trace_rust=debug,tokio=debug<br>cargo test --test test_py_bindings -- --nocapture<br>	- rvh_trace_rust 自分のログ
 - tokio の内部ログ（runtime 生成や spawn など）
 
@@ -547,7 +547,7 @@ EnvFilter に RUST_LOG が優先されるので、コード側の EnvFilter::new
 
 3 ️⃣　dbg!() や eprintln!() で即時ダンプ
 やること	手順	見えるもの
-Rust ↔︎ Python 境界の値を確認	rust<br>// bindings.rs<br>dbg!("before init_tracing");<br>dbg!(Handle::try_current());<br>	
+Rust ↔︎ Python 境界の値を確認	rust<br>// bindings.rs<br>dbg!("before init_tracing");<br>dbg!(Handle::try_current());<br>
 テスト実行（--nocapture）	powershell<br>cargo test --test test_py_bindings -- --nocapture<br>	その場所が確実に通ったか・値はどうかを 行番号付きでそのまま表示
 
 ポイント
@@ -574,7 +574,7 @@ panic 直前に どのタスクが動いた／止まった かが分かります
 
 5 ️⃣　pyo3_async_runtimes::tokio::init の戻り値を確認
 やること	手順	見えるもの
-初期化結果を dbg!	rust<br>// bindings.rs (pymodule 冒頭)<br>let already = pyo3_async_runtimes::tokio::init( <br> tokio::runtime::Builder::new_multi_thread().enable_all()<br>);<br>dbg!(already); // true なら既に初期化済み<br>	
+初期化結果を dbg!	rust<br>// bindings.rs (pymodule 冒頭)<br>let already = pyo3_async_runtimes::tokio::init( <br> tokio::runtime::Builder::new_multi_thread().enable_all()<br>);<br>dbg!(already); // true なら既に初期化済み<br>
 テスト実行	powershell<br>cargo test --test test_py_bindings -- --nocapture<br>	dbg!(already) が true/false どちらか吐くので Runtime 重複判定がすぐ分かる
 
 6 ️⃣　最小 Python スクリプトで import → panic を追跡

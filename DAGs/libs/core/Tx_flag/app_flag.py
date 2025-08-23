@@ -2,10 +2,10 @@
 from flag_python import TxType, route_tx_by_flag
 
 sample = [
-    {"tx_id":"1", "tx_type":TxType.FRESH_TX.value},
-    {"tx_id":"2", "tx_type":TxType.POH_ACK.value},
-    {"tx_id":"3", "tx_type":TxType.REPAIR_REQ.value},
-    {"tx_id":"4", "tx_type":TxType.CHECKPOINT.value},
+    {"tx_id": "1", "tx_type": TxType.FRESH_TX.value},
+    {"tx_id": "2", "tx_type": TxType.POH_ACK.value},
+    {"tx_id": "3", "tx_type": TxType.REPAIR_REQ.value},
+    {"tx_id": "4", "tx_type": TxType.CHECKPOINT.value},
 ]
 
 ordered = route_tx_by_flag(sample)

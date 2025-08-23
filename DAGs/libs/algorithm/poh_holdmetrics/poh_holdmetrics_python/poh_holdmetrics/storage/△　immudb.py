@@ -7,6 +7,7 @@ from ..data_models import HoldEvent, HoldStat
 from poh_holdmetrics.protocols import immudb_pb2 as immu_pb
 from poh_holdmetrics.protocols import immudb_pb2_grpc as immu_grpc
 
+
 class ImmudbStorage:
     """
     immuDB 非同期ストレージプラグイン (gRPC)。

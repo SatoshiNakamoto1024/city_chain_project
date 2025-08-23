@@ -14,9 +14,9 @@ from typing import List, Dict, Any, Optional
 # ────────────────────────────────────────────────────────────────
 # 外部設定ファイルのパス
 # ────────────────────────────────────────────────────────────────
-BASE_DIR   = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CONFIG_DIR = os.path.join(BASE_DIR, "config")
-CITY_EVENTS_FILE     = os.path.join(CONFIG_DIR, "city_events.json")
+CITY_EVENTS_FILE = os.path.join(CONFIG_DIR, "city_events.json")
 LOCATION_EVENTS_FILE = os.path.join(CONFIG_DIR, "location_events.json")
 
 
@@ -38,7 +38,7 @@ def _save_json(path: str, data: List[Dict[str, Any]]) -> None:
 # ────────────────────────────────────────────────────────────────
 # 起動時に一度だけロード
 # ────────────────────────────────────────────────────────────────
-CITY_BONUS_EVENTS: List[Dict[str, Any]]     = _load_json(CITY_EVENTS_FILE)
+CITY_BONUS_EVENTS: List[Dict[str, Any]] = _load_json(CITY_EVENTS_FILE)
 LOCATION_BONUS_EVENTS: List[Dict[str, Any]] = _load_json(LOCATION_EVENTS_FILE)
 
 

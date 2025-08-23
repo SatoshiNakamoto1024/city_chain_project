@@ -40,9 +40,9 @@ async def send(payload_b58: str) -> PoHResponse:
     return await AsyncSender().send(payload_b58)
 
 
-def send_sync(payload_b58: str) -> PoHResponse:  # noqa: D401
+def send_sync(payload_b58: str) -> PoHResponse:
     """
-    同期環境から呼ぶためのラッパ。  
+    同期環境から呼ぶためのラッパ。
     モンキーパッチで ``AsyncSender.send`` が同期関数に
     置き換えられた場合にも対応する。
     """

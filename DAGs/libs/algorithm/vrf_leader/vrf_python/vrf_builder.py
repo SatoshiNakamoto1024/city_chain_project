@@ -1,5 +1,4 @@
 # VRF/vrf_python/vrf_builder.py
-import binascii
 from typing import Union
 from vrf_rust import generate_vrf_keypair_py, prove_vrf_py, verify_vrf_py
 

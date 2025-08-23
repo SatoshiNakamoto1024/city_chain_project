@@ -8,15 +8,15 @@ from .schema import PoHRequest, PoHResponse
 from .sender import AsyncSender, send, send_sync      # ★ send を追加
 
 __all__ = [
-    "PoHRequest",
-    "PoHResponse",
-    "PoHRequestBuilder",
     "AsyncSender",
+    "EncodeError",
+    "PoHRequest",
+    "PoHRequestBuilder",
+    "PoHRequestError",
+    "PoHResponse",
+    "SendError",
     "send",            # ★
     "send_sync",
-    "PoHRequestError",
-    "EncodeError",
-    "SendError",
 ]
 
 try:
@@ -27,7 +27,8 @@ except PackageNotFoundError:  # pragma: no cover
 # --------------------------------------------------------------------- #
 # 互換エイリアス ― tests が ``import poh_request.poh_request`` を期待
 # --------------------------------------------------------------------- #
-import sys, types
+import sys
+import types
 
 _alias = types.ModuleType(f"{__name__}.{__name__}")
 _alias.__dict__.update(globals())               # ルート名前空間を丸ごと共有

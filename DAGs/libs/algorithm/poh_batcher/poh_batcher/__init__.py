@@ -6,4 +6,4 @@ from importlib.metadata import version
 __all__ = ["AsyncBatcher", "pack_acks", "unpack_batch"]
 __version__ = version("poh-batcher")
 
-from .batcher import AsyncBatcher, pack_acks, unpack_batch   # noqa: E402
+from .batcher import AsyncBatcher, pack_acks, unpack_batch

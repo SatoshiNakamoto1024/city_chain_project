@@ -8,12 +8,12 @@ Presence Server の全ルートを Redis 依存なしでエンドツーエンド
 """
 from __future__ import annotations
 import inspect
-import asyncio
 from typing import Dict, Set
 import pytest
 import httpx
 
 from . import server as pres_svr
+
 
 # ─────────────────────────────────────────────
 # 1) FakeRedis 実装  (最低限のコマンドのみ)
@@ -50,7 +50,7 @@ class FakeRedis:
                     case "del":  self.outer._kv.pop(op[1], None)
             self.ops.clear()
 
-    def pipeline(self):  # noqa: D401
+    def pipeline(self):
         return FakeRedis._Pipe(self)
 
     # ---- simple cmds ----
@@ -82,6 +82,7 @@ class FakeRedis:
     def from_url(cls, *_a, **_kw):
         return cls()
 
+
 # ─────────────────────────────────────────────
 # 2) monkeypatch Redis before startup
 # ─────────────────────────────────────────────
@@ -89,6 +90,7 @@ pres_svr.Redis = FakeRedis          # type: ignore[attr-defined]
 pres_svr.redis = FakeRedis()        # global instance used later
 
 app = pres_svr.create_app()         # FastAPI app (startup uses FakeRedis)
+
 
 # ─────────────────────────────────────────────
 # 3) httpx バージョン互換クライアント
@@ -101,6 +103,7 @@ def get_client() -> httpx.AsyncClient:
     tr = httpx.ASGITransport(app=app, lifespan="off") if "lifespan" in tr_sig.parameters \
          else httpx.ASGITransport(app=app)
     return httpx.AsyncClient(transport=tr, base_url="http://t")
+
 
 # ─────────────────────────────────────────────
 # 4) テスト本体
@@ -122,6 +125,7 @@ async def test_presence_lifecycle():
         # list → 0 件
         resp = await cli.get("/presence")
         assert len(resp.json()) == 0
+
 
 @pytest.mark.asyncio
 async def test_presence_client_wrapper():

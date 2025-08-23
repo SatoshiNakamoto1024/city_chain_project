@@ -21,7 +21,7 @@ use tokio::sync::Mutex;
 use crate::{AppState, Transaction};  // 適宜、別ファイルで定義している AppState, Transaction のパスに合わせる
 
 /// PoH状態を取得するためのAPIエンドポイント。
-/// 
+///
 /// - 最新ハッシュ (latest_hash)
 /// - PoHに保持されているイベント数 (count)
 /// - イベント履歴 (events)
@@ -175,7 +175,7 @@ let test_transaction = Transaction::new(
 
 // たとえば PoH に記録 (受信した、とか)
 {
-    let mut state_guard = shared_state.lock().await; 
+    let mut state_guard = shared_state.lock().await;
     let mut poh_guard = state_guard.poh.lock().await;
     let event_str = format!("ReceiveTx: {}, from {} -> {} at {}",
                             test_transaction.transaction_id,
@@ -270,7 +270,7 @@ use sha2::{Sha256, Digest};
 use hex;
 
 pub struct AppState {
-    pub poh: Arc<Mutex<ProofOfHistory>>, 
+    pub poh: Arc<Mutex<ProofOfHistory>>,
     // ...他にも pending_transactions や DPoS などを持っているかもしれません
 }
 
@@ -392,8 +392,3 @@ poh_guard.add_event("ReceiveTx: ...") でPoHに記録
 /poh_status エンドポイントにアクセスすると、PoHの最新状態を参照可能
 こうして「いつ受理したのか」を、PoHのイベント履歴から取得・確認できます。
 改ざんが行われれば連鎖ハッシュ (latest_hash や各 event_hash) が変わるため、履歴の正当性を担保できます。
-
-
-
-
-

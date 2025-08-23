@@ -8,7 +8,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 
 import logging
 from typing import List, Optional
-import grpc
 
 from grpc_dag.gen.dag_pb2 import TxRequest, StatusRequest
 from grpc_dag.gen.dag_pb2_grpc import DAGServiceStub

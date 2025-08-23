@@ -45,8 +45,8 @@ def compress(data: bytes, level: int = 3) -> Tuple[str, bytes]:
     data : bytes
         元データ
     level : int, default 3
-        圧縮レベル  
-        *gzip* : 1–9  
+        圧縮レベル
+        *gzip* : 1–9
         *zstd* : 1–22 (3 は zstd のデフォルトに相当)
 
     Returns

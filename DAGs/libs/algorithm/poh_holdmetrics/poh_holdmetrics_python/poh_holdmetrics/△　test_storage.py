@@ -9,13 +9,11 @@ Storage‑layer integration test
 
 from __future__ import annotations
 
-import asyncio
 import os
 from datetime import datetime, timezone
 
 import pytest
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from pymongo.errors import ServerSelectionTimeoutError
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from poh_holdmetrics.storage.mongodb import MongoStorage
 from poh_holdmetrics.data_models import HoldEvent
@@ -24,7 +22,8 @@ from poh_holdmetrics.data_models import HoldEvent
 #  環境変数 or デフォルト設定
 # ---------------------------------------------------------------------------
 MONGO_URI = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-MONGO_DB  = os.getenv("MONGODB_DB",  "pytest_tmp")
+MONGO_DB = os.getenv("MONGODB_DB", "pytest_tmp")
+
 
 # ---------------------------------------------------------------------------
 #  ヘルパー: mongod が立っているかを事前チェック
@@ -40,7 +39,9 @@ def _server_alive(uri: str) -> bool:
     finally:
         client.close()
 
+
 SERVER_UP = _server_alive(MONGO_URI)
+
 
 # ---------------------------------------------------------------------------
 #  テスト本体
@@ -55,14 +56,14 @@ async def test_mongo_storage_integration() -> None:
     # ── arrange ───────────────────────────────────────────────
     # 強制的に環境変数を上書きして MongoStorage に認識させる
     os.environ["MONGODB_URL"] = MONGO_URI
-    os.environ["MONGODB_DB"]  = MONGO_DB
+    os.environ["MONGODB_DB"] = MONGO_DB
 
     store = MongoStorage()  # 接続文字列は上の env を読む
     await store.purge()     # まっさらな状態に
 
     # ── act ───────────────────────────────────────────────────
     now = datetime.now(tz=timezone.utc)
-    ev  = HoldEvent("tk", "hd", now, now, 2.0)   # duration=0 → score=0
+    ev = HoldEvent("tk", "hd", now, now, 2.0)   # duration=0 → score=0
     await store.save_event(ev)
 
     stats = await store.get_stats()

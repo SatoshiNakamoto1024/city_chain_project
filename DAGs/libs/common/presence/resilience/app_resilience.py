@@ -14,13 +14,12 @@ import asyncio
 import logging
 import random
 from fastapi import FastAPI, HTTPException, Request
-from redis.asyncio import Redis
 from starlette.middleware.base import BaseHTTPMiddleware
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from resilience.circuit_breaker import circuit_breaker, CircuitOpenError
+from resilience.circuit_breaker import circuit_breaker
 from resilience.rate_limiter import RateLimiter, RateLimitExceeded
 from resilience.errors import CircuitOpenError as CBOpen
 
@@ -44,6 +43,7 @@ app = FastAPI(title="Resilience Playground")
 # ──────────────────────────
 global_rl = RateLimiter(rate=2, capacity=2)  # 2 req/sec, burst 2
 
+
 # ──────────────────────────
 # Middleware : IP 単位レート制御
 # ──────────────────────────
@@ -56,7 +56,9 @@ class RLMiddleware(BaseHTTPMiddleware):
         except RateLimitExceeded:
             raise HTTPException(status_code=429, detail="Too Many Requests")
 
+
 app.add_middleware(RLMiddleware)
+
 
 # ──────────────────────────
 # Circuit Breaker 用 route
@@ -67,6 +69,7 @@ async def _maybe_fail():
     await asyncio.sleep(0.05)
     if random.random() < 0.5:
         raise RuntimeError("random failure")
+
 
 @app.get("/unstable")
 async def unstable():
@@ -82,6 +85,7 @@ async def unstable():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # ──────────────────────────
 # RateLimiter 用 route
 # ──────────────────────────
@@ -95,6 +99,7 @@ async def limited():
         return {"status": "granted"}
     except RateLimitExceeded:
         raise HTTPException(status_code=429, detail="rate limit")
+
 
 # ──────────────────────────
 # 直接起動

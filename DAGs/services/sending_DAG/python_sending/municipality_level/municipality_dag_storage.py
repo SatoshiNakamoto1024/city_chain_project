@@ -9,11 +9,12 @@ city_dag_storage.py
 
 import time
 
+
 class CityDAGStorage:
     def __init__(self):
         self.nodes = {}       # tx_id -> dict( sender, receiver, amount, hash, tx_type, etc. )
         self.timestamps = {}  # tx_id -> 登録時刻
-        self.batch_hash_map = {} # tx_id -> batch_hash
+        self.batch_hash_map = {}  # tx_id -> batch_hash
 
     def add_node(self, tx_id: str, data: dict, batch_hash: str):
         self.nodes[tx_id] = data

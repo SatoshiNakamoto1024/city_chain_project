@@ -113,13 +113,13 @@ DAG が PoH_Ack を参照 → 保持ノードを即特定
 
 # 実装分担イメージ
 処理	Python	Rust
-PoH_REQUEST 発行	●python	
-空き容量チェック・Tx保存	●python	
+PoH_REQUEST 発行	●python
+空き容量チェック・Tx保存	●python
 Dilithium 署名生成	（FFI 経由で呼び出し）	●rust
-PoH_ACK Tx 組み立て & DAG 追加	●python	
+PoH_ACK Tx 組み立て & DAG 追加	●python
 PoH_ACK 受信時の署名検証		●rust
 PoH 閾値カウント & “保存完了” 判定		●rust
-TTL 到来後の GC	●python	
+TTL 到来後の GC	●python
 
 
 #　後の受信者が受信時に復元するが、このとき、誰も保存した人がログインしていない場合は復元不可能となる。それを防ぎたい。よって、gossipは使わないよ！

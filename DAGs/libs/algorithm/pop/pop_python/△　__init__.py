@@ -6,13 +6,12 @@ pop_python パッケージ
 Proof-of-Presence 用の高レベル Python API
 """
 __version__ = "0.1.0"
-import sys, os, base64
+import sys
+import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from pop_python.manager      import initialize_pop_system, get_place_info_and_bonus
-from pop_python.polygons     import load_city_polygons, find_city_by_location
-from pop_python.events       import check_city_event, check_location_event
-from pop_python.localization import get_mobile_location
+from pop_python.polygons import load_city_polygons, find_city_by_location
+from pop_python.events import check_city_event, check_location_event
 
 # Rust 拡張がビルドされていれば、dynamic に置き換え
 try:

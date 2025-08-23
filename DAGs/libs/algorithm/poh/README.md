@@ -145,7 +145,7 @@ poh_validator
 → 受信した PoH_ACK Tx の署名検証とカウント閾値チェック
 「PoH 数 >= MIN_POH_REQUIRED」かどうかを判定
 
-poh_repair 
+poh_repair
 → REPAIR_REQ／REPAIR_ACK Tx の組み立て・送受信・検証
 （REQ は Python で作り、ACK の検証は Rust コアで）
 

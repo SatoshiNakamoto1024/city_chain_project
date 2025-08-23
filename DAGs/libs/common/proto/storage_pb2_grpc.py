@@ -47,8 +47,9 @@ def add_StorageServiceServicer_to_server(servicer, server):
             'storage.StorageService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
-
  # This class is part of an EXPERIMENTAL API.
+
+
 class StorageService(object):
     """Missing associated documentation comment in .proto file."""
 

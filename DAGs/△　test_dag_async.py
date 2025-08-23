@@ -26,6 +26,7 @@ from config import BATCH_INTERVAL, NUM_SHARDS, REDUNDANCY, available_nodes
 from dag.dag_storage import DAGNode
 from dag.dag_handler import DAGHandler
 
+
 # ----------------------------
 # ネットワーク状態シミュレーション関数
 # ----------------------------
@@ -47,6 +48,7 @@ def simulate_network_conditions(nodes):
         active_nodes = new_nodes
     return active_nodes
 
+
 # ----------------------------
 # シャーディングとノード割り当ての処理（動的シミュレーション版）
 # ----------------------------
@@ -62,6 +64,7 @@ def split_data(data, n):
         shards[-1] += data[n * chunk_size:]
     return shards
 
+
 def select_nodes_for_shard_dynamic(shard, redundancy, nodes):
     """
     シャードのSHA-256ハッシュ値を計算し、その値に基づいて各ノードにスコアを与え、
@@ -76,6 +79,7 @@ def select_nodes_for_shard_dynamic(shard, redundancy, nodes):
     scored_nodes.sort(key=lambda x: x[0], reverse=True)
     selected = [n["node_id"] for _, n in scored_nodes[:redundancy]]
     return selected
+
 
 def shard_and_assign_dynamic(data, num_shards, redundancy, nodes):
     """
@@ -95,6 +99,7 @@ def shard_and_assign_dynamic(data, num_shards, redundancy, nodes):
         }
     return assignments
 
+
 # ----------------------------
 # ダミートランザクション生成関数
 # ----------------------------
@@ -112,6 +117,7 @@ async def create_dummy_transaction():
     node = DAGNode(tx_id, sender, receiver, amount, tx_type="send", status="completed")
     node.hash = hash_val
     return node
+
 
 # ----------------------------
 # 各トランザクションの非同期処理関数（並列実行用）
@@ -136,6 +142,7 @@ async def process_transaction(handler, node):
         "assignment": assignments
     }
 
+
 # ----------------------------
 # メイン非同期テスト実行部
 # ----------------------------
@@ -146,6 +153,7 @@ async def main():
     results = await asyncio.gather(*tasks)
     print("=== 非同期並列処理テスト結果 ===")
     print(json.dumps(results, indent=2))
+
 
 if __name__ == "__main__":
     asyncio.run(main())

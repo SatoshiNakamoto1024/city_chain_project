@@ -6,9 +6,10 @@ from collections import defaultdict
 from typing import Dict, Set
 from ..core.models import BaseTx, TxType
 
+
 class OutgoingDAG:
     def __init__(self):
-        self.nodes: Dict[str, BaseTx]   = {}
+        self.nodes: Dict[str, BaseTx] = {}
         self.edges: Dict[str, Set[str]] = defaultdict(set)
 
     def add(self, tx: BaseTx):

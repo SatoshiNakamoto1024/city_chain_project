@@ -2,11 +2,11 @@
 
 """VRF proof 検証ラッパー"""
 
-import binascii
 from typing import Union
 from vrf_rust import verify_vrf_py
 
 __all__ = ["verify_vrf"]
+
 
 def _ensure_bytes(data: Union[bytes, bytearray, list[int]]) -> bytes:
     """
@@ -17,6 +17,7 @@ def _ensure_bytes(data: Union[bytes, bytearray, list[int]]) -> bytes:
     if isinstance(data, list):
         return bytes(data)
     raise TypeError(f"Expected bytes or list[int], got {type(data).__name__}")
+
 
 def verify_vrf(public_key_hex: str, proof_hex: str, message: Union[str, bytes]) -> str:
     """

@@ -64,7 +64,7 @@ async fn test_dpos_logic_direct() {
     let state = AppState {
         chain: Arc::new(Mutex::new(DummyChain::new(dpos_instance.clone()))),
     };
-    
+
     // アプリケーションを初期化
     let app = test::init_service(
         App::new()
@@ -72,7 +72,7 @@ async fn test_dpos_logic_direct() {
             .configure(new_app),
     )
     .await;
-    
+
     // テスト用のリクエストを作成
     let req = test::TestRequest::get()
         .uri("/example") // 適切なパスに置き換える

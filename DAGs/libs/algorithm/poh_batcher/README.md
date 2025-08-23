@@ -250,7 +250,7 @@ default = ["core", "py-ext"]
 
 使い方確認
 cargo clean
-cargo build --features py-ext   # 本物 DLL を生成 
+cargo build --features py-ext   # 本物 DLL を生成
   ※この意味で上記必要→　--features py-ext makes Cargo build the cdylib with #[pymodule] symbols
 cargo test --features python -- --test-threads=1            # もう ImportError は出ない
 
@@ -273,4 +273,3 @@ cd poh_ack
 　※プロジェクトの test extras をまとめて拾ってくる
 pip install -e '.[test]'
 python -m pytest poh_batcher/tests
-

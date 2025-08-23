@@ -193,7 +193,7 @@ def test_distributed_storage():
     for _ in range(20):
         node = create_dummy_transaction()
         transactions.append(node)
-    
+
     results = []
     # 各トランザクションを DAGHandler に登録し、1秒後のバッチ処理で分散保存を実行
     for node in transactions:
@@ -202,7 +202,7 @@ def test_distributed_storage():
         # テスト上、ここでは個別に処理結果を待つのではなく、バッチ処理が内部で動作するのを待つ
         # 実際には、1秒後に各トランザクションの保存処理が非同期で実行される
         time.sleep(1.1)  # 1秒以上待機
-        
+
         # 分散保存アルゴリズムが実行された結果は、外部分散ストレージにファイルとして保存されるため、
         # ここでは、その結果を想定して、出力された情報をログとして取得するか、ファイル内容を確認します。
         # ここではシンプルに、各トランザクションの情報を結果リストに追加する。
@@ -213,7 +213,7 @@ def test_distributed_storage():
             "timestamp": time.time()
         }
         results.append(result)
-    
+
     print("=== テスト結果 ===")
     print(json.dumps(results, indent=2))
 
@@ -385,7 +385,7 @@ PS D:\city_chain_project\network\DAGs> python test_dag_restore.py
   "node": "europe_node_2",
   "base_hash": 29687715770091380042722578965730581801984075839825124599667857621263618308779
 }
-[Distributed Storage] 保存完了: ./distributed_storage\CityD\Europe\europe_node_2\1c7c7270-6452-4a29-a6e6-26a58935a3ff.json       
+[Distributed Storage] 保存完了: ./distributed_storage\CityD\Europe\europe_node_2\1c7c7270-6452-4a29-a6e6-26a58935a3ff.json
 [Distributed Storage] 復元成功: ./distributed_storage\CityD\Europe\europe_node_2\1c7c7270-6452-4a29-a6e6-26a58935a3ff.json
 復元されたトランザクションデータ:
 {
@@ -407,15 +407,15 @@ PS D:\city_chain_project\network\DAGs> python test_dag_restore.py
 
 PS D:\city_chain_project\network\DAGs\consensus> python distributed_storage.py
 [INFO] 2025-03-12 22:55:15,858 - Distribution computed: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731}
-[INFO] 2025-03-12 22:55:15,859 - [Consensus] 提案収集: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731, "score": 0.4267580613699945}    
+[INFO] 2025-03-12 22:55:15,859 - [Consensus] 提案収集: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731, "score": 0.4267580613699945}
 [INFO] 2025-03-12 22:55:15,975 - Distribution computed: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731}
-[INFO] 2025-03-12 22:55:15,977 - [Consensus] 提案収集: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731, "score": 0.39273525578225454}   
+[INFO] 2025-03-12 22:55:15,977 - [Consensus] 提案収集: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731, "score": 0.39273525578225454}
 [INFO] 2025-03-12 22:55:16,092 - Distribution computed: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731}
-[INFO] 2025-03-12 22:55:16,094 - [Consensus] 提案収集: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731, "score": 0.3918481001872053}    
+[INFO] 2025-03-12 22:55:16,094 - [Consensus] 提案収集: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731, "score": 0.3918481001872053}
 [INFO] 2025-03-12 22:55:16,211 - Distribution computed: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731}
-[INFO] 2025-03-12 22:55:16,213 - [Consensus] 提案収集: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731, "score": 0.4510979844694671}    
+[INFO] 2025-03-12 22:55:16,213 - [Consensus] 提案収集: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731, "score": 0.4510979844694671}
 [INFO] 2025-03-12 22:55:16,325 - Distribution computed: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731}
-[INFO] 2025-03-12 22:55:16,327 - [Consensus] 提案収集: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731, "score": 0.4075294330322386}    
+[INFO] 2025-03-12 22:55:16,327 - [Consensus] 提案収集: {"municipality": "CityD", "continent": "Africa", "node": "africa_node_1", "base_hash": 108015923607685088977126542259556002212038630039858036184508981016676201850731, "score": 0.4075294330322386}
 [INFO] 2025-03-12 22:55:16,442 - [Consensus] 平均スコア: 0.414
 [INFO] 2025-03-12 22:55:16,444 - [Consensus] 通常合意プロセスにより最終合意
 [INFO] 2025-03-12 22:55:16,445 - [Consensus] 最終合意: {
@@ -499,7 +499,7 @@ Rust に影響がなければ Python 側だけの修正で済む
 
 4. どうすればビルドや再インストールの手間を減らせる？
 仮想環境 or Docker
-Dockerfile内で cargo build --release → .so を /usr/local/lib に配置 → Python が同じコンテナ内で 
+Dockerfile内で cargo build --release → .so を /usr/local/lib に配置 → Python が同じコンテナ内で
 import your_crate
 
 コード修正→再ビルド→Dockerイメージ更新→コンテナ再起動、という一連のフローを自動化しやすい

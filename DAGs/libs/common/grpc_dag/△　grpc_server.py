@@ -21,6 +21,7 @@ logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
 
+
 class StorageService(storage_pb2_grpc.StorageServiceServicer):
     def StoreFragment(self, request, context):
         node_id = os.getenv("NODE_ID", "default_node")
@@ -44,6 +45,7 @@ class StorageService(storage_pb2_grpc.StorageServiceServicer):
 
         return storage_pb2.StoreResponse(success=True, message="Shard stored successfully")
 
+
 def serve():
     """
     ノードとしてgRPCサーバを起動。
@@ -61,6 +63,7 @@ def serve():
     except KeyboardInterrupt:
         logger.info("[gRPC Server] 停止")
         server.stop(0)
+
 
 if __name__ == "__main__":
     serve()

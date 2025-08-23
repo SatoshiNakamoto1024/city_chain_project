@@ -72,6 +72,7 @@ except ImportError:
         verify_signature as _rsa_verify,
     )
 
+
 # ──────────────────────────────────────────────
 # 共通ユーティリティ
 # ──────────────────────────────────────────────
@@ -167,14 +168,14 @@ def verify_rsa(message: bytes, signature: bytes | str, public_key) -> bool:
 __all__ = [
     # Dilithium
     "create_dilithium_keypair",
-    "sign_dilithium",
-    "verify_dilithium",
     # NTRU
     "create_ntru_keypair",
-    "encrypt_ntru",
-    "decrypt_ntru",
     # RSA
     "create_rsa_keypair",
+    "decrypt_ntru",
+    "encrypt_ntru",
+    "sign_dilithium",
     "sign_rsa",
+    "verify_dilithium",
     "verify_rsa",
 ]

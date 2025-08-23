@@ -12,8 +12,8 @@ from shapely.strtree import STRtree
 
 # city_id -> list of (lat,lon)
 CITY_POLYGON_DATA = {
-    "cityA": [(35.0,139.0),(35.05,139.0),(35.05,139.05),(35.0,139.05)],
-    "cityB": [(40.7,-74.0),(40.75,-74.0),(40.75,-73.95),(40.7,-73.95)]
+    "cityA": [(35.0, 139.0), (35.05, 139.0), (35.05, 139.05), (35.0, 139.05)],
+    "cityB": [(40.7, -74.0), (40.75, -74.0), (40.75, -73.95), (40.7, -73.95)]
     # ...本番では数百/数千市町村分
 }
 
@@ -22,6 +22,7 @@ CITY_POLYGONS = {}
 # STRtree 用のリスト [ (Polygon, city_id), ... ]
 CITY_POLYGON_OBJECTS = []
 STR_TREE = None
+
 
 def load_city_polygons():
     """
@@ -36,15 +37,16 @@ def load_city_polygons():
 
     for city_id, coords in CITY_POLYGON_DATA.items():
         # shapely: (x,y)=(lon,lat)
-        poly = Polygon([(lon,lat) for (lat,lon) in coords])
+        poly = Polygon([(lon, lat) for (lat, lon) in coords])
         CITY_POLYGONS[city_id] = poly
         CITY_POLYGON_OBJECTS.append((poly, city_id))
 
-    # STRtree の構築: 
+    # STRtree の構築:
     #  Shapely 2.0 以降は geometry のみを受け取れるので、(geometry, id) 形式は工夫が必要
     #  ここでは geometry だけを集め、並行して city_id を別リスト管理
     polys_only = [item[0] for item in CITY_POLYGON_OBJECTS]
     STR_TREE = STRtree(polys_only)
+
 
 def find_city_by_location(lat, lon):
     """
@@ -72,6 +74,7 @@ def find_city_by_location(lat, lon):
                 if poly == candidate_poly:
                     return cid
     return None
+
 
 def _legacy_find_city(lat, lon):
     """

@@ -12,10 +12,10 @@ _rust = import_module("poh_ack_rust")   # PyInit が呼ばれて GIL 初期化
 from ._version import __version__
 
 __all__ = [
-    "__version__",
     "AckRequest",
     "AckResult",
+    "__version__",
+    "cli",
     "verify_ack",
     "verify_ack_async",
-    "cli",
 ]

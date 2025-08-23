@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 
+
 class PriorityMetric(ABC):
     """
     単一の指標を計算するベースクラス。

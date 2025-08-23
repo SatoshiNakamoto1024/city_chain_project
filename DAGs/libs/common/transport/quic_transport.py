@@ -8,8 +8,7 @@ from __future__ import annotations
 import asyncio
 from aioquic.asyncio import serve, connect
 from aioquic.quic.configuration import QuicConfiguration
-from aioquic.h3.connection import H3_ALPN, H3Connection
-from typing import Optional
+from aioquic.h3.connection import H3_ALPN
 
 
 class QUICServer:

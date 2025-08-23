@@ -10,6 +10,7 @@ formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+
 def get_storage_path(distribution_info):
     base_path = "./distributed_storage"
     municipality = distribution_info.get("municipality", "unknown")
@@ -17,6 +18,7 @@ def get_storage_path(distribution_info):
     node = distribution_info.get("node", "unknown")
     path = os.path.join(base_path, municipality, continent, node)
     return path
+
 
 def store_transaction(distribution_info, dag_node):
     path = get_storage_path(distribution_info)
@@ -40,6 +42,7 @@ def store_transaction(distribution_info, dag_node):
         logger.error("[Distributed Storage] 保存エラー: %s", e)
         raise
 
+
 def restore_transaction(distribution_info, tx_id):
     path = get_storage_path(distribution_info)
     filename = os.path.join(path, f"{tx_id}.json")
@@ -51,6 +54,7 @@ def restore_transaction(distribution_info, tx_id):
     except Exception as e:
         logger.error("[Distributed Storage] 復元エラー: %s", e)
         return None
+
 
 if __name__ == "__main__":
     # 簡単なテスト

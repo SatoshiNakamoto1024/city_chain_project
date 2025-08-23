@@ -61,4 +61,3 @@ errors.py: 重複検知の例外クラス
 
 を middleware/idempotency/ にまとめ、core/handler.py の add_transaction 前に挟むだけで全体に効果が波及します。
 これで「同じTxを２度処理しない」「一時的な送信エラーは自動リトライ」の両要件を簡潔に実現できます。
-

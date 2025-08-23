@@ -1,10 +1,13 @@
 # D:\city_chain_project\network\sending_DAGs\python_sending\sender\poh_requester.py
-import time, uuid, base64
+import time
+import uuid
+import base64
 from pathlib import Path
 from typing import List
 from ...core.models import PoHRequestTx, TxType, BaseTx
 from cert_python import sign_with_cert
 from ...network import send_grpc
+
 
 class PoHRequester:
     def __init__(self, pem_path: Path):
@@ -16,7 +19,7 @@ class PoHRequester:
             send_grpc(node, req.dict())
 
     def _build_req(self, orig: BaseTx, node_id: str) -> PoHRequestTx:
-        ts  = time.time()
+        ts = time.time()
         msg = f"{orig.tx_id}|{node_id}|{ts}"
         sig = sign_with_cert(msg, self.pem)
         return PoHRequestTx(

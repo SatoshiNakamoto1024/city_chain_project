@@ -11,8 +11,6 @@ from google.protobuf.internal import builder as _builder
 _sym_db = _symbol_database.Default()
 
 
-
-
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rstorage.proto\x12\x07storage\"=\n\x0cShardRequest\x12\r\n\x05tx_id\x18\x01 \x01(\t\x12\x10\n\x08shard_id\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"1\n\rStoreResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2R\n\x0eStorageService\x12@\n\rStoreFragment\x12\x15.storage.ShardRequest\x1a\x16.storage.StoreResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
@@ -20,10 +18,10 @@ _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'storage_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
-  _globals['_SHARDREQUEST']._serialized_start=26
-  _globals['_SHARDREQUEST']._serialized_end=87
-  _globals['_STORERESPONSE']._serialized_start=89
-  _globals['_STORERESPONSE']._serialized_end=138
-  _globals['_STORAGESERVICE']._serialized_start=140
-  _globals['_STORAGESERVICE']._serialized_end=222
+  _globals['_SHARDREQUEST']._serialized_start = 26
+  _globals['_SHARDREQUEST']._serialized_end = 87
+  _globals['_STORERESPONSE']._serialized_start = 89
+  _globals['_STORERESPONSE']._serialized_end = 138
+  _globals['_STORAGESERVICE']._serialized_start = 140
+  _globals['_STORAGESERVICE']._serialized_end = 222
 # @@protoc_insertion_point(module_scope)

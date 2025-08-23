@@ -16,6 +16,7 @@ try:
 except ImportError:
     _USE_RUST = False
 
+
 class FaultsetError(Exception):
     """フェイルセット処理中に発生する例外"""
     pass
@@ -89,7 +90,7 @@ def _python_failover(
     シンプル Python フォールバック実装。
     latency <= threshold のノードを返し、全件超過なら例外を投げる。
     """
-    survivors = [nid for nid, lat in zip(nodes, latencies) if lat <= threshold]
+    survivors = [nid for nid, lat in zip(nodes, latencies, strict=False) if lat <= threshold]
     if not survivors:
         raise FaultsetError("all nodes exceed threshold")
     return survivors

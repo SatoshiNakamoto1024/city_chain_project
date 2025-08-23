@@ -20,31 +20,31 @@ def parse_args(args=None):
 
     sub_init = sub.add_parser("init")
     sub_init.add_argument("--base", required=True)
-    sub_init.add_argument("--db",   required=True)
+    sub_init.add_argument("--db", required=True)
 
     sub_save = sub.add_parser("save")
     sub_save.add_argument("--base", required=True)
-    sub_save.add_argument("--db",   required=True)
-    sub_save.add_argument("--tx",   required=True,
+    sub_save.add_argument("--db", required=True)
+    sub_save.add_argument("--tx", required=True,
                            help='Tx JSON: {"tx_id":"...","holder_id":"...","timestamp":0.0,"payload":"base64"}')
 
     sub_load = sub.add_parser("load")
     sub_load.add_argument("--base", required=True)
-    sub_load.add_argument("--db",   required=True)
+    sub_load.add_argument("--db", required=True)
     sub_load.add_argument("--tx-id", required=True)
 
     sub_delete = sub.add_parser("delete")
     sub_delete.add_argument("--base", required=True)
-    sub_delete.add_argument("--db",   required=True)
+    sub_delete.add_argument("--db", required=True)
     sub_delete.add_argument("--tx-id", required=True)
 
     sub_list = sub.add_parser("list")
     sub_list.add_argument("--base", required=True)
-    sub_list.add_argument("--db",   required=True)
+    sub_list.add_argument("--db", required=True)
 
     sub_recov = sub.add_parser("recover")
     sub_recov.add_argument("--base", required=True)
-    sub_recov.add_argument("--db",   required=True)
+    sub_recov.add_argument("--db", required=True)
 
     # args が None なら sys.argv[1:] を使い、リストが渡されたらそれを使う
     return parser.parse_args(args)
@@ -62,9 +62,9 @@ async def main(argv=None):
         print("Initialized storage at", args.base, args.db)
 
     elif args.cmd == "save":
-        j       = json.loads(args.tx)
+        j = json.loads(args.tx)
         payload = base64.b64decode(j["payload"])
-        tx      = Tx(tx_id=j["tx_id"], holder_id=j["holder_id"], timestamp=j["timestamp"])
+        tx = Tx(tx_id=j["tx_id"], holder_id=j["holder_id"], timestamp=j["timestamp"])
         tx.payload = payload
         await manager.save_tx(tx)
         print(f"Saved tx {tx.tx_id}")
@@ -100,6 +100,7 @@ async def main(argv=None):
     # 2) デフォルト ThreadPoolExecutor をシャットダウン
     loop = asyncio.get_running_loop()
     await loop.shutdown_default_executor()
+
 
 if __name__ == "__main__":
     import asyncio

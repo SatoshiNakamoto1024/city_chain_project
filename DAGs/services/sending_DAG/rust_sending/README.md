@@ -1,7 +1,7 @@
 city_chain_project/network/sending_DAG/rust_sending
 ├── cert_pqc/src       #lib.rs,main_cert.rs,pem.rs,signer.rs,valifier.rs等入っているフォルダー
 ├── dag_core/src       #crypto.rs,dpos_parallel.rs,lib.rs,ntru_dilithium.rs,object_dependency.rs等入っているフォルダー
-├── flag_sort/src      #lib.rs,distributer.rs,soter.rs,types.rs等入っているフォルダー            
+├── flag_sort/src      #lib.rs,distributer.rs,soter.rs,types.rs等入っているフォルダー
 └── tests
 
 # では ――
@@ -259,4 +259,3 @@ REPAIR_ACKの自動検証関数	verify_repair_ack(tx_id, recovered_tx, sig, cert
 
 すべてのPoH・REPAIRもTxとして署名付きでDAGに含めることで、
 「改ざん不能な自己修復型DAGネットワーク」 が成立します。
-

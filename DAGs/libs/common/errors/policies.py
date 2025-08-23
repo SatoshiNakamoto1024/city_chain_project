@@ -6,7 +6,7 @@ policies.py  ― 例外種別 → ポリシーマッピング
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Mapping, Type
+from typing import Mapping, Type
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

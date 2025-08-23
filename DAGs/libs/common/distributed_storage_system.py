@@ -17,6 +17,7 @@ logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
 
+
 def get_storage_path(node_id: str):
     """
     node_idごとにストレージディレクトリを分ける。
@@ -25,6 +26,7 @@ def get_storage_path(node_id: str):
     path = os.path.join(base, node_id)
     os.makedirs(path, exist_ok=True)
     return path
+
 
 def store_transaction_frag(node_id: str, tx_id: str, shard_id: str, data: dict) -> bool:
     """
@@ -41,6 +43,7 @@ def store_transaction_frag(node_id: str, tx_id: str, shard_id: str, data: dict) 
     except Exception as e:
         logger.error("[DistStorage] 保存失敗: %s", e)
         return False
+
 
 def restore_transaction_frag(node_id: str, tx_id: str, shard_id: str) -> dict:
     """

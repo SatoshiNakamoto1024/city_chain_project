@@ -1,4 +1,4 @@
-# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_integration.py
+# \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_integration.py
 # poh_holdmetrics_integration.py
 # -*- coding: utf-8 -*-
 """
@@ -22,11 +22,10 @@
 
 from __future__ import annotations
 
-import os
 import random
 from datetime import datetime, timedelta, timezone
 from typing import List
-
+import os
 import pytest
 
 # ──────────────────────────────────────────────────────────────
@@ -100,6 +99,12 @@ def test_calculator_python_vs_rust():
 @pytest.mark.asyncio
 @pytest.mark.skipif(not HAS_RS, reason="Rust バインディング未インストール")
 async def test_pipeline_python_vs_rust(monkeypatch):
+    # Atlas SRV URI を環境から拾う（MONGODB_URI / MONGODB_URL どちらでも）
+    atlas_uri = os.getenv("MONGODB_URI") or os.getenv("MONGODB_URL")
+    if not atlas_uri:
+        pytest.skip("Atlas の接続文字列(MONGODB_URI か MONGODB_URL)が未設定のためスキップ")
+
+    monkeypatch.setenv("MONGODB_URI", atlas_uri)
     monkeypatch.setenv("MONGODB_DB", "holdmetrics_test")
 
     store = MongoStorage()

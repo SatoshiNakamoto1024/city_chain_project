@@ -37,8 +37,8 @@ def _get_cert_paths() -> Tuple[str, str, str]:
     を取得して返す。
     """
     cert = os.getenv(config.CLIENT_CERT_ENV, "/etc/ssl/client.crt")
-    key  = os.getenv(config.CLIENT_KEY_ENV,  "/etc/ssl/client.key")
-    ca   = os.getenv(config.CA_CERT_ENV,     "/etc/ssl/ca.crt")
+    key = os.getenv(config.CLIENT_KEY_ENV, "/etc/ssl/client.key")
+    ca = os.getenv(config.CA_CERT_ENV, "/etc/ssl/ca.crt")
     return cert, key, ca
 
 
@@ -104,6 +104,6 @@ def create_grpc_channel(
 
 
 __all__ = [
-    "create_https_session",
     "create_grpc_channel",
+    "create_https_session",
 ]

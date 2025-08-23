@@ -67,7 +67,7 @@ jobs:
           name: wheels-win
           path: dist\*.whl
           if-no-files-found: error
-        
+
 メモ
 working-directory: は Cargo.toml がある rust クレートのディレクトリに合わせて必ず直してください。
 -o dist に出した wheel を artifact としてアップロードしています。

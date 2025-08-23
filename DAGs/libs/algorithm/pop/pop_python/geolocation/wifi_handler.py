@@ -24,9 +24,9 @@ def estimate_location_by_wifi(wifi_data: List[dict]) -> Optional[Tuple[float, fl
         resp = requests.post(api_url, json=payload, timeout=5)
         resp.raise_for_status()
         data = resp.json()
-        loc  = data.get("location", {})
-        lat  = loc.get("lat")
-        lng  = loc.get("lng")
+        loc = data.get("location", {})
+        lat = loc.get("lat")
+        lng = loc.get("lng")
         if lat is not None and lng is not None:
             return lat, lng
     except Exception:

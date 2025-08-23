@@ -1,8 +1,12 @@
-import time, uuid, hashlib, base64
+import time
+import uuid
+import hashlib
+import base64
 from pathlib import Path
 from ..storage.dag_store import DAGStore
 from ..core.models import BaseTx, TxType, PoHAckTx
 from cert_python import sign_with_cert
+
 
 class PoHManager:
     MIN_POH = 5  # 副本閾値
@@ -12,10 +16,10 @@ class PoHManager:
         self.pem = pem_path
 
     def build_poh(self, orig: BaseTx, holder_id: str) -> PoHAckTx:
-        now  = time.time()
-        msg  = f"{orig.tx_id}|{holder_id}|{now}"
-        sig  = sign_with_cert(msg, self.pem)
-        poh  = PoHAckTx(
+        now = time.time()
+        msg = f"{orig.tx_id}|{holder_id}|{now}"
+        sig = sign_with_cert(msg, self.pem)
+        poh = PoHAckTx(
             tx_id=str(uuid.uuid4()),
             tx_type=TxType.POH_ACK,
             timestamp=now,

@@ -19,6 +19,7 @@ logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
 
+
 def get_node_endpoint(node_id: str):
     """
     ノードIDからホスト・ポートを導く例。
@@ -28,6 +29,7 @@ def get_node_endpoint(node_id: str):
     host = os.getenv("NODE_HOST", "localhost")
     port = os.getenv("NODE_PORT", "50051")
     return f"{host}:{port}"
+
 
 def send_shard_to_node(node_info: dict, tx_id: str, shard_id: str, data: str) -> bool:
     """

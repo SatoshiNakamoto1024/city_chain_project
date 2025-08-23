@@ -143,9 +143,9 @@ Copy
 
 ## まとめ
 
-- **get_kanazawa_polygon.py**  
-  - Overpass API を用いて金沢市の行政境界データを取得し、GeoJSON ファイルとして `D:\city_chain_project\PoP\poligon_data\kanazawa.geojson` に保存するコードです。  
-- **README.md**  
+- **get_kanazawa_polygon.py**
+  - Overpass API を用いて金沢市の行政境界データを取得し、GeoJSON ファイルとして `D:\city_chain_project\PoP\poligon_data\kanazawa.geojson` に保存するコードです。
+- **README.md**
   - このコードの使用方法、必要環境、実行手順、および注意事項を詳細に説明したファイルです。
 
 これらのファイルを配置すれば、実際に金沢市の詳細な行政境界データを取得し、指定フォルダに出力すること

@@ -23,7 +23,7 @@ async def submit_to_node(node, payload):
         return resp
     except grpc.RpcError as e:
         await handle_error(NetworkError(str(e)), context="submit_to_node")
-        
+
 あるいは
 from common.errors.exceptions import StorageError
 from common.errors.policies import STORAGE_RETRY
@@ -138,5 +138,3 @@ except StorageError:
 
 この構成により 「どこで失敗し、何回リトライしたか」 を
 統一フォーマットで把握でき、運用・監視が格段に楽になります。
-
-

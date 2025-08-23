@@ -4,9 +4,11 @@ import yaml
 from pathlib import Path
 from typing import Dict, Any
 
+
 async def parse(path: Path) -> Dict[str, Any]:
     from asyncio import get_running_loop
     loop = get_running_loop()
+
     def _load() -> Dict[str, Any]:
         with path.open("r", encoding="utf-8") as f:
             return yaml.safe_load(f) or {}

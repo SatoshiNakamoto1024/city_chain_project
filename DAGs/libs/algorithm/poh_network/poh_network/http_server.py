@@ -4,7 +4,7 @@ import logging
 from aiohttp import web
 
 from poh_storage.storage import StorageManager
-from poh_storage.types   import Tx
+from poh_storage.types import Tx
 
 logging.basicConfig(level=logging.INFO)
 

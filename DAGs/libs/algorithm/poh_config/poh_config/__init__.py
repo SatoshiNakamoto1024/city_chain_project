@@ -5,4 +5,4 @@ __version__ = "0.1.0"
 from .config import ConfigManager
 from .types import Config
 
-__all__ = ("__version__", "ConfigManager", "Config")
+__all__ = ("Config", "ConfigManager", "__version__")

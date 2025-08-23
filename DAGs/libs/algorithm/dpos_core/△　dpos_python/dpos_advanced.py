@@ -13,11 +13,13 @@ SuiやSolana的な高度機能を取り入れたサンプル。
 
 import time
 
+
 class StakeInfo:
     def __init__(self, rep_id, amount):
         self.rep_id = rep_id
         self.amount = amount
-        self.lock_until = time.time() + 90*24*3600  # 3ヶ月ロック
+        self.lock_until = time.time() + 90 * 24 * 3600  # 3ヶ月ロック
+
 
 class AdvancedDPoSManager:
     def __init__(self):
@@ -64,7 +66,7 @@ class AdvancedDPoSManager:
         if rep_id not in self.stakes:
             return True
         now = time.time()
-        return (now> self.stakes[rep_id].lock_until)
+        return (now > self.stakes[rep_id].lock_until)
 
     def finalize_voting_result(self, batch_hash, result):
         """
@@ -73,5 +75,5 @@ class AdvancedDPoSManager:
         """
         if not result["approved"]:
             # slashing or partial
-            for bad_rep in result.get("bad_validators",[]):
+            for bad_rep in result.get("bad_validators", []):
                 self.slash(bad_rep, f"BadVoting on {batch_hash}", 0.5)

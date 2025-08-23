@@ -30,7 +30,6 @@ import time
 from typing import List
 import aiohttp
 from redis.asyncio import Redis
-import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -53,6 +52,7 @@ if not logger.handlers:
     _h = logging.StreamHandler(sys.stdout)
     _h.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s %(message)s"))
     logger.addHandler(_h)
+
 
 # ──────────────────────────────────────────
 # Redis backend
@@ -100,6 +100,7 @@ class _RedisPresence:
         now = time.time()
         return [NodeInfo(node_id=nid, last_seen=now) for nid in sorted(node_ids)]
 
+
 # ──────────────────────────────────────────
 # HTTP backend
 # ──────────────────────────────────────────
@@ -127,13 +128,14 @@ class _HttpPresence:
             data = await resp.json()
         return [NodeInfo(**d) for d in data]
 
+
 # ──────────────────────────────────────────
 # Manager 本体
 # ──────────────────────────────────────────
 class NodeListManager:
     """
     `asyncio.create_task(NodeListManager().run_forever())`
-    で常駐させる。  
+    で常駐させる。
     便利ヘルパ `start_background_manager()` が下にある。
     """
 
@@ -182,10 +184,12 @@ class NodeListManager:
             await self._backend.logout(NODE_ID)
             logger.info("Presence logout")
 
+
 # ──────────────────────────────────────────
 # シングルトン起動用ヘルパ
 # ──────────────────────────────────────────
 _manager_singleton: NodeListManager | None = None
+
 
 def start_background_manager() -> None:
     """

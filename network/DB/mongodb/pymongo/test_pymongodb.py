@@ -1,4 +1,4 @@
-# D:\city_chain_project\network\DB\mongodb\pymongo\test_pymongodb.py
+# \city_chain_project\network\DB\mongodb\pymongo\test_pymongodb.py
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -6,13 +6,24 @@ import pytest
 import asyncio
 from motor_async_handler import MotorDBHandler
 from bson.objectid import ObjectId
+import json
+
+CONFIG_JSON = "/home/satoshi/work/city_chain_project/network/DB/config/mongodb_config/main_chain/continental_mongodb_config/mongodb_continental.json"
+
+def load_uri_for(continent: str = "asia") -> str:
+    try:
+        with open(CONFIG_JSON, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        return cfg["complete"][continent]
+    except Exception as e:
+        raise RuntimeError(f"Failed to load URI from {CONFIG_JSON}: {e}")
+
+uri = os.getenv("MONGODB_URL", load_uri_for("asia"))
+db_name = os.getenv("MONGODB_DB", "city_chain_pytest")
+col_name = os.getenv("MONGODB_COLL_BASE", "pytest_collection")
 
 @pytest.mark.asyncio
 async def test_insert_and_find_document():
-    uri = "mongodb+srv://satoshi:greg1024@cluster0.6gb92.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-    db_name = "test_async_db"
-    col_name = "test_async_collection"
-
     # 書き込み用（プライマリ）
     write_handler = await MotorDBHandler.new(uri, db_name)
     # テスト用: 事前に削除
@@ -41,10 +52,6 @@ async def test_insert_and_find_document():
 
 @pytest.mark.asyncio
 async def test_update_document():
-    uri = "mongodb+srv://satoshi:greg1024@cluster0.6gb92.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-    db_name = "test_async_db"
-    col_name = "test_async_collection"
-
     write_handler = await MotorDBHandler.new(uri, db_name)
     await write_handler.db[col_name].delete_many({})
 
@@ -67,10 +74,6 @@ async def test_update_document():
 
 @pytest.mark.asyncio
 async def test_delete_document():
-    uri = "mongodb+srv://satoshi:greg1024@cluster0.6gb92.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-    db_name = "test_async_db"
-    col_name = "test_async_collection"
-
     write_handler = await MotorDBHandler.new(uri, db_name)
     await write_handler.db[col_name].delete_many({})
 
@@ -89,10 +92,6 @@ async def test_delete_document():
 
 @pytest.mark.asyncio
 async def test_list_documents():
-    uri = "mongodb+srv://satoshi:greg1024@cluster0.6gb92.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-    db_name = "test_async_db"
-    col_name = "test_async_collection"
-
     write_handler = await MotorDBHandler.new(uri, db_name)
     await write_handler.db[col_name].delete_many({})
 
@@ -116,10 +115,6 @@ async def test_parallel_inserts():
     """
     高並列の挿入テスト。暗号署名入りのドキュメントを複数生成し、同時に挿入。
     """
-    uri = "mongodb+srv://satoshi:greg1024@cluster0.6gb92.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-    db_name = "test_async_db"
-    col_name = "test_batch"
-
     write_handler = await MotorDBHandler.new(uri, db_name)
     read_handler = await MotorDBHandler.new_with_read_preference(uri, db_name)
     await write_handler.db[col_name].delete_many({})

@@ -28,6 +28,7 @@ import poh_holdmetrics.protocols.hold_pb2_grpc as pb_grpc
 
 LOGGER = logging.getLogger(__name__)
 
+
 # ────────────────────────────────────────────────
 # Timestamp ↔ datetime 変換ユーティリティ
 # ────────────────────────────────────────────────
@@ -130,6 +131,7 @@ class _HoldMetricsServicer(pb_grpc.HoldMetricsServicer):
                 weighted_score=0.0,
                 updated_at=now_ts,
             )
+
 
 # ────────────────────────────────────────────────
 #  起動ヘルパー

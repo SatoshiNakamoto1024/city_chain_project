@@ -17,9 +17,9 @@ rvh_faultset/                                     ← リポジトリルート
 │   │   ├── bindings.rs                           ← PyO3 での `#[pymodule]` ラッパー
 │   │   ├── main_faultset.rs                      ← CLI サンプル (`--bin main_faultset`)
 │   │   └── tests/
-│   │       ├── test_cli.rs 
-│   │       ├── test_py_bindings.rs 
-│   │       ├── test_import.rs 
+│   │       ├── test_cli.rs
+│   │       ├── test_py_bindings.rs
+│   │       ├── test_import.rs
 │   │       └── test_faultset.rs                  ← Rust 単体テスト
 │   └── benches/
 │       ├── bench_faultset_failover.rs            ← failover ベンチマーク
@@ -275,5 +275,3 @@ test_faultset_integration.py::test_cli_sync PASSED                              
 test_faultset_integration.py::test_cli_async PASSED                                                              [100%]
 
 ================================================== 8 passed in 1.97s ==================================================
-
-

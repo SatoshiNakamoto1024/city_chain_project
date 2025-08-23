@@ -9,11 +9,8 @@ MongoDB が無い環境でも落ちないように `mongomock` を使うだけ�
 from __future__ import annotations
 
 import os
-import json
 from copy import deepcopy
 from pathlib import Path
-from types import SimpleNamespace as NS
-from typing import Any
 
 import pytest
 

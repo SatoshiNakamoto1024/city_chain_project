@@ -25,6 +25,7 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+
 class GRPCClient:
     def __init__(
         self,

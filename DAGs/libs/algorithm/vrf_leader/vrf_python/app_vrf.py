@@ -1,8 +1,9 @@
 # VRF/vrf_python/app_vrf.py
 """Command-line demo for VRF Python client."""
 import argparse
-from .vrf_builder import generate_keypair, prove_vrf 
+from .vrf_builder import generate_keypair, prove_vrf
 from .vrf_validator import verify_vrf
+
 
 def main():
     parser = argparse.ArgumentParser(description="VRF demo CLI")
@@ -34,6 +35,7 @@ def main():
     elif args.cmd == "verify":
         h = verify_vrf(args.pk, args.proof, args.message.encode())
         print("Hash: ", h)
+
 
 if __name__ == "__main__":
     main()

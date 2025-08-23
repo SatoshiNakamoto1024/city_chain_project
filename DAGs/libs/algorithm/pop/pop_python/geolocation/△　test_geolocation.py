@@ -4,7 +4,8 @@
 geolocation サブモジュールの単体テスト
 GPS, Wi-Fi, モック、FastAPI エンドポイントを網羅します。
 """
-import sys, os, base64
+import sys
+import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import random
@@ -15,9 +16,10 @@ from pop_python.geolocation.gps_handler import validate_gps
 import pop_python.geolocation.wifi_handler as wifi_handler
 from pop_python.geolocation.location_fallback import generate_mock_location
 from pop_python.geolocation.app_geolocation import app as geo_app
-from pop_python.polygons import load_city_polygons, city_polygons, city_ids
+from pop_python.polygons import load_city_polygons, city_polygons
 
 client = TestClient(geo_app)
+
 
 # --- GPS テスト ---
 def test_validate_gps_valid():
@@ -25,9 +27,11 @@ def test_validate_gps_valid():
     assert validate_gps(90.0, 180.0)
     assert validate_gps(-90.0, -180.0)
 
+
 def test_validate_gps_invalid():
     assert not validate_gps(91.0, 0.0)
     assert not validate_gps(0.0, 181.0)
+
 
 # --- Wi-Fi テスト ---
 @pytest.mark.parametrize("env_url,env_key", [(None, None), ("", "")])
@@ -37,15 +41,19 @@ def test_estimate_location_by_wifi_no_env(monkeypatch, env_url, env_key):
     monkeypatch.delenv("GEOLOCATION_API_KEY", raising=False)
     assert wifi_handler.estimate_location_by_wifi([{"mac": "aa"}]) is None
 
+
 class DummyResponse:
     def __init__(self, json_data, status_code=200):
         self._json = json_data
         self.status_code = status_code
+
     def raise_for_status(self):
         if not (200 <= self.status_code < 300):
             raise Exception("HTTP Error")
+
     def json(self):
         return self._json
+
 
 def test_estimate_location_by_wifi_success(monkeypatch):
     # 環境変数を設定
@@ -58,6 +66,7 @@ def test_estimate_location_by_wifi_success(monkeypatch):
         {"mac": "00:11:22:33:44:55", "ssid": "X", "rssi": -50}
     ])
     assert latlng == (12.34, 56.78)
+
 
 # --- モック位置テスト ---
 def test_generate_mock_location(monkeypatch):
@@ -77,6 +86,7 @@ def test_generate_mock_location(monkeypatch):
 
 # --- FastAPI エンドポイントテスト ---
 
+
 def test_gps_endpoint_success():
     resp = client.post("/gps", json={"lat": 36.3, "lon": 136.5})
     assert resp.status_code == 200
@@ -93,6 +103,7 @@ def test_wifi_endpoint_success(monkeypatch):
     # 環境変数とレスポンスモック
     monkeypatch.setenv("GEOLOCATION_API_URL", "http://example.com")
     monkeypatch.setenv("GEOLOCATION_API_KEY", "dummy_key")
+
     class Resp:
         def __init__(self): self.status_code = 200
         def raise_for_status(self): pass

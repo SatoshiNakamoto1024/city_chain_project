@@ -19,6 +19,7 @@ _PARSER_MAP: Dict[str, ParserFunc] = {
     ".yml":  yaml_parser.parse,
 }
 
+
 class ConfigManager:
     """
     設定ファイル (TOML/JSON/YAML) の読み込み・キャッシュ・監視を提供。
@@ -96,7 +97,7 @@ class ConfigManager:
         # 最初に一度ロード
         await self.load()
         # watchfiles を使った簡易監視
-        from watchfiles import awatch, Change
+        from watchfiles import awatch
 
         async for changes in awatch(str(self._path.parent)):
             for change_type, changed in changes:  # Change, str

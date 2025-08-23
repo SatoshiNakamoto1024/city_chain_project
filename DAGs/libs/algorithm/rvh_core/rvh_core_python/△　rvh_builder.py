@@ -23,7 +23,7 @@ class RVHError(Exception):
     pass
 
 
-__all__ = ["rendezvous_hash", "RVHError"]
+__all__ = ["RVHError", "rendezvous_hash"]
 
 
 def rendezvous_hash(nodes: Sequence[str], key: str, k: int) -> List[str]:

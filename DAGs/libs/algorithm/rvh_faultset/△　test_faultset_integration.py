@@ -1,5 +1,5 @@
 # D:\city_chain_project\DAGs\libs\algorithm\rvh_faultset\test_faultset_integration.py
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 # D:\city_chain_project\DAGs\libs\algorithm\rvh_faultset\test_faultset_integration.py
 
 """
@@ -28,15 +28,15 @@ sys.path.insert(0, str(ROOT / "rvh_faultset_rust" / "target" / "wheels"))
 sys.path.insert(0, str(ROOT / "rvh_faultset_python"))
 
 from rvh_faultset import faultset, FaultsetError
-import rvh_faultset  # Rust モジュールとしてこれをimportします
 
 # テスト用のノード一覧
 BASE_NODES = [
     {"id": "a", "lat": 35.0, "lon": 139.0, "latency":  50.0},
-    {"id": "b", "lat": 51.5, "lon":  -0.1, "latency": 200.0},
-    {"id": "c", "lat": 40.7, "lon":  -74.0, "latency":  75.0},
+    {"id": "b", "lat": 51.5, "lon": -0.1, "latency": 200.0},
+    {"id": "c", "lat": 40.7, "lon": -74.0, "latency":  75.0},
     {"id": "d", "lat": 35.0, "lon": 140.0, "latency": 150.0},
 ]
+
 
 def test_end_to_end_basic():
     """
@@ -47,10 +47,12 @@ def test_end_to_end_basic():
     assert isinstance(survivors, list)
     assert set(survivors) == {"a", "c"}
 
+
 def test_end_to_end_empty_input():
     """空リスト入力で即座に FaultsetError を返すこと"""
     with pytest.raises(FaultsetError):
         faultset([], threshold=50.0, precision=6)
+
 
 def test_end_to_end_all_filtered_out():
     """
@@ -63,6 +65,7 @@ def test_end_to_end_all_filtered_out():
     ]
     with pytest.raises(FaultsetError):
         faultset(nodes, threshold=100.0, precision=12)
+
 
 if __name__ == "__main__":
     # このスクリプト単体実行対応

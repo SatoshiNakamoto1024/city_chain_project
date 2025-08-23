@@ -5,7 +5,6 @@ pytest -v common/node_list/tests/test_node_list.py
 Redis に依存しない純粋ユニットテスト。
 環境変数で BACKEND=redis を指定し、FakeRedisBackend で差し替え。
 """
-import asyncio
 import time
 from typing import List
 import pytest
@@ -19,6 +18,7 @@ os.environ["PRESENCE_BACKEND"] = "redis"
 from node_list.schemas import NodeInfo
 from node_list.registry import get_registry
 from node_list.manager import NodeListManager
+
 
 # -----------------------------------------------------------------
 # Fake backend （Redis/HTTP 共通で使える最小モック）
@@ -39,6 +39,7 @@ class FakePresenceBackend:
     async def list_nodes(self) -> List[NodeInfo]:
         now = time.time()
         return [NodeInfo(node_id=n, last_seen=now) for n in sorted(self._set)]
+
 
 # -----------------------------------------------------------------
 # テスト

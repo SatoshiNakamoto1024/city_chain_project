@@ -11,37 +11,39 @@
 """
 
 from __future__ import annotations
-
+import os
 import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Any, List
-
 import motor.motor_asyncio
 from pymongo.errors import ConfigurationError, ServerSelectionTimeoutError
 from pydantic import Field
 from pydantic_settings import BaseSettings
-
 from ..data_models import HoldEvent, HoldStat
 
 __all__ = ["MongoStorage"]
 
 _LOG = logging.getLogger(__name__)
 
+
 # ---------------------------------------------------------------------------- #
 # 設定（毎回環境変数を評価）
 # ---------------------------------------------------------------------------- #
 class _Settings(BaseSettings):
-    mongodb_url: str = Field("mongodb://localhost:27017", alias="MONGODB_URL")
+    mongodb_url: str | None = Field(default=None, alias="MONGODB_URL")
     mongodb_db: str = Field("holdmetrics", alias="MONGODB_DB")
 
     model_config = dict(env_prefix="", case_sensitive=False)
 
 
 def _current_cfg() -> _Settings:
-    """常に最新の環境変数で設定を構築"""
-    return _Settings()
-
+    """常に最新の環境変数で設定を構築（MONGODB_URI 互換もサポート）"""
+    cfg = _Settings()
+    if not cfg.mongodb_url:
+        # 互換: 既存テストなどが設定する MONGODB_URI も見に行く
+        cfg.mongodb_url = os.getenv("MONGODB_URI")
+    return cfg
 
 # ---------------------------------------------------------------------------- #
 # mongomock（任意依存）
@@ -50,6 +52,7 @@ try:
     import mongomock  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover
     mongomock = None
+
 
 # ---------------------------------------------------------------------------- #
 # メイン実装
@@ -136,11 +139,21 @@ class MongoStorage:
     def _create_client(self):
         """MongoDB へ接続 or mongomock へフォールバック"""
         url = self._cfg.mongodb_url
+        if not url:
+            raise RuntimeError(
+                "MONGODB_URL (または互換の MONGODB_URI) が未設定です。"
+                " Atlas を使う場合は mongodb+srv://… の SRV URI を渡してください。"
+            )
         try:
+            # 追加の軽量オプション（URI に指定があれば URI 優先）
             client = motor.motor_asyncio.AsyncIOMotorClient(
                 url,
                 tz_aware=True,
-                serverSelectionTimeoutMS=2_000,
+                appname=os.getenv("MONGODB_APPNAME", "poh-holdmetrics"),
+                maxPoolSize=int(os.getenv("MONGO_POOL_MAX", "200")),
+                minPoolSize=int(os.getenv("MONGO_POOL_MIN", "20")),
+                serverSelectionTimeoutMS=int(os.getenv("MONGO_SST_MS", "5000")),
+                connectTimeoutMS=int(os.getenv("MONGO_CONNECT_MS", "5000")),
             )
 
             # ── 接続確認：イベントループが動いていなければ同期 ping ───────
@@ -177,7 +190,7 @@ class MongoStorage:
                     super().__init__("mongodb://localhost")
                     self._sync = mongomock.MongoClient()
 
-                def __getattr__(self, item):  # noqa: D401
+                def __getattr__(self, item):
                     return getattr(self._sync, item)
 
                 def __getitem__(self, name):  # noqa: Dunder

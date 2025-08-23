@@ -47,6 +47,7 @@ RUN --mount=type=cache,id=pip-cache-builder,target=/root/.cache/pip \
 # 4) ソース配置（.dockerignore で不要物は除外推奨）
 WORKDIR /workspace
 COPY Cargo.toml Cargo.toml
+COPY network/DB/mongodb/ network/DB/mongodb/
 COPY DAGs/libs/algorithm/ DAGs/libs/algorithm/
 
 # 5) 出力用ディレクトリ

@@ -13,7 +13,7 @@ use pyo3::wrap_pyfunction;
 use pyo3::Bound;
 
 // ───── Tokio ランタイムを “一度だけ” 用意する ─────
-use std::sync::OnceLock;              // Rust 1.70 以降の std 補完型 
+use std::sync::OnceLock;              // Rust 1.70 以降の std 補完型
 use tokio::runtime::Builder;          // ランタイムのビルダー
 
 static TOKIO_RT_INIT: OnceLock<()> = OnceLock::new();
@@ -46,7 +46,7 @@ use crate::{
 /// ```
 #[pyfunction(name = "init_tracing")]
 fn py_init_tracing(level: &str) -> PyResult<()> {
-    init_tokio_once(); 
+    init_tokio_once();
     init_tracing_rs(level)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
 }
@@ -57,7 +57,7 @@ fn py_init_tracing(level: &str) -> PyResult<()> {
 #[pyfunction(name = "sync_span")]
 fn sync_span(name: &str) -> PyResult<PySpanGuard> {
     // Rust 側に実装済みの span 関数をそのまま呼び出す
-    init_tokio_once(); 
+    init_tokio_once();
     sync_span_impl(name)
 }
 
@@ -69,7 +69,7 @@ fn py_span<'py>(
     kwargs: Option<&Bound<'py, PyDict>>,
 ) -> PyResult<Bound<'py, PyAny>> {
     /* 1) Rust 側の span を開始 */
-    init_tokio_once(); 
+    init_tokio_once();
     let span = new_span(name);
 
     /* 2) 追加フィールドを kwargs から記録 */
@@ -91,7 +91,7 @@ fn py_span<'py>(
 #[pymodule]
 fn rvh_trace_rust(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     init_tokio_once();                    // ★ ここを追加 ★
-    
+
     // with …: 用（同期）
     m.add_function(wrap_pyfunction!(sync_span, m)?)?;
     // await …: 用（非同期）

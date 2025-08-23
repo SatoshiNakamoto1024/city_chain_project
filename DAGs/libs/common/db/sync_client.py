@@ -7,7 +7,7 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 
 DEFAULT_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-DEFAULT_DB  = os.getenv("DB_NAME", "federation_dag_db")
+DEFAULT_DB = os.getenv("DB_NAME", "federation_dag_db")
 
 
 class SyncMongoClient:
@@ -41,8 +41,8 @@ class SyncMongoClient:
             self._client = None
 
     # `with SyncMongoClient() as cli:` で使えるように
-    def __enter__(self):  # noqa: D401
+    def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc, tb):  # noqa: D401
+    def __exit__(self, exc_type, exc, tb):
         self.close()

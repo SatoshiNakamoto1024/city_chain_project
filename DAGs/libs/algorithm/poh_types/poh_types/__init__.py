@@ -14,5 +14,4 @@ except PackageNotFoundError:
 from .types import PoHTx, PoHReq, PoHAck
 from .exceptions import PoHTypesError
 
-__all__ = ("PoHTx", "PoHReq", "PoHAck", "PoHTypesError", "__version__")
-
+__all__ = ("PoHAck", "PoHReq", "PoHTx", "PoHTypesError", "__version__")

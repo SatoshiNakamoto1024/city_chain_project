@@ -41,8 +41,8 @@ use sha2::{Sha256, Digest};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ObjectType {
     Owned(String),   // 所有者
-    Shared,          
-    Immutable,       
+    Shared,
+    Immutable,
 }
 
 /// Python側から受け取るトランザクション構造
@@ -59,7 +59,7 @@ pub struct ObjDepTx {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ResolveStatus {
     Success,
-    Conflict(String),  
+    Conflict(String),
     Invalid(String),   // 所有権違反, Immutableへwrite, etc
 }
 
@@ -190,7 +190,7 @@ pub fn resolve_object_dependencies(
     //   => ただし簡略化: "if there's an overlap in write_shards of i & read_shards of j => conflict"
     // - write/write => conflict if overlap
     // - Owned(同一ユーザが同じobjに書く) => ここでは “衝突あり” とする(先着順で実行)
-    // => 実装はshard overlap + check if "same user" => skip? 
+    // => 実装はshard overlap + check if "same user" => skip?
     //   が複雑になるため、ここで全Txについて "sender" が違う or even same => we unify approach "overlap => conflict"
 
     for i in 0..n {
@@ -198,7 +198,7 @@ pub fn resolve_object_dependencies(
         for j in (i+1)..n {
             let (j_idx, j_tx) = indexed[j];
             let conflict = is_conflict_sui(
-                &new_read[i], &new_write[i], 
+                &new_read[i], &new_write[i],
                 &new_read[j], &new_write[j],
                 &valid_txs[i_idx],
                 &valid_txs[j_idx],
@@ -286,11 +286,11 @@ fn is_conflict_sui(
     txj: &ObjDepTx,
     obj_map: &ObjectMap
 ) -> bool {
-    // 大雑把: shard overlap => possible conflict. 
-    // しかし read/read => no conflict. 
+    // 大雑把: shard overlap => possible conflict.
+    // しかし read/read => no conflict.
     // なので "if i_write & j_write != ∅ => conflict" (write/write)
     //          "if i_write & j_read != ∅ => conflict" (read/write)
-    //  etc. 
+    //  etc.
     // さらに Owned/Shared/Immutableの詳細
     // ここでは shard overlap があれば一旦判定 => そのobjectごとの詳細を見る
 

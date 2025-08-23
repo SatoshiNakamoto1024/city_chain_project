@@ -13,8 +13,6 @@ Google Cloud Blog (2014) 掲載のアルゴリズムを純 Python で実装。
 rvh_stable: Jump Hash (Google Jump Consistent Hash) の純粋 Python 実装
 """
 
-import struct
-import logging
 
 def jump_hash(key: str, buckets: int) -> int:
     """
@@ -38,6 +36,7 @@ def jump_hash(key: str, buckets: int) -> int:
         # next bucket の計算
         j = int((b + 1) * (1 << 31) / ((h >> 33) + 1))
     return b
+
 
 async def async_jump_hash(key: str, buckets: int) -> int:
     """

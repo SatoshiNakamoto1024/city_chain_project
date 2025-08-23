@@ -11,6 +11,7 @@ formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+
 class DAGNode:
     def __init__(self, tx_id, sender, receiver, amount, tx_type, status="pending"):
         self.tx_id = tx_id
@@ -22,12 +23,13 @@ class DAGNode:
         self.timestamp = time.time()
         self.hash = self.compute_hash()
         logger.info("DAGNode created: %s", self.tx_id)
-    
+
     def compute_hash(self):
         data = f"{self.tx_id}{self.sender}{self.receiver}{self.amount}{self.tx_type}{self.timestamp}"
         computed = hashlib.sha256(data.encode()).hexdigest()
         logger.debug("Computed hash for node %s: %s", self.tx_id, computed)
         return computed
+
 
 class DAGStorage:
     def __init__(self):
@@ -57,6 +59,7 @@ class DAGStorage:
             result = [node for node in self.nodes.values() if node.tx_type == tx_type]
             logger.info("Retrieved %d nodes of type %s.", len(result), tx_type)
             return result
+
 
 if __name__ == "__main__":
     node = DAGNode("tx_test", "Alice", "Bob", 100, "send")

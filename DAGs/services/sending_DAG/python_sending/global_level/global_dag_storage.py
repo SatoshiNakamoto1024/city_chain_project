@@ -9,6 +9,7 @@ global_dag_storage.py
 
 import time
 
+
 class GlobalDAGStorage:
     def __init__(self):
         self.nodes = {}       # c_batch_id -> dict(continent_hash, data_list, global_hash)

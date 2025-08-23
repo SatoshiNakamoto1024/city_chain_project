@@ -9,7 +9,6 @@ trace_builder
 
 from __future__ import annotations
 
-import asyncio
 import functools
 import inspect
 from typing import Any, Callable, TypeVar
@@ -66,5 +65,6 @@ def trace_sync(name: str | None = None, **fields: Any) -> Callable[[T], T]:
         return _wrap_sync(fn, name or fn.__name__, fields)  # type: ignore[return-value]
 
     return decorator
+
 
 __all__ = ["trace", "trace_sync"]

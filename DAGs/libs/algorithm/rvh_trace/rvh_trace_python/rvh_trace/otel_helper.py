@@ -35,5 +35,5 @@ def check_collector(endpoint: str = "http://localhost:4317") -> bool:
     try:
         resp = requests.get(endpoint.replace("4317", "4318"))
         return resp.status_code == 200
-    except Exception:  # noqa: BLE001
+    except Exception:
         return False

@@ -6,13 +6,15 @@
 ユーザー指定がなければ、ロード済みのすべての都市ポリゴンから
 ランダムに１つ選び、内部を一様にサンプリングして返します。
 """
-import sys, os, base64
+import sys
+import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import random
 from typing import Tuple, Optional
 from shapely.geometry import Point
 from pop_python.polygons import load_city_polygons, city_polygons, city_ids
+
 
 def get_mobile_location(
     user_id: str,
@@ -42,7 +44,7 @@ def get_mobile_location(
     # ４．都市ポリゴンをランダム選択
     idx = random.randrange(len(city_polygons))
     poly = city_polygons[idx]
-    cid  = city_ids[idx]
+    cid = city_ids[idx]
 
     # ５．バウンディングボックス内を一様サンプリング
     minx, miny, maxx, maxy = poly.bounds

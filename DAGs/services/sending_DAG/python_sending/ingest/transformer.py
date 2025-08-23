@@ -2,6 +2,7 @@ from .models import BaseTx
 from network.sending_DAG.python_sending.core.handler import CityDAGHandler
 from network.sending_DAG.python_sending.core.tx_node import TxNode
 
+
 def to_dag_node(tx: BaseTx) -> TxNode:
     """
     PydanticモデルからDAG側のノードオブジェクトへ変換
@@ -12,6 +13,7 @@ def to_dag_node(tx: BaseTx) -> TxNode:
         payload=tx.dict(exclude={"type", "tx_id", "timestamp"}),
         timestamp=tx.timestamp.isoformat()
     )
+
 
 async def ingest_and_submit(handler: CityDAGHandler, raw: dict):
     """

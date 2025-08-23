@@ -1,7 +1,6 @@
 # VRF/vrf_python/test_vrf.py
-import binascii
 import pytest
-from .vrf_builder import generate_keypair, prove_vrf 
+from .vrf_builder import generate_keypair, prove_vrf
 from .vrf_validator import verify_vrf
 
 

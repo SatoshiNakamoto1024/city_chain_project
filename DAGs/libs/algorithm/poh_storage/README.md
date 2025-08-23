@@ -5,7 +5,7 @@ poh_storage/                              ← リポジトリルート
 ├── pyproject.toml                       ← PEP 517/518 ビルド設定（依存関係、パッケージ名、バージョン等）
 └── poh_storage/                         ← 実際の Python モジュール
     ├── __init__.py                      ← パッケージ定義（バージョン読み込みなど）
-    ├── app_storage.py                   ← エンドポイント    
+    ├── app_storage.py                   ← エンドポイント
     ├── storage.py                       ← `StorageManager` クラス（Tx の登録／取得／削除の高レベル API）
     ├── hash_utils.py                    ← SHA-256 ハッシュ計算ユーティリティ
     ├── file_store.py                    ← ファイルベースの永続化 (ディレクトリ構造管理、ファイル I/O)

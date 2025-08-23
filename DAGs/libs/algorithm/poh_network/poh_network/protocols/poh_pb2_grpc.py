@@ -60,14 +60,14 @@ class PohServiceServicer(object):
     def Broadcast(self, request, context):
         """---- Tx Broadcast ------------------------------------------------
 
-        * 単発送信: クライアント → サーバ 
+        * 単発送信: クライアント → サーバ
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def BroadcastBatch(self, request, context):
-        """* バッチ送信: クライアント → サーバ 
+        """* バッチ送信: クライアント → サーバ
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -76,7 +76,7 @@ class PohServiceServicer(object):
     def StreamTx(self, request_iterator, context):
         """* 両方向ストリーミング: pub/sub に近い
         クライアント側が Tx を送ると同時に
-        サーバ側がネットワーク全体から届いた Tx を push する 
+        サーバ側がネットワーク全体から届いた Tx を push する
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -85,7 +85,7 @@ class PohServiceServicer(object):
     def Ping(self, request, context):
         """---- Health / Ping ----------------------------------------------
 
-        * 単純に alive 判定用 
+        * 単純に alive 判定用
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -94,14 +94,14 @@ class PohServiceServicer(object):
     def RegisterPeer(self, request, context):
         """---- Peer Management --------------------------------------------
 
-        * ピア登録要求 
+        * ピア登録要求
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def ListPeers(self, request, context):
-        """* ピア一覧を取得 
+        """* ピア一覧を取得
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -145,8 +145,9 @@ def add_PohServiceServicer_to_server(servicer, server):
             'poh.PohService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
-
  # This class is part of an EXPERIMENTAL API.
+
+
 class PohService(object):
     """===============================================================
     SERVICE DEFINITIONS

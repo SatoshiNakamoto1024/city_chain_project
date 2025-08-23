@@ -31,12 +31,15 @@ GEN_HEADER = ""
 # Utils
 # -------------------------------------------------------------------------------------
 
+
 def eprint(*args: Any, **kwargs: Any) -> None:
     print(*args, file=sys.stderr, **kwargs)
+
 
 def load_yaml(path: Path) -> Dict[str, Any]:
     with path.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)
+
 
 def write_file(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -44,6 +47,7 @@ def write_file(path: Path, content: str) -> None:
     with path.open("w", encoding="utf-8", newline="\n") as f:
         f.write(GEN_HEADER + content)
     eprint(f"[gen] wrote {path}")
+
 
 def crate_root_from_crate_path(crate_path: str) -> str:
     """
@@ -55,6 +59,7 @@ def crate_root_from_crate_path(crate_path: str) -> str:
     p = Path(crate_path)
     return str(p.parent) if p.name.endswith("_rust") else str(p)
 
+
 def join_features(features: List[str] | None) -> str:
     if not features:
         return ""
@@ -63,6 +68,7 @@ def join_features(features: List[str] | None) -> str:
 # -------------------------------------------------------------------------------------
 # Bake (buildx) generator
 # -------------------------------------------------------------------------------------
+
 
 def generate_bake_hcl(cfg: Dict[str, Any]) -> str:
     defaults = cfg.get("defaults", {})
@@ -141,6 +147,7 @@ def generate_bake_hcl(cfg: Dict[str, Any]) -> str:
 # Compose generators（services を必ず先頭に）
 # -------------------------------------------------------------------------------------
 
+
 def _healthcheck_tcp_block(port_env: str | None, port_literal: int | None,
                            interval: str, timeout: str, retries: int) -> List[str]:
     if port_env:
@@ -156,6 +163,7 @@ def _healthcheck_tcp_block(port_env: str | None, port_literal: int | None,
     lines.append(f"      timeout: {timeout}")
     lines.append(f"      retries: {retries}")
     return lines
+
 
 def _compose_infra_services(cfg: Dict[str, Any]) -> Tuple[List[str], Dict[str, Dict[str, str]]]:
     """infra セクションを services: の子要素として出力する。"""
@@ -185,14 +193,15 @@ def _compose_infra_services(cfg: Dict[str, Any]) -> Tuple[List[str], Dict[str, D
                 services_lines.append(f'      test: ["CMD-SHELL","mongosh --quiet --eval \\"{cmd}\\""]')
             else:
                 services_lines.append('      test: ["CMD-SHELL","echo ok"]')
-            services_lines.append(f"      interval: {hc.get('interval','5s')}")
-            services_lines.append(f"      timeout: {hc.get('timeout','2s')}")
-            services_lines.append(f"      retries: {int(hc.get('retries',20))}")
+            services_lines.append(f"      interval: {hc.get('interval', '5s')}")
+            services_lines.append(f"      timeout: {hc.get('timeout', '2s')}")
+            services_lines.append(f"      retries: {int(hc.get('retries', 20))}")
         services_lines.append("    networks:")
         services_lines.append(f"      - {network}")
         services_lines.append("")  # 空行で区切る
 
     return services_lines, volume_map
+
 
 def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) -> List[str]:
     """services と（必要なら）pyext/tests を services: の子要素として出力する。"""
@@ -291,23 +300,22 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
             out.append(f'    image: "${{REGISTRY:-local}}/{tname}:latest"')
             out.append("    working_dir: /workspace")
             # --- collect env for tests and emit once ---
-            env = {}
+            env: Dict[str, str] = {}
             # 既存のテスト定義から env を拾う（もしあれば）
             if t.get("environment"):
                 env.update(t["environment"])
             if t.get("env"):
                 env.update(t["env"])
-            # Mongo 接続先（未指定ならだけ入れる）
-            env.setdefault("MONGODB_URL", "mongodb://mongo:27017")
-            env.setdefault("MONGODB_URI", "mongodb://mongo:27017")
+            # Atlas 前提の既定値（未指定ならだけ入れる）
+            env.setdefault("MONGODB_URL", "${MONGODB_URL}")
+            env.setdefault("MONGODB_URI", "${MONGODB_URI}")
             env.setdefault("MONGODB_DB", "pytest_tmp")
             # 兄弟サービスへの自動注入（未設定のときだけ）
             if has_grpc:
                 env.setdefault("POH_GRPC_ADDR", "poh_holdmetrics-grpc:60051")
             if has_http:
                 env.setdefault("POH_HTTP_ADDR", "http://poh_holdmetrics-http:8000")
-            if has_mongo:
-                env.setdefault("MONGO_URL", "mongodb://mongo:27017")
+            # Atlas モードでは MONGO_URL は不要（挿入しない）
             if env:
                 out.append("    environment:")
                 for k, v in env.items():
@@ -315,15 +323,12 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
             # 明示 wait_for があればそれを優先
             explicit_wait = t.get("wait_for")
 
-            # 自動 depends_on: mongo は service_started、-grpc/-http は healthy
+            # 自動 depends_on: -grpc/-http は healthy、mongo は使わない前提なので付けない
             out.append("    depends_on:")
             if explicit_wait:
                 out.append(f"      {explicit_wait['service']}:")
                 out.append("        condition: service_healthy")
             else:
-                if has_mongo:
-                    out.append("      mongo:")
-                    out.append("        condition: service_healthy")
                 if has_grpc:
                     out.append("      poh_holdmetrics-grpc:")
                     out.append("        condition: service_healthy")
@@ -334,23 +339,22 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
             if t.get("kind") == "pytest":
                 path = t["path"]
                 markers = t.get("markers")
-                # 先に Rust 拡張 wheel をインストール → その後に Python ラッパを -e で入れる
-                cmd = (
+                # --- 事前インストール（entrypoint）: 旧 rust wheel の除去 → /workspace/wheels から再インストール → wrapper[test]
+                prelude = (
                     "set -eux; "
-                    # maturin build 済みの成果物（/workspace/wheels）を入れる
-                    "if ls /workspace/wheels/*.whl >/dev/null 2>&1; then "
-                    "  python -m pip install --no-cache-dir /workspace/wheels/*.whl; "
-                    "else "
-                    "  echo '!! no wheels found under /workspace/wheels' >&2; "
+                    "python -m pip uninstall -y poh-holdmetrics-rust || true; "
+                    "if ls /workspace/wheels/poh_holdmetrics_rust-*.whl >/dev/null 2>&1; then "
+                    "  python -m pip install --no-cache-dir /workspace/wheels/poh_holdmetrics_rust-*.whl; "
                     "fi; "
-                    # ラッパ（テスト extras 付き）を editable で
                     f"python -m pip install --no-cache-dir -e {wrapper}[test]; "
-                    # pytest 実行
-                    f"pytest -q {path}"
+                    "exec \"$0\" \"$@\""
                 )
+                out.append(f'    entrypoint: ["bash","-lc",{shlex.quote(prelude)}]')
+                # 既定の pytest コマンド（上書きも可）を array で出力
+                cmd_arr = ['"pytest"','"-q"', f'"{path}"']
                 if markers:
-                    cmd += f" -m \"{markers}\""
-                out.append(f"    command: bash -lc {shlex.quote(cmd)}")
+                    cmd_arr += ['"-m"', f'"{markers}"']
+                out.append(f"    command: [{', '.join(cmd_arr)}]")
 
             out.append("    networks:")
             out.append(f"      - {network}")
@@ -378,33 +382,27 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
             out.append(f'    image: "${{REGISTRY:-local}}/{tname}:latest"')
             out.append("    working_dir: /workspace")
             # --- collect env for tests and emit once ---
-            env = {}
+            env: Dict[str, str] = {}
             # 既存のテスト定義から env を拾う（もしあれば）
             if t.get("environment"):
                 env.update(t["environment"])
             if t.get("env"):
                 env.update(t["env"])
-            # Mongo 接続先（未指定ならだけ入れる）
-            env.setdefault("MONGODB_URL", "mongodb://mongo:27017")
-            env.setdefault("MONGODB_URI", "mongodb://mongo:27017")
+            # Atlas 前提の既定値
+            env.setdefault("MONGODB_URL", "${MONGODB_URL}")
+            env.setdefault("MONGODB_URI", "${MONGODB_URI}")
             env.setdefault("MONGODB_DB", "pytest_tmp")
             if has_grpc:
                 env.setdefault("POH_GRPC_ADDR", "poh_holdmetrics-grpc:60051")
             if has_http:
                 env.setdefault("POH_HTTP_ADDR", "http://poh_holdmetrics-http:8000")
-            if has_mongo:
-                env.setdefault("MONGO_URL", "mongodb://mongo:27017")
+            # Atlas モードでは MONGO_URL は不要（挿入しない）
             if env:
                 out.append("    environment:")
                 for k, v in env.items():
                     out.append(f'      {k}: "{v}"')
-            # 明示 wait_for があればそれを優先
-            explicit_wait = t.get("wait_for")
-            # 自動 depends_on
+            # 自動 depends_on（mongo 依存は付けない）
             out.append("    depends_on:")
-            if has_mongo:
-                out.append("      mongo:")
-                out.append("        condition: service_healthy")
             if has_grpc:
                 out.append("      poh_holdmetrics-grpc:")
                 out.append("        condition: service_healthy")
@@ -416,19 +414,20 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
                 path = t["path"]
                 markers = t.get("markers")
                 wrapper_guess = svc["crate_path"].replace("_rust", "_python")
-                cmd = (
+                prelude = (
                     "set -eux; "
-                    "if ls /workspace/wheels/*.whl >/dev/null 2>&1; then "
-                    "  python -m pip install --no-cache-dir /workspace/wheels/*.whl; "
-                    "else "
-                    "  echo '!! no wheels found under /workspace/wheels' >&2; "
+                    "python -m pip uninstall -y poh-holdmetrics-rust || true; "
+                    "if ls /workspace/wheels/poh_holdmetrics_rust-*.whl >/dev/null 2>&1; then "
+                    "  python -m pip install --no-cache-dir /workspace/wheels/poh_holdmetrics_rust-*.whl; "
                     "fi; "
                     f"python -m pip install --no-cache-dir -e {wrapper_guess}[test] || true; "
-                    f"pytest -q {path}"
+                    "exec \"$0\" \"$@\""
                 )
+                out.append(f'    entrypoint: ["bash","-lc",{shlex.quote(prelude)}]')
+                cmd_arr = ['"pytest"','"-q"', f'"{path}"']
                 if markers:
-                    cmd += f" -m \"{markers}\""
-                out.append(f"    command: bash -lc {shlex.quote(cmd)}")
+                    cmd_arr += ['"-m"', f'"{markers}"']
+                out.append(f"    command: [{', '.join(cmd_arr)}]")
 
             out.append("    networks:")
             out.append(f"      - {network}")
@@ -436,9 +435,11 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
 
     return out
 
+
 def _network_block(cfg: Dict[str, Any]) -> str:
     network = cfg.get("defaults", {}).get("network", "city_chain_net")
     return f"networks:\n  {network}: {{}}\n"
+
 
 def _volumes_block(volume_map: Dict[str, Dict[str, str]]) -> str:
     if not volume_map:
@@ -451,6 +452,7 @@ def _volumes_block(volume_map: Dict[str, Dict[str, str]]) -> str:
     lines.append("")  # 末尾改行
     return "\n".join(lines)
 
+
 def generate_compose_test(cfg: Dict[str, Any]) -> str:
     infra_services, volume_map = _compose_infra_services(cfg)
     app_and_tests = _compose_app_and_tests_services(cfg, include_tests=True)
@@ -459,6 +461,7 @@ def generate_compose_test(cfg: Dict[str, Any]) -> str:
     networks_block = _network_block(cfg)
     volumes_block = _volumes_block(volume_map)
     return services_block + networks_block + volumes_block
+
 
 def generate_compose_prod(cfg: Dict[str, Any]) -> str:
     infra_services, volume_map = _compose_infra_services(cfg)
@@ -472,6 +475,7 @@ def generate_compose_prod(cfg: Dict[str, Any]) -> str:
 # -------------------------------------------------------------------------------------
 # CLI
 # -------------------------------------------------------------------------------------
+
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Generate bake/compose files from services.yaml")
@@ -499,6 +503,7 @@ def main() -> None:
     write_file(out_dir / "docker-compose.test.generated.yml", compose_test)
     write_file(out_dir / "docker-compose.prod.generated.yml", compose_prod)
     eprint("[gen] done.")
+
 
 if __name__ == "__main__":
     main()

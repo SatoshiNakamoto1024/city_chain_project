@@ -2,6 +2,7 @@
 import time
 from .errors import RateLimitExceeded
 
+
 class TokenBucket:
     """
     トークンバケット方式レートリミッター。

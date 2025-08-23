@@ -14,8 +14,8 @@ from .rvh_builder import (
 from ._version import __version__
 
 __all__ = [
-    "rendezvous_hash",
-    "arendezvous_hash",
     "RVHError",
     "__version__",
+    "arendezvous_hash",
+    "rendezvous_hash",
 ]

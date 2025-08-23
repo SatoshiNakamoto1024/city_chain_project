@@ -296,7 +296,7 @@ test src\holdset.rs - holdset::HoldAggregator::spawn_gc_task (line 147) - compil
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.54s
 
 
-# benches 
+# benches
 # bench-holdmetrics-calc
     Finished `bench` profile [optimized] target(s) in 5m 39s
      Running benches\bench_holdmetrics_calc.rs (target\release\deps\bench_holdmetrics_calc-ef2b3aa4497112b4.exe)

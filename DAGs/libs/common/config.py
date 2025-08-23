@@ -7,10 +7,6 @@ config.py
 本番想定での追加要素を含めた共通設定。
 """
 
-import hashlib
-import random
-import os
-import time
 
 # -------------------------
 # 可変バッチ制御パラメータ
@@ -24,6 +20,7 @@ MAX_TX_PER_BATCH = 50
 
 # 現在の動的バッチ間隔を記憶する
 _current_batch_interval = 1.0
+
 
 def get_dynamic_batch_interval(pending_tx_count: int) -> float:
     """
@@ -85,7 +82,7 @@ def shard_and_assign_hex(hash_str: str, shard_size=16, redundancy=2, nodes=[]):
     scored = []
     hash_val = int(hash_str, 16)
     for n in nodes:
-        random_factor = (hash_val % 100)/100.0
+        random_factor = (hash_val % 100) / 100.0
         w = n.get("weight", 1.0)
         r = n.get("reliability", 0.9)
         score = w * r * (1.0 + random_factor)

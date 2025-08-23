@@ -1,20 +1,20 @@
 city_chain_project/network/sending_DAG/python_sending
-├── common       
-│   ├── dist_storage   # storege関連フォルダー     
-│   ├── grpc_dag   
-│       ├── client     # channel.py,retry.py,dag_client.pyなどが入っているフォルダー    
-│       ├── gen        # dag_pb2.pyなどが入っているフォルダー      
-│       ├── proto      # ntru関連が入っているフォルダー   
-│       ├── server     # app_grpc.py,interceptors.py,servicer.py等が入っているフォルダー 
-│       └── tests      # テスト関連が入っているフォルダー 
+├── common
+│   ├── dist_storage   # storege関連フォルダー
+│   ├── grpc_dag
+│       ├── client     # channel.py,retry.py,dag_client.pyなどが入っているフォルダー
+│       ├── gen        # dag_pb2.pyなどが入っているフォルダー
+│       ├── proto      # ntru関連が入っているフォルダー
+│       ├── server     # app_grpc.py,interceptors.py,servicer.py等が入っているフォルダー
+│       └── tests      # テスト関連が入っているフォルダー
 │   ├── proto
-│   └── storage_service  # db.py,db_handler.py,node_registry.pyなどが入っているフォルダー 
-├── core               # core関連フォルダー 
-├── sender             # sender関連フォルダー 
-├── storage           
-│   └── outgoing_dag   
-├── Tx_flag            
-│   ├── flag_router        
+│   └── storage_service  # db.py,db_handler.py,node_registry.pyなどが入っているフォルダー
+├── core               # core関連フォルダー
+├── sender             # sender関連フォルダー
+├── storage
+│   └── outgoing_dag
+├── Tx_flag
+│   ├── flag_router
 │   └── flag_types
 └──  tests
 

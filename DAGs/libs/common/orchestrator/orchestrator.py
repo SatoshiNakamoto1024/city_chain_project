@@ -3,6 +3,7 @@ import asyncio
 from object_processing.router import Router
 from object_processing.shard_worker import ShardWorker
 
+
 async def main():
     router = Router()
     await router.start()
@@ -17,6 +18,7 @@ async def main():
     # while True:
     #     evt = await receive_event()
     #     await router.ingress.put(evt)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

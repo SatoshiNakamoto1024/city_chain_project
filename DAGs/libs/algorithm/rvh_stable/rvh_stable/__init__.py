@@ -12,4 +12,4 @@ except PackageNotFoundError:
 
 from .stable import jump_hash, async_jump_hash
 
-__all__ = ("jump_hash", "async_jump_hash", "__version__")
+__all__ = ("__version__", "async_jump_hash", "jump_hash")

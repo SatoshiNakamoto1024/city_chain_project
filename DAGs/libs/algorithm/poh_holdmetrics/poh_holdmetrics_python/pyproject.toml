@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "poh_holdmetrics"
-version = "0.1.7"
+version = "0.1.16"
 description = "Proof-of-Hold based holding-time metrics calculation and serving toolkit."
 requires-python = ">=3.12"
 license = "Apache-2.0"
@@ -21,7 +21,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "poh_holdmetrics_rust>=0.1.0",
+  "poh_holdmetrics_rust>=0.1.16",
   "click>=8.1",
   "uvicorn[standard]>=0.20",
   "fastapi>=0.95",
@@ -45,7 +45,7 @@ test = [
   "motor>=3.3"
 ]
 config     = ["pyyaml>=6.0"]
-storage    = ["motor>=3.3", "immutdb>=0.15"]
+storage    = ["motor>=3.3", "dnspython>=2.0"]
 exporter   = ["prometheus-client>=0.16", "opentelemetry-api>=1.22", "opentelemetry-sdk>=1.22"]
 api        = ["fastapi>=0.95", "uvicorn[standard]>=0.20", "grpcio>=1.71.2", "httpx>=0.24"]
 protobuf   = ["protobuf>=4"]

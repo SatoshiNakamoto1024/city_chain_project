@@ -5,8 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import random
-import time
-from typing import Any, Awaitable, Callable, TypeVar
+from typing import Awaitable, Callable, TypeVar
 from .exceptions import SendError
 import base58
 

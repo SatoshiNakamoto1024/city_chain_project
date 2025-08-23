@@ -1,4 +1,4 @@
-# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\api\grpc_server.py
+# \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\api\grpc_server.py
 # -*- coding: utf-8 -*-
 """
 gRPC server for PoH‑Hold‑Metrics
@@ -27,6 +27,7 @@ import poh_holdmetrics.protocols.hold_pb2 as pb
 import poh_holdmetrics.protocols.hold_pb2_grpc as pb_grpc
 
 LOGGER = logging.getLogger(__name__)
+
 
 # ────────────────────────────────────────────────
 # Timestamp ↔ datetime 変換ユーティリティ
@@ -129,6 +130,7 @@ class _HoldMetricsServicer(pb_grpc.HoldMetricsServicer):
                 weighted_score=0.0,
                 updated_at=now_ts,
             )
+
 
 # ────────────────────────────────────────────────
 #  起動ヘルパー

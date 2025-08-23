@@ -12,10 +12,12 @@ formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+
 def get_node_endpoint(node):
     host = os.getenv("NODE_HOST", node)
     port = os.getenv("NODE_PORT", "50051")
     return f"{host}:{port}"
+
 
 def send_to_node(node, tx_id, shard_id, data):
     endpoint = get_node_endpoint(node)
@@ -33,6 +35,7 @@ def send_to_node(node, tx_id, shard_id, data):
     except grpc.RpcError as e:
         logger.error("[gRPC Client] エラー: %s", e)
         return False
+
 
 if __name__ == "__main__":
     # テスト用

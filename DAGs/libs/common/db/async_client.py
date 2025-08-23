@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from motor.core import AgnosticCollection
 
 DEFAULT_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-DEFAULT_DB  = os.getenv("DB_NAME", "federation_dag_db")
+DEFAULT_DB = os.getenv("DB_NAME", "federation_dag_db")
 
 
 class AsyncMongoClient:

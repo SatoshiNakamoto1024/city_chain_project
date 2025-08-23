@@ -11,13 +11,13 @@ import typing as _t
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request, Response
-from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from observability.metrics import REQUEST_COUNTER
 from observability.tracing import get_tracer
+
 
 # ─────────────────────────────
 # FastAPI / ASGI Middleware
@@ -40,6 +40,7 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
             REQUEST_COUNTER.labels(endpoint=path, status=status).inc()
             return resp
 
+
 # ─────────────────────────────
 # gRPC Interceptor (optional)
 # ─────────────────────────────
@@ -51,6 +52,7 @@ _GRPC_LAT = Summary(
     "gRPC method latency",
     ["method", "code"],
 )
+
 
 class GRPCObservabilityInterceptor(grpc.ServerInterceptor):
     def intercept_service(self, continuation, handler_call_details):

@@ -1,7 +1,7 @@
 # network/DAGs/common/priority/metrics/distance.py
 
-import math
 from . import base
+
 
 class DistanceMetric(base.PriorityMetric):
     """

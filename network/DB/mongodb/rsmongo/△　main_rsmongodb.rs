@@ -1,82 +1,118 @@
-// src/bin/main_rsmongodb.rs
+// \city_chain_project\network\DB\mongodb\rsmongo\src/bin/main_rsmongodb.rs
 
-use rsmongodb::lib_async::MongoDBAsyncHandler;
-use mongodb::bson::{doc, Document};
-use std::sync::Arc;
-use tokio::{spawn, time::{sleep, Duration}};
+use rsmongodb::lib_async::{MongoDBAsyncHandler, ensure_ttl_6months};
+use mongodb::bson::{doc, Bson, Document, DateTime as BsonDateTime};
+use tokio::{signal, sync::mpsc};
+use std::{collections::HashMap, fs};
+use serde_json::Value as Json;
+
+/// Writer へ送るチャネル
+type TxSender = mpsc::Sender<Document>;
+
+/// 大陸ごとの非同期 Writer ハブ
+pub struct Writers {
+    senders: HashMap<String, TxSender>, // "asia" -> その大陸の writer への送信口
+}
+
+impl Writers {
+    /// DAG からの書き込み依頼を即時キューイング（ノンブロッキング）
+    pub fn enqueue(&self, continent: &str, mut doc: Document) {
+        if !doc.contains_key("createdAt") {
+            doc.insert("createdAt", Bson::DateTime(BsonDateTime::now()));
+        }
+        if let Some(tx) = self.senders.get(continent) {
+            // 投げられない場合（満杯）には、上位でリトライ戦略を検討
+            let _ = tx.try_send(doc);
+        }
+    }
+}
+
+/// JSON から「大陸 -> URI」マップを読み込む（Atlas 用）
+fn load_continental_uris_from_json() -> HashMap<String, String> {
+    // あなたの既存ファイルを読みます
+    let p = "/home/satoshi/work/city_chain_project/network/DB/config/mongodb_config/main_chain/continental_mongodb_config/mongodb_continental.json";
+    let s = fs::read_to_string(p).expect("read mongodb_continental.json");
+    let v: Json = serde_json::from_str(&s).expect("parse mongodb_continental.json");
+    let table = v.get("complete").and_then(|x| x.as_object()).expect("complete is object");
+
+    let mut uris = HashMap::new();
+    for (k, val) in table {
+        if let Some(uri) = val.as_str() {
+            uris.insert(k.to_string(), uri.to_string());
+        }
+    }
+    uris
+}
+
+/// 各大陸ごとに Writer タスクを起動（MongoDB クライアントを持ち、MPSC を受信して書き込む）
+async fn start_writers(uris: &HashMap<String, String>, dbname: &str, coll_name: &str) -> Writers {
+    let mut senders = HashMap::new();
+
+    for (continent, uri) in uris {
+        // 送信用チャネルを作成（十分なバッファ）
+        let (tx, mut rx) = mpsc::channel::<Document>(10_000);
+        senders.insert(continent.clone(), tx);
+
+        // 各大陸に対応する MongoDB ハンドラ（プライマリ書き込み用）
+        // 失敗は即時 panic させず、ログ出力後に再試行ロジックを足してもよい
+        let handler = MongoDBAsyncHandler::new(uri, dbname)
+            .await
+            .unwrap_or_else(|e| panic!("create handler for {} failed: {:?}", continent, e));
+
+        // TTL（6ヶ月）インデックスを念のため作成（存在すれば no-op）
+        {
+            let coll = handler.db().collection::<Document>(coll_name);
+            ensure_ttl_6months(&coll).await.expect("create TTL index");
+        }
+        
+        
+        // 受信ループ：ドキュメントを受けるたびに暗号化処理を含む insert を実行
+        let coll = coll_name.to_string();
+        tokio::spawn(async move {
+            while let Some(doc) = rx.recv().await {
+                if let Err(e) = handler.insert_document(&coll, doc).await {
+                    eprintln!("[writer] insert error: {:?}", e);
+                    // TODO: 死活監視・DLQ などの実装余地
+                }
+            }
+        });
+    }
+
+    Writers { senders }
+}
 
 #[tokio::main]
 async fn main() -> mongodb::error::Result<()> {
-    // MongoDB Atlas の接続文字列 (ユーザー: satoshi, パスワード: greg1024)
-    let uri = "mongodb+srv://satoshi:greg1024@cluster0.sy70d.mongodb.net/test_data?retryWrites=true&w=majority";
-    let database_name = "test_data";
-    let collection_name = "transactions";
+    // ==== 設定の読み込み ====
+    // DB 名は環境変数で上書き可能（未設定なら city_chain）
+    let dbname = std::env::var("MONGODB_DB").unwrap_or_else(|_| "city_chain".to_string());
+    // コレクション名は固定（必要なら env で可変に）
+    let coll = std::env::var("MONGODB_COLL").unwrap_or_else(|_| "transactions".to_string());
 
-    // 非同期ハンドラの初期化
-    let db_handler = MongoDBAsyncHandler::new(uri, database_name).await?;
-    // Arc でラップして所有権を共有
-    let db_handler = Arc::new(db_handler);
+    // 大陸 -> URI の一覧を JSON から読み込む（本番想定）
+    // 単一の環境変数（MONGODB_URL_AS）で一つだけ接続する形は検証用として残しても良いですが、
+    // 本番では “全大陸” を起動しておくのが運用しやすいです。
+    let uris = load_continental_uris_from_json();
 
-    // 1) 単一ドキュメントの挿入（リトライなし）
-    let doc_single = doc! {
-        "user": "Alice",
-        "action": "send",
-        "amount": 100,
-        "status": "pending"
-    };
-    let inserted_id = db_handler.insert_document(collection_name, doc_single).await?;
-    println!("[single insert] Inserted with ID: {:?}", inserted_id);
+    // ==== Writer 群（大陸ごと）を起動 ====
+    let writers = start_writers(&uris, &dbname, &coll).await;
+    println!("[service] writers started for {} continents (db='{}', coll='{}')",
+             writers.senders.len(), dbname, coll);
 
-    // 2) リトライ付き挿入（最大3回再試行）
-    let doc_retry = doc! {
-        "user": "Bob",
-        "action": "receive",
-        "amount": 200,
-        "status": "pending"
-    };
-    let inserted_id_retry = db_handler.insert_document_with_retry(collection_name, doc_retry, 3).await?;
-    println!("[retry insert] Inserted with ID: {:?}", inserted_id_retry);
-
-    // 3) 100件の並列挿入 (各タスクは最大5回までリトライ)
-    const NUM_TASKS: usize = 100;
-    let mut tasks = Vec::new();
-
-    for i in 0..NUM_TASKS {
-        let handler_clone = Arc::clone(&db_handler);
-        let doc_parallel = doc! {
-            "user": format!("ParallelUser{}", i),
-            "action": "transfer",
-            "amount": i as i32,  // usize を i32 にキャスト
-            "status": "pending"
-        };
-        tasks.push(spawn(async move {
-            // 各挿入は最大 5 回のリトライ
-            handler_clone.insert_document_with_retry("transactions", doc_parallel, 5).await
-        }));
+    // ==== ここからは「待機」 ====
+    // DAG 側からは、別プロセス間通信（gRPC/HTTP/NATS/Kafka 等）で受け取ったら `writers.enqueue()` を呼ぶだけ。
+    // いまは簡易デモとして、RUN_DEMO=1 のときだけ 2件書いてみる。
+    if std::env::var("RUN_DEMO").ok().as_deref() == Some("1") {
+        let mut d1 = doc!{ "sender":"A", "receiver":"B", "amount": 10, "status":"pending" };
+        let mut d2 = doc!{ "sender":"C", "receiver":"D", "amount": 20, "status":"completed" };
+        writers.enqueue("asia", d1.clone());
+        writers.enqueue("europe", d2.clone());
+        println!("[demo] enqueued 2 docs");
     }
 
-    let mut success_count = 0_usize;
-    for (idx, task) in tasks.into_iter().enumerate() {
-        match task.await {
-            Ok(Ok(id)) => {
-                success_count += 1;
-                println!("[parallel insert {}] Inserted doc with ID: {:?}", idx, id);
-            }
-            Ok(Err(e)) => {
-                eprintln!("[parallel insert {}] Insertion error: {:?}", idx, e);
-            }
-            Err(e) => {
-                eprintln!("[parallel insert {}] Task join error: {:?}", idx, e);
-            }
-        }
-    }
-    println!("Parallel insertion completed. Success: {}/{}", success_count, NUM_TASKS);
-
-    // 4) コレクション内の全ドキュメントを取得して件数表示
-    let all_docs = db_handler.list_documents::<Document>(collection_name).await?;
-    println!("Total documents in '{}': {}", collection_name, all_docs.len());
-
-    // 少し待機してから終了（ログ確認用）
-    sleep(Duration::from_secs(2)).await;
+    // Ctrl+C まで常駐
+    println!("[service] ready. Press Ctrl+C to stop.");
+    signal::ctrl_c().await.expect("failed to listen for ctrl_c");
+    println!("[service] shutting down…");
     Ok(())
 }

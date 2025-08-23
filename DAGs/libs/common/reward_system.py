@@ -40,6 +40,7 @@ TOKEN_BASE = 10.0  # 1 ステップ当たりの基準トークン
 # node_id → 累計報酬
 node_rewards: Dict[str, float] = {}
 
+
 # ──────────────────────────
 # 内部 util
 # ──────────────────────────
@@ -55,6 +56,7 @@ def _grant(node_id: str, score: float) -> None:
     r = _calc(node["node_type"], score)
     node_rewards[node_id] = node_rewards.get(node_id, 0.0) + r
     logger.info("node=%s +%.2f → total=%.2f", node_id, r, node_rewards[node_id])
+
 
 # ──────────────────────────
 # 外部 API

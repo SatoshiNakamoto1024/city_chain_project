@@ -1,5 +1,5 @@
 # D:\city_chain_project\network\sending_DAGs\python_sending\common\grpc\test_grpc.py
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 gRPC クライアント／サーバ ユニットテスト
 - 1回目失敗→2回目成功のリトライ動作を検証
@@ -14,9 +14,10 @@ import grpc
 import pytest
 from concurrent import futures
 
-from grpc_dag.dag_pb2 import TxRequest, TxResponse, StatusRequest, StatusResponse
+from grpc_dag.dag_pb2 import TxResponse, StatusResponse
 from grpc_dag.dag_pb2_grpc import DAGServiceServicer, add_DAGServiceServicer_to_server
 from network.sending_DAG.python_sending.common.grpc_dag.server.app_grpc import GRPCClient
+
 
 class DummyDAGServicer(DAGServiceServicer):
     def __init__(self):
@@ -31,6 +32,7 @@ class DummyDAGServicer(DAGServiceServicer):
     def QueryTransactionStatus(self, request, context):
         return StatusResponse(status="COMPLETED")
 
+
 @pytest.fixture(scope="module")
 def grpc_server():
     servicer = DummyDAGServicer()
@@ -42,12 +44,14 @@ def grpc_server():
     yield servicer, port
     server.stop(True)
 
+
 def test_submit_transaction_with_retry(grpc_server):
     servicer, port = grpc_server
     client = GRPCClient(f'localhost:{port}')
     resp = client.submit_transaction('tx1', 'data')
     assert resp.status == 'OK'
     assert servicer.submit_count == 2
+
 
 def test_query_transaction_status(grpc_server):
     _, port = grpc_server

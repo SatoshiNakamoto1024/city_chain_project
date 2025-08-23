@@ -187,4 +187,3 @@ pip install maturin click pydantic ed25519 base58 pytest pytest-asyncio
 # Rust 版ビルド & Python テスト
 maturin develop --release
 pytest -q
-

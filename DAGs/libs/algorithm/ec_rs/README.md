@@ -20,7 +20,7 @@ ec_rust_src/
 │   │   └── fountain.rs         # Fountain Code 実装（将来追加）
 │   ├── sharding.rs             # 汎用分割・復元ロジック
 │   ├── bindings.rs             # PyO3 バインディング登録
-│   ├── gf.rs 
+│   ├── gf.rs
 │   ├── metrics.rs              # シャード生成や再構築にかかった時間・メモリ使用量などを計測
 │   ├── security.rs             # シード化（seeded randomness）やキー管理
 │   ├── error_codes.rs          # ECError を数値コードや HTTP ステータスとマッピング
@@ -251,4 +251,3 @@ GitHub Actions でビルド→テスト→Criterion ベンチ→Publish
 
 まずは 1→2→3 の “コア API＋テスト” を仕上げ してから、順に 4→5→6… と拡張していくのが安全・効率的です。
 この順序で進めていきましょう！
-

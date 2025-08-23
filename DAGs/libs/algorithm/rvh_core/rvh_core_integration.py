@@ -7,7 +7,6 @@
 """
 
 import asyncio
-import os
 from random import Random
 
 import pytest
@@ -18,7 +17,8 @@ import pytest
 from rvh_core import rendezvous_hash, arendezvous_hash, RVHError
 
 NODES = [f"node{i}" for i in range(5)]
-KEY   = "tx-XYZ"
+KEY = "tx-XYZ"
+
 
 # ─────────────────────────────────────────────────────────────
 # 正常系
@@ -85,6 +85,6 @@ def test_random_fuzz_under_both_backends(monkeypatch, force_py) -> None:
         key = f"obj-{rnd.randrange(10000)}"
 
         # sync / async 結果が一致するか
-        sync_res  = rendezvous_hash(nodes, key, k)
+        sync_res = rendezvous_hash(nodes, key, k)
         async_res = asyncio.run(arendezvous_hash(nodes, key, k))
         assert sync_res == async_res

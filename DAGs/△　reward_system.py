@@ -14,11 +14,13 @@ from config import REWARD_RATES, TOKEN_REWARD_UNIT, CONTINENT_NODES
 
 node_rewards = {}
 
+
 def calculate_node_reward(node_info, contribution_score):
     node_type = node_info.get("node_type", "light")
     rate = REWARD_RATES.get(node_type, 1.0)
     reward = contribution_score * rate * TOKEN_REWARD_UNIT
     return reward
+
 
 def record_node_contribution(node_id, contribution_score):
     node_type = "full" if "full" in node_id or "node_1" in node_id else "light"
@@ -26,6 +28,7 @@ def record_node_contribution(node_id, contribution_score):
     reward = calculate_node_reward(node_info, contribution_score)
     node_rewards[node_id] = node_rewards.get(node_id, 0) + reward
     print(f"[Reward] ノード {node_id} に {reward:.2f} Harmony Token を支払い、総報酬は {node_rewards[node_id]:.2f} です。")
+
 
 def distribute_rewards():
     all_nodes = []
@@ -36,6 +39,7 @@ def distribute_rewards():
         contribution = random.uniform(0.5, 1.0)
         record_node_contribution(node_id, contribution)
     threading.Timer(60, distribute_rewards).start()  # 1分ごとに実行
+
 
 if __name__ == "__main__":
     distribute_rewards()

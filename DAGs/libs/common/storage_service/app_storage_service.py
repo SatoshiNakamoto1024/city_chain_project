@@ -9,7 +9,6 @@ from __future__ import annotations
 import signal
 import sys
 import time
-import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -20,11 +19,13 @@ from storage_service.config import SERVER_PORT
 server, port = start_storage_server(port=SERVER_PORT, node_id="storage-node")
 print(f"[StorageService] listening on {port}")
 
+
 # Graceful-stop
-def _sigterm(signo, frame):  # noqa: D401
+def _sigterm(signo, frame):
     print("Stopping StorageService...")
     server.stop(0)
     sys.exit(0)
+
 
 signal.signal(signal.SIGINT, _sigterm)
 signal.signal(signal.SIGTERM, _sigterm)

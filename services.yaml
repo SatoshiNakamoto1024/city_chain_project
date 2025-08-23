@@ -1,20 +1,13 @@
-# services.yaml
+# \city_chain_project\services.yaml
 # ===================================================================================
 # 目的:
 #   - クレートごとに「どうビルドするか / どう起動するか / どうテストするか」を宣言
 #   - tools/gen.py が docker-bake.generated.hcl / docker-compose.*.generated.yml を生成
 #
-# 用語:
-#   kind:
-#     - python : Pythonオンリー（Rust無し）
-#     - rust   : Rustオンリー（バイナリ）
-#     - mixed  : Python×Rust（PyO3拡張を maturin でビルド）
-#
-# 本ファイルでは:
-#   - rvh_trace（mixed / ライブラリ = pyext 枠）
-#   - poh_holdmetrics（mixed / ライブラリ = pyext 枠）
-#   - poh_srv（rust / gRPCサーバ = services 枠）
-#   - mongo（infra）
+# 前提（本番想定・Atlas固定）:
+#   - ローカルMongoDBは使わない
+#   - orchestra または起動コマンドが MONGODB_URL を “1本だけ” 注入する
+#   - 依存する他サービス（mongoコンテナ等）は記述しない
 # ===================================================================================
 
 version: 1
@@ -30,37 +23,43 @@ pyext:
     crate_path: DAGs/libs/algorithm/poh_holdmetrics
     kind: mixed
     features: ["python"]
-    # ★ ここを「Python ラッパのディレクトリ」に修正
+    # Python ラッパのディレクトリ
     python_wrapper: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
     tests:
       - kind: pytest
         path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/tests
-        # ここを追加: Mongo の起動完了を待つ
-        wait_for:
-          service: mongo
-        # ここを追加: コンテナ内からは "mongo" で到達する
+        # ★重要: ここで MONGODB_URL/MONGODB_URI を固定しない（空文字が焼き込まれるのを防ぐ）
+        # Atlas の接続文字列は `docker compose run -e ...` でコンテナ起動時に注入する
         env:
-          MONGO_URI: "mongodb://mongo:27017"
+          # MONGODB_URL: （削除）
+          # MONGODB_URI: （削除）
+          MONGODB_DB: "pytest_tmp"
+          # テスト安定化用（開発時のみ）
+          PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: "python"
+          PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION: "3"
+          POH_DISABLE_RUST: "1"
+          PYTEST_ADDOPTS: "-o cache_dir=/tmp/pytest_cache"
 
-# 常駐サービス
+# 常駐サービス（Atlas 直結）
 services:
   # ==== gRPC サーバ ====
   - name: poh_holdmetrics-grpc
-    # ★ *_rust を指す（OK）
+    # *_rust を指す
     crate_path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust
     kind: rust
     bin_name: main_holdmetrics
     env:
       SERVICE_MODE: "grpc"
       GRPC_ADDRESS: "0.0.0.0:60051"
-      MONGO_URI: "mongodb://mongo:27017"
+      # Atlas の接続文字列を1本だけ注入（例：mongodb+srv://...）
+      MONGODB_URL: ${MONGODB_URL}
+      # DB 名（pymongoでは client[DB] で参照）
+      MONGODB_DB: "holdmetrics_prod"
     ports:
       - "60051:60051"
       # （任意）メトリクスを scrape したい場合は 9100 も公開
       - "9100:9100"
-    depends_on:
-      - mongo
-    # ★ ここを追加：Rust の bin をそのまま実行（常駐）
+    # Rust の bin をそのまま実行（常駐）
     command: ["/app/bin/main_holdmetrics", "--grpc-addr", "0.0.0.0:60051"]
     healthcheck:
       port: 60051
@@ -70,20 +69,18 @@ services:
 
   # ==== HTTP サーバ ====
   - name: poh_holdmetrics-http
-    # どちらでも動くが、統一のため *_rust を推奨（下のどちらか一方を使う）
-    # crate_path: DAGs/libs/algorithm/poh_holdmetrics
     crate_path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust
     kind: mixed
     features: ["python"]
     env:
       SERVICE_MODE: "http"
       HTTP_PORT: "8000"
-      MONGO_URI: "mongodb://mongo:27017"
+      # Atlas の接続文字列を1本だけ注入
+      MONGODB_URL: ${MONGODB_URL}
+      MONGODB_DB: "holdmetrics_prod"
     ports:
       - "8000:8000"
-    depends_on:
-      - mongo
-    # ★ ここを追加：Uvicorn で FastAPI を常駐起動
+    # Uvicorn で FastAPI を常駐起動
     command: ["python","-m","uvicorn","poh_holdmetrics.api.http_server:app","--host","0.0.0.0","--port","8000"]
     healthcheck:
       port: 8000
@@ -91,19 +88,4 @@ services:
       timeout: "2s"
       retries: 20
 
-# ミドルウェア
-infra:
-  - name: mongo
-    image: "mongo:7"
-    ports:
-      - "27017:27017"
-    volumes:
-      - name: mongo-data
-        mount: /data/db
-        driver: local
-    healthcheck:
-      type: mongosh
-      command: "db.adminCommand({ ping: 1 })"
-      interval: "5s"
-      timeout: "3s"
-      retries: 20
+# ※ Atlas固定のため infra: mongo は記述しない（ローカルMongoは使わない）

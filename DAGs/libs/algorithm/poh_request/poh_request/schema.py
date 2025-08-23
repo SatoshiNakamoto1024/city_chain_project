@@ -42,7 +42,7 @@ class PoHRequest(BaseModel):
 
     # ---- 追加: datetime を常に ISO‑8601 へ ----
     @field_serializer("created_at", when_used="always")
-    def _ser_dt(self, v: datetime) -> str:          # noqa: D401, N802
+    def _ser_dt(self, v: datetime) -> str:
         """Serialize datetime as UTC ISO‑8601 w/ seconds precision."""
         return v.replace(tzinfo=timezone.utc).isoformat(timespec="seconds")
 

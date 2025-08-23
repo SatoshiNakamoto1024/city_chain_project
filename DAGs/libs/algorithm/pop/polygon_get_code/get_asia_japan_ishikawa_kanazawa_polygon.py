@@ -19,6 +19,7 @@ relation(4800041);
 out meta geom;
 """
 
+
 def fetch_kanazawa_polygon():
     headers = {
         "User-Agent": "MyOverpassClient/1.0 (next_teal_organization@gmail.com)"
@@ -26,9 +27,9 @@ def fetch_kanazawa_polygon():
     response = requests.post(OVERPASS_URL, data={'data': QUERY}, headers=headers)
     if response.status_code != 200:
         raise Exception("Error fetching data: HTTP {}".format(response.status_code))
-    
+
     osm_data = response.json()
-    
+
     # チェック：relationタイプの要素にジオメトリが含まれているか
     has_geom = False
     for element in osm_data.get("elements", []):
@@ -43,7 +44,7 @@ def fetch_kanazawa_polygon():
             return geojson_data
         else:
             raise Exception("No geometry data returned and osmtogeojson.convert is not available.")
-    
+
     # geometry がある場合、そのデータを元に GeoJSON を組み立てる
     features = []
     for element in osm_data.get("elements", []):
@@ -71,10 +72,12 @@ def fetch_kanazawa_polygon():
     }
     return geojson_data
 
+
 def save_geojson(data, filepath):
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     print(f"GeoJSON data saved to: {filepath}")
+
 
 if __name__ == "__main__":
     try:

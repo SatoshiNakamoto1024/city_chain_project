@@ -2,6 +2,7 @@
 import time
 from .errors import CircuitOpenError
 
+
 class CircuitBreaker:
     """
     簡易サーキットブレーカー (async非対応メソッドでも動きます)：
@@ -36,7 +37,7 @@ class CircuitBreaker:
 
         try:
             result = func(*args, **kwargs)
-        except Exception as e:
+        except Exception:
             self._failure_count += 1
             if self._failure_count >= self.fail_max:
                 self._enter_open()

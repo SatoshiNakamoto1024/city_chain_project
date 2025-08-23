@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict
 
+
 @dataclass(frozen=True)
 class Config:
     MIN_POH_REQUIRED: int

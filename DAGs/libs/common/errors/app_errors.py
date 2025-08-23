@@ -32,10 +32,10 @@ app = FastAPI(title="Common-Errors Demo")
 
 
 @app.exception_handler(BaseError)
-async def base_err_handler(_: Request, exc: BaseError) -> JSONResponse:  # noqa: D401
+async def base_err_handler(_: Request, exc: BaseError) -> JSONResponse:
     """
-    独自例外を共通 JSON 形式に変換  
-    * ValidationError → 400  
+    独自例外を共通 JSON 形式に変換
+    * ValidationError → 400
     * それ以外        → 500
     """
     status = 400 if isinstance(exc, ValidationError) else 500

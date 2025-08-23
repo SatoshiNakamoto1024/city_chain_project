@@ -23,6 +23,7 @@ city_polygons: List[Polygon] = []
 geom_to_city: dict[Polygon, str] = {}
 _str_tree: Optional[STRtree] = None
 
+
 def load_city_polygons() -> None:
     """
     一度呼び出せば OK。
@@ -52,6 +53,7 @@ def load_city_polygons() -> None:
 
     _str_tree = STRtree(city_polygons)
 
+
 def find_city_by_location(lat: float, lon: float) -> Optional[str]:
     """
     Point(lon,lat) が属する city_id を返します。
@@ -71,7 +73,7 @@ def find_city_by_location(lat: float, lon: float) -> Optional[str]:
             poly = city_polygons[int(candidate)]
         else:
             poly = candidate
-        
+
         city_id = geom_to_city.get(poly)
         if city_id and poly.contains(pt):
             return city_id

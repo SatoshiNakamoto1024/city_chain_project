@@ -11,8 +11,6 @@ from __future__ import annotations
 import logging
 import os
 from concurrent import futures
-from pathlib import Path
-from typing import Optional
 import grpc
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
@@ -67,7 +65,7 @@ def start_storage_server(
     max_workers: int = 10,
 ) -> tuple[grpc.Server, int]:
     """
-    ・ユニットテスト／PoC 用の簡単サーバ起動ヘルパ  
+    ・ユニットテスト／PoC 用の簡単サーバ起動ヘルパ
     ・戻り値: (server_obj, listen_port)
     """
     server = grpc.server(futures.ThreadPoolExecutor(max_workers))
@@ -84,8 +82,8 @@ def start_storage_server(
 # ───────────────────────────────────────
 class StorageClient:
     """
-    高レベルクライアント  
-    ・bytes を渡すだけで StoreFragment 呼び出し  
+    高レベルクライアント
+    ・bytes を渡すだけで StoreFragment 呼び出し
     ・リトライは呼び出し側で必要に応じて実装
     """
 

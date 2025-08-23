@@ -9,6 +9,7 @@ ChannelFactory: gRPC チャンネルを生成するユーティリティ
 import grpc
 from typing import List, Optional
 
+
 class ChannelFactory:
     @staticmethod
     def create_secure_channel(

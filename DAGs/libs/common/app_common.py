@@ -28,6 +28,7 @@ import common as C  # noqa: E402  pylint: disable=wrong-import-position
 logger = logging.getLogger("common.cli")
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s %(message)s")
 
+
 # ════════════════════════════════════════════════════════════
 # 1) batch-interval
 # ════════════════════════════════════════════════════════════
@@ -104,7 +105,7 @@ def cmd_storage_server(args: argparse.Namespace) -> None:
     loaded = _load_storage_proto()
     if loaded is None:
         sys.exit(1)
-    storage_pb2, storage_pb2_grpc = loaded  # noqa: N806
+    storage_pb2, storage_pb2_grpc = loaded
 
     class DevStorageServicer(storage_pb2_grpc.StorageServiceServicer):  # type: ignore
         def StoreFragment(self, request, context):  # noqa: N802

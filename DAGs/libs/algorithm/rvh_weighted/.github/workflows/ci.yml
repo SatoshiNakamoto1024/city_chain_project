@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: target
-          key: ${{ runner.os }}-cargo-build-${{ github.sha }} 
+          key: ${{ runner.os }}-cargo-build-${{ github.sha }}
 
       # 3. Rust 環境セットアップ
       - name: Install Rust

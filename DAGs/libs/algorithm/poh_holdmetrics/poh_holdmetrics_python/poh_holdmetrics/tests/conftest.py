@@ -1,4 +1,4 @@
-# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\tests\conftest.py
+# \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\tests\conftest.py
 # (tests ディレクトリ直下)
 
 import os

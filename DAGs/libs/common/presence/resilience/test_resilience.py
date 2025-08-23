@@ -21,6 +21,7 @@ from resilience.rate_limiter import RateLimiter
 
 res.global_rl = RateLimiter(rate=1000, capacity=1000)  # monkeypatch
 
+
 # -------------------------------------------------------------------
 # 2) httpx バージョン差異を吸収した AsyncClient helper
 # -------------------------------------------------------------------
@@ -39,13 +40,15 @@ def get_client() -> httpx.AsyncClient:
         tr = httpx.ASGITransport(app=res.app)
     return httpx.AsyncClient(transport=tr, base_url="http://test")
 
+
 # -------------------------------------------------------------------
 # 3) テスト: Circuit Breaker
 # -------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_circuit_breaker(monkeypatch):
     # ---------- ❶ 最初の 3 回だけ必ず失敗させる ----------
-    import itertools, random
+    import itertools
+    import random
     fails = itertools.chain([0.0, 0.0, 0.0], itertools.repeat(1.0))  # 3回失敗→以降成功
     monkeypatch.setattr(random, "random", lambda: next(fails))
 
@@ -61,6 +64,7 @@ async def test_circuit_breaker(monkeypatch):
         await asyncio.sleep(2.1)
         r = await cli.get("/unstable")
         assert r.status_code in (200, 500)
+
 
 # -------------------------------------------------------------------
 # 4) テスト: Rate Limiter

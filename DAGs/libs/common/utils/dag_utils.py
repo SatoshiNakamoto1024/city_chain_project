@@ -2,8 +2,8 @@
 """
 DAG（有向非巡回グラフ）向けユーティリティ
 =========================================
-- トポロジカルソート  
-- サイクル検出  
+- トポロジカルソート
+- サイクル検出
 - エッジリスト→隣接リスト変換
 """
 
@@ -28,7 +28,7 @@ def topological_sort(dependencies: Dict[T, List[T]]) -> List[T]:
         ValueError: サイクルが検出された場合
     """
     # 全ノードの in-degree を計算
-    in_degree: Dict[T, int] = {node: 0 for node in dependencies}
+    in_degree: Dict[T, int] = dict.fromkeys(dependencies, 0)
     for succs in dependencies.values():
         for v in succs:
             in_degree[v] = in_degree.get(v, 0) + 1

@@ -1,6 +1,7 @@
 # D:\city_chain_project\DAGs\libs\algorithm\poh_ack\poh_ack_python\poh_ack\models.py
 from pydantic import BaseModel, Field
 
+
 class AckRequest(BaseModel):
     """
     ACK 検証リクエストモデル

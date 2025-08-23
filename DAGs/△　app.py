@@ -13,6 +13,7 @@ app = Flask(__name__)
 # DAGHandlerの初期化（バッチ保持時間は1秒）
 dag_handler = DAGHandler(batch_interval=1)
 
+
 @app.route("/send_transaction", methods=["POST"])
 def send_transaction():
     """
@@ -23,7 +24,7 @@ def send_transaction():
     sender = data.get("sender")
     receiver = data.get("receiver")
     amount = data.get("amount")
-    
+
     if not sender or not receiver or amount is None:
         return jsonify({"error": "Missing required fields"}), 400
 
@@ -35,6 +36,7 @@ def send_transaction():
     }
     return jsonify(response)
 
+
 @app.route("/receive_transaction", methods=["POST"])
 def receive_transaction():
     """
@@ -45,7 +47,7 @@ def receive_transaction():
     sender = data.get("sender")
     receiver = data.get("receiver")
     amount = data.get("amount")
-    
+
     if not sender or not receiver or amount is None:
         return jsonify({"error": "Missing required fields"}), 400
 
@@ -56,6 +58,7 @@ def receive_transaction():
         "message": "Receive transaction scheduled for MongoDB storage."
     }
     return jsonify(response)
+
 
 @app.route("/status", methods=["GET"])
 def status():
@@ -72,6 +75,7 @@ def status():
         "total_dag_nodes": total
     }
     return jsonify(response)
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)

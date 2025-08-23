@@ -9,6 +9,7 @@ from .exceptions import TTLManagerError
 
 logger = logging.getLogger(__name__)
 
+
 class TTLManager:
     """
     PoH トランザクションの TTL 管理とガベージコレクション。
@@ -18,7 +19,7 @@ class TTLManager:
 
     def __init__(self, storage_manager: StorageManager, ttl_seconds: int):
         self.storage_manager = storage_manager
-        self.ttl_seconds     = ttl_seconds
+        self.ttl_seconds = ttl_seconds
         self._task = None
 
     async def scan_once(self) -> List[str]:

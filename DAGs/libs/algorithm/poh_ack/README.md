@@ -335,7 +335,7 @@ Rust サブクレート poh_ack_rust/Cargo.toml を
 -# python = PyO3 バインディングを含む完全版
 -python  = ["pyo3/extension-module", "pyo3/abi3-py312", "pyo3/auto-initialize"]
 -# デフォルトはどちらもオフに
--default = []      
+-default = []
 -# wheel ビルドや Python から import するとき
 -python-ext = ["pyo3/extension-module"]
 -# Rust 側で直接実行・テストしたいとき
@@ -370,7 +370,7 @@ Edit
 +tokio                = { workspace = true,
 +                         features = ["rt","rt-multi-thread","macros","time"] }
 +once_cell            = "1.19"
- 
+
  # --- errors & CLI etc. ----------------------------------------------------
 -chrono        = { version = "0.4", features = ["serde"] }
 -serde         = { version = "1.0", features = ["derive"] }
@@ -384,7 +384,7 @@ Edit
 +anyhow               = { workspace = true }
  clap                 = { version = "4.5", features = ["derive"] }
  indoc                = "1"
- 
+
  # --- PyO3 & asyncio bridge -----------------------------------------------
 -pyo3          = { version = "0.25",
 -                  features = ["abi3-py312", "extension-module", "auto-initialize"] }

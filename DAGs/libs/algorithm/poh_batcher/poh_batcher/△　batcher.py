@@ -76,7 +76,7 @@ class AsyncBatcher:
     timeout :
         先頭 ACK を受信してから flush するまでの秒数
     sink :
-        ``async def sink(batch: PackedBatch)``  
+        ``async def sink(batch: PackedBatch)``
         – flush 時に呼ばれるコールバック
     loop :
         明示しない場合 ``asyncio.get_event_loop()`` を使用

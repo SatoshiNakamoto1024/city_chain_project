@@ -3,6 +3,7 @@
 from .checkpoint import CheckpointManager
 from typing import Optional
 
+
 class AnchorService:
     """
     完了バッチを上位レイヤー（Municipality／Continent）へプッシュする際に、

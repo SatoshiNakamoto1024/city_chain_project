@@ -17,7 +17,6 @@ import sys
 import pathlib
 import pytest
 import subprocess
-import asyncio
 
 ROOT = pathlib.Path(__file__).parent
 
@@ -30,16 +29,18 @@ from rvh_faultset import faultset, faultset_async, FaultsetError
 
 BASE_NODES = [
     {"id": "a", "lat": 35.0, "lon": 139.0, "latency":  50.0},
-    {"id": "b", "lat": 51.5, "lon":  -0.1, "latency": 200.0},
-    {"id": "c", "lat": 40.7, "lon":  -74.0, "latency":  75.0},
+    {"id": "b", "lat": 51.5, "lon": -0.1, "latency": 200.0},
+    {"id": "c", "lat": 40.7, "lon": -74.0, "latency":  75.0},
     {"id": "d", "lat": 35.0, "lon": 140.0, "latency": 150.0},
 ]
+
 
 def test_sync_basic():
     """sync: threshold=100, precision=5 なら a,c が残る"""
     survivors = faultset(BASE_NODES, threshold=100.0, precision=5)
     assert isinstance(survivors, list)
     assert set(survivors) == {"a", "c"}
+
 
 @pytest.mark.asyncio
 async def test_async_basic():
@@ -48,16 +49,19 @@ async def test_async_basic():
     assert isinstance(survivors, list)
     assert set(survivors) == {"a", "c"}
 
+
 def test_sync_empty():
     """sync: 空入力で FaultsetError"""
     with pytest.raises(FaultsetError):
         faultset([], threshold=50.0, precision=6)
+
 
 @pytest.mark.asyncio
 async def test_async_empty():
     """async: 同上を await で呼び出すと FaultsetError"""
     with pytest.raises(FaultsetError):
         await faultset_async([], threshold=50.0, precision=6)
+
 
 def test_sync_all_filtered():
     """sync: precision=12 で分散クラスタ → 全フィルタアウト → エラー"""
@@ -68,6 +72,7 @@ def test_sync_all_filtered():
     with pytest.raises(FaultsetError):
         faultset(nodes, threshold=100.0, precision=12)
 
+
 @pytest.mark.asyncio
 async def test_async_all_filtered():
     """async: 同上を await"""
@@ -77,6 +82,7 @@ async def test_async_all_filtered():
     ]
     with pytest.raises(FaultsetError):
         await faultset_async(nodes, threshold=100.0, precision=12)
+
 
 def test_cli_sync(tmp_path):
     """CLI sync モード (-p precision)"""
@@ -91,6 +97,7 @@ def test_cli_sync(tmp_path):
     # 出力例: "Survivors: ['a', 'c']\n"
     assert "a" in res.stdout and "c" in res.stdout
 
+
 def test_cli_async(tmp_path):
     """CLI async モード (--async)"""
     cmd = [
@@ -103,6 +110,7 @@ def test_cli_async(tmp_path):
     res = subprocess.run(cmd, capture_output=True, text=True)
     assert res.returncode == 0
     assert "a" in res.stdout and "c" in res.stdout
+
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__]))

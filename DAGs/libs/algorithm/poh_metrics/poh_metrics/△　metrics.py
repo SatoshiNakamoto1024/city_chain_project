@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, Summary
 
-__all__ = ["register_metrics", "get_metric"]
+__all__ = ["get_metric", "register_metrics"]
 
 
 # --------------------------------------------------------------------------- #

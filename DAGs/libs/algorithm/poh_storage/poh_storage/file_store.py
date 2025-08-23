@@ -2,6 +2,7 @@
 import aiofiles
 from pathlib import Path
 
+
 class FileStore:
     """
     Async file-based storage for raw Tx payloads.

@@ -3,7 +3,6 @@
 単体テスト: geo weight と record の検証
 """
 from __future__ import annotations
-import asyncio
 import inspect
 import math
 import pytest
@@ -13,6 +12,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from reward.app_reward import app
+
 
 # ---------------------------
 # httpx クライアント helper
@@ -25,6 +25,7 @@ def get_cli():
     tr = httpx.ASGITransport(app=app, lifespan="off") if "lifespan" in tr_sig.parameters \
         else httpx.ASGITransport(app=app)
     return httpx.AsyncClient(transport=tr, base_url="http://t")
+
 
 # ---------------------------
 # E2E テスト

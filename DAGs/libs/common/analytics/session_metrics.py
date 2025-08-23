@@ -2,6 +2,7 @@ import time
 from collections import defaultdict
 from threading import Lock
 
+
 class SessionMetrics:
     """
     ノードのログイン/ログアウトをトラッキングし、

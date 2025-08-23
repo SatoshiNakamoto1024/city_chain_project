@@ -1,6 +1,6 @@
 # vrf_python
 
-VRF (Verifiable Random Function) の Python クライアントラッパーです。  
+VRF (Verifiable Random Function) の Python クライアントラッパーです。
 内部で Rust 製の `vrf_rust` 拡張モジュールを呼び出して、鍵生成・証明生成・検証を行います。
 
 1. 背景：VRF とは何か？

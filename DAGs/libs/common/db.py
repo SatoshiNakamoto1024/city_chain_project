@@ -12,27 +12,28 @@ from __future__ import annotations
 
 import contextlib
 import os
-from typing import Any, AsyncIterator, Iterator
+from typing import Any, AsyncIterator
 
 # ───────────────────────────────
 # デフォルト設定（環境変数で上書き可）
 # ───────────────────────────────
 DEFAULT_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-DEFAULT_DB  = os.getenv("DB_NAME", "federation_dag_db")
+DEFAULT_DB = os.getenv("DB_NAME", "federation_dag_db")
+
 
 # ───────────────────────────────
 # 同期版ラッパー
 # ───────────────────────────────
 class _SyncClientWrapper:
     """
-    with _SyncClientWrapper(...) as cli:  
+    with _SyncClientWrapper(...) as cli:
         cli.insert_one("col", {...})
     """
 
     def __init__(self, uri: str, db_name: str):
         from pymongo import MongoClient  # ※ローカル import でテストが軽くなる
         self._client = MongoClient(uri)
-        self._db     = self._client[db_name]
+        self._db = self._client[db_name]
 
     # ----- CRUD 最低限だけ実装 -----
     def insert_one(self, col: str, doc: dict[str, Any]):
@@ -65,6 +66,7 @@ def get_sync_client(
     """
     return _SyncClientWrapper(uri, db_name)
 
+
 # ───────────────────────────────
 # 非同期版ラッパー (Motor)
 # ───────────────────────────────
@@ -80,7 +82,7 @@ class _AsyncClientWrapper:
         except ImportError as e:  # pragma: no cover
             raise ImportError("motor がインストールされていません") from e
         self._client = AsyncIOMotorClient(uri)
-        self._db     = self._client[db_name]
+        self._db = self._client[db_name]
 
     # async CRUD
     async def insert_one(self, col: str, doc: dict[str, Any]):
@@ -113,10 +115,11 @@ def get_async_client(
     """
     return _AsyncClientWrapper(uri, db_name)  # これは async context-manager
 
+
 # ───────────────────────────────
 # __all__
 # ───────────────────────────────
 __all__ = [
-    "get_sync_client",
     "get_async_client",
+    "get_sync_client",
 ]

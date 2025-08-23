@@ -6,8 +6,8 @@
 │   │   │   ├── encoder.rs                 # LDPC エンコード（符号語生成）ロジック
 │   │   │   ├── decoder.rs                 # LDPC デコード（誤り訂正）ロジック
 │   │   │   └── matrix.rs                  # パリティ検査行列・ガロア体演算ユーティリティ
-│   │   ├── tests/      
-│   │   │   └── test_ldpc.rs 
+│   │   ├── tests/
+│   │   │   └── test_ldpc.rs
 │   │   ├── Cargo.toml
 
 LDPC サブクレートを独立した Rust プロジェクト（subcrate）として立ち上げ、全ファイルを本番実装用の雛形としてまとめました。これで

@@ -3,8 +3,10 @@
 """
 subscribers = []
 
+
 def subscribe(cb):
     subscribers.append(cb)
+
 
 def broadcast(tx_dict: dict):
     for cb in subscribers:

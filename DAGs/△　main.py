@@ -5,6 +5,7 @@ from dag.dag_handler import DAGHandler
 app = Flask(__name__)
 dag_handler = DAGHandler(batch_interval=1)
 
+
 @app.route("/send_transaction", methods=["POST"])
 def send_transaction():
     data = request.get_json()
@@ -17,6 +18,7 @@ def send_transaction():
     tx_id, tx_hash = dag_handler.add_transaction(sender, receiver, amount, tx_side)
     return jsonify({"tx_id": tx_id, "tx_hash": tx_hash})
 
+
 @app.route("/receive_transaction", methods=["POST"])
 def receive_transaction():
     data = request.get_json()
@@ -27,6 +29,7 @@ def receive_transaction():
         return jsonify({"error": "Missing fields"}), 400
     tx_id, tx_hash = dag_handler.add_transaction(sender, receiver, amount, "receive")
     return jsonify({"tx_id": tx_id, "tx_hash": tx_hash})
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)

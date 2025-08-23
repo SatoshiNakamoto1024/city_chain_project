@@ -29,6 +29,7 @@ from node_list.schemas import NodeInfo
 SET_KEY = "presence:online"
 LAST_SEEN = "presence:last_seen:{}"
 
+
 # ────────────────────────────
 # Rate limit middleware (IP 単位)
 # ────────────────────────────
@@ -48,6 +49,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             raise HTTPException(status_code=429, detail="Too Many Requests")
         return await call_next(request)
 
+
 # ────────────────────────────
 # FastAPI
 # ────────────────────────────
@@ -56,10 +58,12 @@ app.add_middleware(RateLimitMiddleware, rate=30, capacity=60)
 
 redis: Redis
 
+
 @app.on_event("startup")
 async def _startup():
     global redis
     redis = Redis.from_url(PRESENCE_REDIS_URI, decode_responses=True)
+
 
 # ────────────────────────────
 # Redis helpers
@@ -70,17 +74,20 @@ async def _login(node_id: str):
     pipe.set(LAST_SEEN.format(node_id), time.time(), ex=HEARTBEAT_INTERVAL_SEC * 2)
     await pipe.execute()
 
+
 async def _logout(node_id: str):
     pipe = redis.pipeline()
     pipe.srem(SET_KEY, node_id)
     pipe.delete(LAST_SEEN.format(node_id))
     await pipe.execute()
 
+
 async def _heartbeat(node_id: str):
     ok = await redis.exists(LAST_SEEN.format(node_id))
     if not ok:
         raise HTTPException(status_code=404, detail="node not found")
     await redis.set(LAST_SEEN.format(node_id), time.time(), ex=HEARTBEAT_INTERVAL_SEC * 2)
+
 
 async def _list() -> List[NodeInfo]:
     ids = await redis.smembers(SET_KEY)
@@ -91,6 +98,7 @@ async def _list() -> List[NodeInfo]:
             infos.append(NodeInfo(node_id=nid, last_seen=float(ts)))
     return infos
 
+
 # ────────────────────────────
 # Routes
 # ────────────────────────────
@@ -98,26 +106,31 @@ async def _list() -> List[NodeInfo]:
 async def list_presence():
     return await _list()
 
+
 @app.post("/presence/login")
 async def login(body: dict):
     await _login(body["node_id"])
     return {"status": "OK"}
+
 
 @app.post("/presence/logout")
 async def logout(body: dict):
     await _logout(body["node_id"])
     return {"status": "OK"}
 
+
 @app.post("/presence/heartbeat")
 async def heartbeat(body: dict):
     await _heartbeat(body["node_id"])
     return {"status": "OK"}
+
 
 # ────────────────────────────
 # Entry point
 # ────────────────────────────
 def create_app() -> FastAPI:  # for uvicorn programmatic launch
     return app
+
 
 if __name__ == "__main__":
     import uvicorn

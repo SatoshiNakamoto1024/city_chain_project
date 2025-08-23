@@ -12,6 +12,7 @@ resolver = "2"
 
 # --- サブクレートをパターンでまとめる ---------------------------
 members = [
+  "network/DB/mongodb/rsmongo",
   "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust",
   # pythonのみクレートは列挙しない
   # 必要なら他ドメインも

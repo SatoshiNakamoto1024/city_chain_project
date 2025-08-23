@@ -4,6 +4,7 @@ from prometheus_client import CollectorRegistry
 from poh_metrics.registry import get_registry
 import poh_metrics.metrics as metrics
 
+
 @pytest.fixture(autouse=True)
 def clear_and_reinit_registry(monkeypatch):
     """
@@ -18,6 +19,7 @@ def clear_and_reinit_registry(monkeypatch):
     # メトリクス登録（force=True で再登録）
     metrics.register_metrics(reg, force=True)
     return reg
+
 
 def test_metrics_registered():
     """

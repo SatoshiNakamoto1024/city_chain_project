@@ -14,7 +14,8 @@ Usage:
     python poh_ack_integration.py
 """
 
-import sys, os
+import sys
+import os
 from pathlib import Path
 
 script_dir = Path(os.path.abspath(__file__)).parent
@@ -39,7 +40,6 @@ from poh_ack.models import AckRequest
 from poh_ack.verifier import verify_ack, verify_ack_async
 
 # インストール済みの Rust 拡張をインポート
-import poh_ack_rust as _rust
 
 # -------------- build‑artefact name ----------------------------
 BIN_NAME = "main_ack.exe" if os.name == "nt" else "main_ack"
@@ -47,7 +47,7 @@ BIN_NAME = "main_ack.exe" if os.name == "nt" else "main_ack"
 # ─ Rust CLI バイナリのパスを自動検出 ────────────────────────────────────────
 _root = Path(__file__).parent
 rust_rel = _root / "poh_ack_rust" / "target" / "release" / BIN_NAME
-rust_dbg = _root / "poh_ack_rust" / "target" / "debug"   / BIN_NAME
+rust_dbg = _root / "poh_ack_rust" / "target" / "debug" / BIN_NAME
 if rust_rel.exists():
     RUST_CLI = str(rust_rel)
 elif rust_dbg.exists():
@@ -56,6 +56,7 @@ else:
     print(" Cannot find main_ack binary. Please run `cargo build [--release]` first.", file=sys.stderr)
     sys.exit(1)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def make_test_ack(id: str, timestamp: str) -> AckRequest:
     """
@@ -77,6 +78,7 @@ def make_test_ack(id: str, timestamp: str) -> AckRequest:
         pubkey=base58.b58encode(pk_bytes).decode(),
     )
 
+
 def write_req(tmpdir: Path, req: AckRequest) -> Path:
     """
     AckRequest を JSON にシリアライズして一時ファイルに書き出し、
@@ -85,6 +87,7 @@ def write_req(tmpdir: Path, req: AckRequest) -> Path:
     file_path = tmpdir / f"{req.id}.json"
     file_path.write_text(json.dumps(req.model_dump()), encoding="utf-8")
     return file_path
+
 
 def test_rust_cli(tmpdir: Path):
     """Rust CLI (`main_ack --input ...`) の同期テスト"""
@@ -103,6 +106,7 @@ def test_rust_cli(tmpdir: Path):
         sys.exit(1)
     print("✅ Rust CLI passed")
 
+
 def test_python_sync_api():
     """Python 同期 API (`verify_ack`) のテスト"""
     now = datetime.now(timezone.utc).isoformat()
@@ -113,6 +117,7 @@ def test_python_sync_api():
         sys.exit(1)
     print("✅ Python sync API passed")
 
+
 async def test_python_async_api():
     """Python 非同期 API (`verify_ack_async`) のテスト"""
     now = datetime.now(timezone.utc).isoformat()
@@ -122,6 +127,7 @@ async def test_python_async_api():
         print(" Python async API failed:", res.error, file=sys.stderr)
         sys.exit(1)
     print("✅ Python async API passed")
+
 
 def test_python_cli_sync(tmpdir: Path):
     """Python CLI 同期モード (`poh-ack verify`) のテスト"""
@@ -148,6 +154,7 @@ def test_python_cli_sync(tmpdir: Path):
     print("STDOUT→", result.stdout)
     print("STDERR→", result.stderr, file=sys.stderr)
 
+
 def test_python_cli_async(tmpdir: Path):
     """Python CLI 非同期モード (`poh-ack verify-async`) のテスト"""
     now = datetime.now(timezone.utc).isoformat()
@@ -169,6 +176,7 @@ def test_python_cli_async(tmpdir: Path):
         print(" Python CLI async unexpected output:", result.stdout, file=sys.stderr)
         sys.exit(1)
     print("✅ Python CLI async passed")
+
 
 def main():
     tmpdir = Path("./_integration_tmp")
@@ -192,6 +200,7 @@ def main():
     test_python_cli_async(tmpdir)
 
     print("\n All Rust & Python integration tests passed!")
+
 
 if __name__ == "__main__":
     main()

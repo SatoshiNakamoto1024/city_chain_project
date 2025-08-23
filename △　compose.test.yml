@@ -1,0 +1,40 @@
+# /city_chain_project/compose.test.yml
+services:
+  test_poh_holdmetrics:
+    image: python:3.12-slim
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:ro
+    environment:
+      # Mongo を 1 本だけ注入（Atlas を使う場合は MONGODB_URL に SRV を入れておく）
+      MONGODB_URL: ${MONGODB_URL}
+      MONGODB_URI: ${MONGODB_URL}     # テストコードは URI も見るので揃えておく
+      MONGODB_DB: pytest_tmp
+
+      # テストを安定させる開発用フラグ
+      PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: "python"
+      PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION: "3"
+      POH_DISABLE_RUST: "1"
+
+      # ログ短縮
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONUNBUFFERED: "1"
+
+      # pytest のキャッシュが read-only に書こうとして失敗しないよう退避
+      PYTEST_ADDOPTS: "-o cache_dir=/tmp/pytest_cache"
+
+    # ソースを /tmp にコピーしてから pip install → pytest
+    # ※ Compose 側の展開を避けるため、$ を $$ にエスケープするのがポイント
+    command: >
+      bash -lc '
+        set -eux;
+        SRC_IN=DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python;
+        SRC_TMP=/tmp/poh_holdmetrics_python;
+        rm -rf "$$SRC_TMP";
+        mkdir -p "$$SRC_TMP";
+        cp -a "$$SRC_IN"/. "$$SRC_TMP"/;
+        python -m pip install --no-cache-dir "$$SRC_TMP[test]";
+        pytest -q "$$SRC_TMP/poh_holdmetrics/tests"
+      '
+
+    profiles: ["poh_holdmetrics"]

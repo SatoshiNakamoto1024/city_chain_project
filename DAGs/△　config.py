@@ -1,7 +1,6 @@
 # config.py
 import os
 import hashlib
-import random
 
 # -------------------------------------------------
 # 基本設定（MongoDB接続、バッチ処理、ノード情報など）
@@ -27,7 +26,7 @@ CONTINENT_NODES = {
     "Asia": [
         {"node_id": "asia_node_1", "weight": 1.2, "reliability": 0.95, "load": 0.3, "capacity": 100, "node_type": "full"},
         {"node_id": "asia_node_2", "weight": 1.0, "reliability": 0.90, "load": 0.2, "capacity": 150, "node_type": "light"},
-        {"node_id": "asia_node_3", "weight": 1.1, "reliability": 0.92, "load": 0.4, "capacity": 80,  "node_type": "full"}
+        {"node_id": "asia_node_3", "weight": 1.1, "reliability": 0.92, "load": 0.4, "capacity": 80, "node_type": "full"}
     ],
     "Europe": [
         {"node_id": "europe_node_1", "weight": 1.0, "reliability": 0.93, "load": 0.35, "capacity": 120, "node_type": "full"},
@@ -35,16 +34,16 @@ CONTINENT_NODES = {
     ],
     "America": [
         {"node_id": "america_node_1", "weight": 1.1, "reliability": 0.94, "load": 0.3, "capacity": 130, "node_type": "full"},
-        {"node_id": "america_node_2", "weight": 1.0, "reliability": 0.92, "load": 0.4, "capacity": 90,  "node_type": "light"},
+        {"node_id": "america_node_2", "weight": 1.0, "reliability": 0.92, "load": 0.4, "capacity": 90, "node_type": "light"},
         {"node_id": "america_node_3", "weight": 1.2, "reliability": 0.95, "load": 0.2, "capacity": 140, "node_type": "full"}
     ],
     "Africa": [
-        {"node_id": "africa_node_1", "weight": 1.0, "reliability": 0.90, "load": 0.5, "capacity": 70,  "node_type": "light"},
-        {"node_id": "africa_node_2", "weight": 1.1, "reliability": 0.92, "load": 0.45, "capacity": 60,  "node_type": "light"}
+        {"node_id": "africa_node_1", "weight": 1.0, "reliability": 0.90, "load": 0.5, "capacity": 70, "node_type": "light"},
+        {"node_id": "africa_node_2", "weight": 1.1, "reliability": 0.92, "load": 0.45, "capacity": 60, "node_type": "light"}
     ],
     "Oceania": [
-        {"node_id": "oceania_node_1", "weight": 1.2, "reliability": 0.93, "load": 0.3, "capacity": 95,  "node_type": "full"},
-        {"node_id": "oceania_node_2", "weight": 1.0, "reliability": 0.91, "load": 0.35, "capacity": 85,  "node_type": "light"}
+        {"node_id": "oceania_node_1", "weight": 1.2, "reliability": 0.93, "load": 0.3, "capacity": 95, "node_type": "full"},
+        {"node_id": "oceania_node_2", "weight": 1.0, "reliability": 0.91, "load": 0.35, "capacity": 85, "node_type": "light"}
     ]
 }
 
@@ -78,6 +77,7 @@ available_nodes = [
     # 必要に応じて追加
 ]
 
+
 def split_data(data, n):
     """
     データを n 個の断片に均等に分割する。
@@ -89,6 +89,7 @@ def split_data(data, n):
     if length % n != 0:
         shards[-1] += data[n * chunk_size:]
     return shards
+
 
 def select_nodes_for_shard(shard, redundancy, nodes):
     """
@@ -105,6 +106,7 @@ def select_nodes_for_shard(shard, redundancy, nodes):
     selected = [n["node_id"] for _, n in scored_nodes[:redundancy]]
     return selected
 
+
 def shard_and_assign(data, num_shards, redundancy, nodes):
     """
     トランザクションデータを num_shards 個に分割し、
@@ -120,6 +122,7 @@ def shard_and_assign(data, num_shards, redundancy, nodes):
             "assigned_nodes": selected_nodes
         }
     return assignments
+
 
 # テスト用コード（直接実行した場合のデモ）
 if __name__ == "__main__":

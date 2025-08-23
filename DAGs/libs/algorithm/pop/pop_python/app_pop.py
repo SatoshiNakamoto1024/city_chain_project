@@ -19,8 +19,6 @@ from typing import Optional, List, Dict, Any
 
 from pop_python.manager import get_place_info_and_bonus
 from pop_python.events import (
-    check_city_event,
-    check_location_event,
     add_city_event,
     add_location_event,
     CITY_BONUS_EVENTS,

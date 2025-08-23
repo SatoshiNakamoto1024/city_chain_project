@@ -44,7 +44,7 @@ def filter_nodes(
     regex_deny:
         正規表現で拒否するパターン群 (文字列の iterable)
     predicate:
-        ``lambda node: bool`` な任意の述語関数  
+        ``lambda node: bool`` な任意の述語関数
         True を返すノードは **除外** される
 
     Returns

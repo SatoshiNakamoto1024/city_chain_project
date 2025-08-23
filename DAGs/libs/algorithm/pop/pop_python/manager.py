@@ -3,13 +3,14 @@
 """
 PoP マネージャ: 位置取得 + イベント倍率計算
 """
-import sys, os, base64
+import sys
+import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from functools import lru_cache
 from typing import TypedDict
-from pop_python.polygons     import load_city_polygons, find_city_by_location
-from pop_python.events       import check_city_event, check_location_event
+from pop_python.polygons import load_city_polygons, find_city_by_location
+from pop_python.events import check_city_event, check_location_event
 from pop_python.localization import get_mobile_location
 
 INITIALIZED = False
@@ -31,9 +32,9 @@ def initialize_pop_system() -> None:
 
 @lru_cache(maxsize=1024)
 def _cached_lookup(user_id: str, lat: float, lon: float):
-    city      = find_city_by_location(lat, lon)
+    city = find_city_by_location(lat, lon)
     city_mult = check_city_event(city)
-    loc_mult  = check_location_event(lat, lon)
+    loc_mult = check_location_event(lat, lon)
     return city, city_mult * loc_mult
 
 

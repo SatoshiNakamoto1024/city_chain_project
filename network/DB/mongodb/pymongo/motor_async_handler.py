@@ -1,180 +1,196 @@
-# File: network/db/mongodb/pymongo/motor_async_handler.py
-# Patched version with CSFLE + NTRU-KEM key wrapping, with fallback when libmongocrypt is missing.
+# \city_chain_project\network/db/mongodb/pymongo/motor_async_handler.py
+# Async Motor wrapper with production-minded defaults:
+# - Connection pool tuning via env
+# - SecondaryPreferred reader
+# - Optional write concern "majority" (env)
+# - createdAt auto-fill
+# - Retry insert
+# - TTL(6 months) helper
+# - Optional "content" transparent encrypt/decrypt (no-op by default)
 
 import os
-import sys
 import math
-import base64
-import secrets
 import asyncio
-import binascii
 import logging
-from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 
 import motor.motor_asyncio
-from motor.core import AgnosticDatabase
-from pymongo.encryption import Algorithm
-from pymongo.encryption import ClientEncryption
-from pymongo.errors import ConfigurationError
+from motor.core import AgnosticDatabase, AgnosticCollection
+from pymongo import ReadPreference, WriteConcern
 from bson.objectid import ObjectId
-
-# プロジェクトルート直下の Algorithm パッケージを探せるようパス追加
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../..")))
-from Algorithm.core.crypto import unwrap_key_ntru, wrap_key_ntru
+from pymongo.errors import PyMongoError
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 設定：KeyVault, master capsule, NTRU 鍵
-# ─────────────────────────────────────────────────────────────────────────────
+# ========= 環境変数でプールやタイムアウトを調整 =========
+def _env_u32(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, default))
+    except Exception:
+        return default
 
-KEY_VAULT_NS = os.getenv("KEY_VAULT_NS", "keyvault.__keys__")
-MASTER_CAPSULE_PATH = Path(os.getenv("MASTER_CAPSULE", "/etc/secrets/master_capsule"))
+def _env_u64(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, default))
+    except Exception:
+        return default
 
-# NTRU 鍵は環境変数に「16進文字列」で渡されたものをバイト列に変換
-_priv_hex = os.getenv("NTRU_PRIV", "deadbeef")
-_pub_hex  = os.getenv("NTRU_PUB", "beefdead")
-try:
-    MASTER_PRIV_NTRU = binascii.unhexlify(_priv_hex)
-    MASTER_PUB_NTRU  = binascii.unhexlify(_pub_hex)
-except (binascii.Error, TypeError):
-    raise RuntimeError(
-        "NTRU_PRIV / NTRU_PUB は16進文字列で指定してください "
-        f"(got PRIV={_priv_hex!r}, PUB={_pub_hex!r})"
-    )
+MONGO_POOL_MAX      = _env_u32("MONGO_POOL_MAX", 200)         # maxPoolSize
+MONGO_POOL_MIN      = _env_u32("MONGO_POOL_MIN", 20)          # minPoolSize
+MONGO_POOL_IDLE_MS  = _env_u64("MONGO_POOL_IDLE_MS", 60_000)  # maxIdleTimeMS
+MONGO_SST_MS        = _env_u32("MONGO_SST_MS", 5_000)         # serverSelectionTimeoutMS
+MONGO_CONNECT_MS    = _env_u32("MONGO_CONNECT_MS", 5_000)     # connectTimeoutMS
+MONGO_W_MAJORITY    = os.getenv("MONGO_W_MAJORITY", "0") == "1"  # write concern majority
+
+# ========= 透過暗号（本番では CSFLE や AppLevel-Enc に置換可） =========
+class _NoOpCE:
+    def encrypt(self, v, *a, **k):
+        return v
+    def decrypt(self, v, *a, **k):
+        return v
+
+# 必要に応じて後で本物の CE を差し込めるようにしておく
+CE = _NoOpCE()
+
 
 class MotorDBHandler:
     """
-    Async-Mongo wrapper + CSFLE (AES-GCM) + NTRU-KEM key wrapping.
-    テスト環境で libmongocrypt が無い場合は暗号化をバイパスします。
+    Async Motor wrapper aligned with Rust MongoDBAsyncHandler:
+      - new() / new_with_read_preference()
+      - insert/find/list/update/delete
+      - insert_document_with_retry()
+      - ensure_ttl_6months()
     """
 
     def __init__(self, client: motor.motor_asyncio.AsyncIOMotorClient, db: AgnosticDatabase):
         self.client = client
         self.db = db
 
-        # ---------- ClientEncryption 初期化 ----------
-        # まずマスターカプセルを読み込んで unwrap → local master key 取得
-        try:
-            capsule_bytes = MASTER_CAPSULE_PATH.read_bytes()
-            local_master_key = unwrap_key_ntru(MASTER_PRIV_NTRU, capsule_bytes)
-            logger.info("[MotorDBHandler] Unwrapped NTRU master key via capsule")
-        except Exception as e:
-            logger.warning(
-                "[MotorDBHandler] Failed to unwrap NTRU master key (%s); "
-                "using random local master key for testing", e
-            )
-            # CSFLE のローカルマスターキーは 96 バイト必須なので、乱数生成
-            local_master_key = secrets.token_bytes(96)
-
-        kms_providers = {"local": {"key": local_master_key}}
-
-        # ClientEncryption の初期化。libmongocrypt がなければフォールバックでダミー実装を使う。
-        try:
-            self._ce = ClientEncryption(
-                kms_providers=kms_providers,
-                key_vault_namespace=KEY_VAULT_NS,
-                key_vault_client=self.client,       # pymongo>=4.0 の引数名
-                codec_options=None,
-            )
-            # 本来の data key を起こす
-            self._dek_id = self._ensure_data_key()
-        except ConfigurationError as e:
-            logger.warning(
-                "[MotorDBHandler] CSFLE disabled (%s); "
-                "using identity encrypt/decrypt for testing", e
-            )
-            # テスト／開発環境向けダミー
-            class _NoOpCE:
-                def encrypt(inner_self, value, *args, **kwargs):
-                    return value
-                def decrypt(inner_self, value, *args, **kwargs):
-                    return value
-            self._ce = _NoOpCE()
-            self._dek_id = None  # encrypt/decrypt はキー不要
-
-    # ---------- factory ----------
-
+    # ---------- factories ----------
     @classmethod
     async def new(cls, uri: str, dbname: str):
-        client = motor.motor_asyncio.AsyncIOMotorClient(uri, serverSelectionTimeoutMS=5000)
+        """プライマリ指向（書き込み用）"""
+        client = motor.motor_asyncio.AsyncIOMotorClient(
+            uri,
+            maxPoolSize=MONGO_POOL_MAX,
+            minPoolSize=MONGO_POOL_MIN,
+            maxIdleTimeMS=MONGO_POOL_IDLE_MS,
+            serverSelectionTimeoutMS=MONGO_SST_MS,
+            connectTimeoutMS=MONGO_CONNECT_MS,
+            # ※ writeConcern は各操作（collection）側で設定する
+        )
         return cls(client, client[dbname])
 
     @classmethod
     async def new_with_read_preference(cls, uri: str, dbname: str):
+        """セカンダリ優先（読み取り用）"""
         client = motor.motor_asyncio.AsyncIOMotorClient(
             uri,
-            readPreference="secondaryPreferred",
-            serverSelectionTimeoutMS=5000
+            maxPoolSize=MONGO_POOL_MAX,
+            minPoolSize=MONGO_POOL_MIN,
+            maxIdleTimeMS=MONGO_POOL_IDLE_MS,
+            serverSelectionTimeoutMS=MONGO_SST_MS,
+            connectTimeoutMS=MONGO_CONNECT_MS,
+            readPreference="secondaryPreferred",  # Motor は文字列でも可
         )
         return cls(client, client[dbname])
 
     async def close_connection(self):
         self.client.close()
 
-    # ---------- internal ----------
+    # ---------- helpers ----------
+    @staticmethod
+    async def ensure_ttl_6months(collection: AgnosticCollection, field: str = "createdAt"):
+        """
+        6ヶ月 TTL を保証（存在すれば no-op）
+        """
+        try:
+            await collection.create_index([(field, 1)], expireAfterSeconds=60 * 60 * 24 * 30 * 6, name="ttl_createdAt_6m")
+        except Exception as e:
+            logger.warning("ensure_ttl_6months failed on %s: %s", collection.name, e)
 
-    def _ensure_data_key(self):
-        """KeyVault に NTRU capsule 付き DEK が無ければ生成"""
-        kv_db, kv_coll = KEY_VAULT_NS.split(".")
-        kv = self.client[kv_db][kv_coll]
-        doc = kv.find_one({"keyAltNames": ["pqc_default_dek"]})
-        if doc:
-            return doc["_id"]
+    def _coll(self, name: str) -> AgnosticCollection:
+        c = self.db[name]
+        if MONGO_W_MAJORITY:
+            # 書き込みの耐障害性を優先する場合
+            c = c.with_options(write_concern=WriteConcern(w="majority"))
+        return c
 
-        dek = secrets.token_bytes(32)
-        capsule = wrap_key_ntru(MASTER_PUB_NTRU, dek)
-        res = kv.insert_one({
-            "_id": ObjectId(),
-            "keyAltNames": ["pqc_default_dek"],
-            "ntru_capsule": base64.b64encode(capsule).decode(),
-            "createdAt": asyncio.get_event_loop().time(),
-        })
-        return res.inserted_id
-
-    # ---------- validation ----------
-
-    def _validate_document(self, d: Dict[str, Any]):
+    @staticmethod
+    def _validate_document(d: Dict[str, Any]):
         for k, v in d.items():
             if isinstance(v, int) and not (-2**31 <= v < 2**31):
                 raise ValueError(f"Int32 overflow: {k}")
             if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
                 raise ValueError(f"Invalid float: {k}")
 
-    # ---------- CRUD with transparent encryption ----------
+    @staticmethod
+    def _auto_created_at(d: Dict[str, Any]):
+        if "createdAt" not in d:
+            # PyMongo は Python の datetime を受け付けるが、ここでは簡単にサーバ時刻を使うため省略も可
+            # 実運用は timezone-aware の datetime.utcnow() を推奨
+            import datetime
+            d["createdAt"] = datetime.datetime.utcnow()
 
-    async def insert_document(self, coll: str, doc: Dict[str, Any]):
-        self._validate_document(doc)
-        enc_doc = dict(doc)
-        if "content" in enc_doc:
-            # identity CE の場合はそのまま返る
-            enc_doc["content"] = self._ce.encrypt(
-                enc_doc["content"],
-                Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
-                key_id=self._dek_id
-            )
-        result = await self.db[coll].insert_one(enc_doc)
-        return result.inserted_id
+    @staticmethod
+    def _maybe_encrypt_content(d: Dict[str, Any]) -> Dict[str, Any]:
+        if "content" in d:
+            enc = dict(d)
+            enc["content"] = CE.encrypt(enc["content"])
+            return enc
+        return d
 
-    async def find_document(self, coll: str, query: Dict[str, Any]):
-        raw = await self.db[coll].find_one(query)
-        return self._decrypt_doc(raw)
-
-    async def list_documents(self, coll: str):
-        cur = self.db[coll].find({})
-        out = []
-        async for d in cur:
-            out.append(self._decrypt_doc(d))
-        return out
-
-    def _decrypt_doc(self, d):
+    @staticmethod
+    def _maybe_decrypt_content(d: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         if not d:
-            return None
-        if "content" in d and isinstance(d["content"], (bytes, bytearray)):
+            return d
+        if "content" in d:
             try:
-                d["content"] = self._ce.decrypt(d["content"])
+                d = dict(d)
+                d["content"] = CE.decrypt(d["content"])
             except Exception:
                 pass
         return d
+
+    # ---------- CRUD ----------
+    async def insert_document(self, coll: str, doc: Dict[str, Any]) -> ObjectId:
+        self._validate_document(doc)
+        self._auto_created_at(doc)
+        enc_doc = self._maybe_encrypt_content(doc)
+        res = await self._coll(coll).insert_one(enc_doc)
+        return res.inserted_id
+
+    async def insert_document_with_retry(self, coll: str, doc: Dict[str, Any], max_retry: int = 5) -> ObjectId:
+        last_err: Optional[Exception] = None
+        for attempt in range(max_retry):
+            try:
+                return await self.insert_document(coll, dict(doc))  # clone
+            except PyMongoError as e:
+                last_err = e
+                # バックオフ（50ms, 100ms, 150ms, ...）
+                await asyncio.sleep(0.05 * (attempt + 1))
+        assert last_err is not None
+        raise last_err
+
+    async def find_document(self, coll: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        raw = await self._coll(coll).find_one(query)
+        return self._maybe_decrypt_content(raw)
+
+    async def list_documents(self, coll: str) -> List[Dict[str, Any]]:
+        out: List[Dict[str, Any]] = []
+        async for d in self._coll(coll).find({}):
+            out.append(self._maybe_decrypt_content(d) or d)
+        return out
+
+    async def update_document(self, coll: str, filter_: Dict[str, Any], fields: Dict[str, Any]) -> int:
+        # $set に content があれば暗号化
+        update_doc: Dict[str, Any] = {"$set": dict(fields)}
+        if "content" in update_doc["$set"]:
+            update_doc["$set"]["content"] = CE.encrypt(update_doc["$set"]["content"])
+        res = await self._coll(coll).update_one(filter_, update_doc)
+        return int(res.modified_count)
+
+    async def delete_document(self, coll: str, filter_: Dict[str, Any]) -> int:
+        res = await self._coll(coll).delete_one(filter_)
+        return int(res.deleted_count)

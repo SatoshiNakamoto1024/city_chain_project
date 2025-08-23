@@ -2,12 +2,13 @@ from collections import defaultdict
 from typing import Dict, Set
 from ..core.models import BaseTx, TxType
 
+
 class DAGStore:
     """
     *未完了* Tx を保持する軽量 DAG (隣接リスト方式)
     """
     def __init__(self):
-        self.nodes: Dict[str, BaseTx]   = {}
+        self.nodes: Dict[str, BaseTx] = {}
         self.edges: Dict[str, Set[str]] = defaultdict(set)
 
     # --------------- CRUD ---------------

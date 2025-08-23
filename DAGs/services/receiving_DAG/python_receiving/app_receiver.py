@@ -1,7 +1,10 @@
 """
 python receiver_app.py pem/client.pem
 """
-import sys, json, base64, time, random
+import sys
+import base64
+import time
+import random
 from pathlib import Path
 from receiving_DAG.python import RecoveryManager
 from poh_python import build_poh_ack
@@ -10,7 +13,7 @@ pem_path = Path(sys.argv[1])
 rm = RecoveryManager(pem_path)
 
 # 送信側Tx
-fresh = {"tx_id":"tx123","sender":"Alice","receiver":"Bob","amount":1}
+fresh = {"tx_id": "tx123", "sender": "Alice", "receiver": "Bob", "amount": 1}
 # 復元要求
 rm.trigger_repair("tx123", "RequesterNode")
 
@@ -22,10 +25,10 @@ for i in range(5):
 
 # ダミー REPAIR_ACK
 ack = {
-    "tx_id": str(random.randint(1,9)*111),
-    "tx_type":"repair_ack",
-    "original_tx_id":"tx123",
-    "responder":"Node0",
+    "tx_id": str(random.randint(1, 9) * 111),
+    "tx_type": "repair_ack",
+    "original_tx_id": "tx123",
+    "responder": "Node0",
     "timestamp": time.time(),
     "recovered_tx": fresh,
     "signature": base64.b64encode(b"SIG_dummy").decode()

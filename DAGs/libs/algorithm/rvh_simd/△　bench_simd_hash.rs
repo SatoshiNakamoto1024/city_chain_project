@@ -12,4 +12,3 @@ pub fn bench_score(c: &mut Criterion) {
 
 criterion_group!(benches, bench_score);
 criterion_main!(benches);
-

@@ -8,6 +8,7 @@ _METRICS = {
     "session_duration": "network.DAGs.common.priority.metrics.session_duration.SessionDurationMetric",
 }
 
+
 def get_metric(name: str):
     """
     名前から PriorityMetric クラスをロードしてインスタンス化して返す

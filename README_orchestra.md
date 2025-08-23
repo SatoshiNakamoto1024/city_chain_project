@@ -1180,14 +1180,8 @@ python tools/gen.py --services services.yaml --out .
 ## どのターゲットがあるか確認
 docker buildx bake -f docker-bake.generated.hcl --print
 
-# BuildKit で並列ビルド（ログ plain）
-DOCKER_BUILDKIT=1 docker buildx bake -f docker-bake.generated.hcl --progress=plain
-
-# さらに永続キャッシュを使いたい場合
-DOCKER_BUILDKIT=1 docker buildx bake -f docker-bake.generated.hcl \
-  --set *.cache-to=type=local,dest=.buildx-cache,mode=max \
-  --set *.cache-from=type=local,src=.buildx-cache \
-  --progress=plain
+# BuildKit で並列ビルド
+DOCKER_BUILDKIT=1 docker buildx bake -f docker-bake.generated.hcl --load
 
 # 終わったら
 # クリーン
@@ -1206,6 +1200,9 @@ docker buildx bake -f docker-bake.generated.hcl
 docker compose -f docker-compose.prod.generated.yml up -d
 
 # テストを流す（必要なら）
+例でasiaを明示しておく
+export MONGODB_URL='mongodb+srv://satoshi:greg1024@asia.kzxnr.mongodb.net/?retryWrites=true&w=majority'
+そしてテスト
 docker compose -f docker-compose.test.generated.yml up --build --abort-on-container-exit
 
 
@@ -1493,6 +1490,49 @@ jobs:
 REGISTRY=ghcr.io/your-org-or-user docker compose -f docker-compose.prod.generated.yml up -d
 サーバ（例：k8s）でも同様にイメージを参照。
 
+
+#　gitにてコミット前にやる準備
+１．1) GitHubに公開鍵を登録したか確認
+あなたの公開鍵はこれ（表示済み）：
+cat ~/.ssh/id_ed25519.pub
+# => ssh-ed25519 AAAA... next.teal.organization@gmail.com
+
+→ ブラウザで GitHub → Settings → SSH and GPG keys → New SSH key
+Title: WSL、Key: 上の1行全部をコピペ → Add SSH key
+
+→ ssh-agent に鍵を載せる（毎回の新シェルで最初に一度）
+eval "$(ssh-agent -s)"
+ssh-add -D                      # 念のため全削除
+ssh-add ~/.ssh/id_ed25519       # パスフレーズ入力
+ssh-add -l                      # ここで 1 本表示されればOK
+
+→　SSH が必ずその鍵を使うよう固定（WSL）
+cat > ~/.ssh/config <<'EOF'
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519
+  IdentitiesOnly yes
+  AddKeysToAgent yes
+  PreferredAuthentications publickey
+EOF
+
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/config
+chmod 600 ~/.ssh/id_ed25519
+chmod 644 ~/.ssh/id_ed25519.pub
+
+→ 接続テスト
+ssh -T git@github.com
+
+うまくいけば：
+Hi <あなたのGitHubユーザー名>! You've successfully authenticated...
+
+
+２．PyPIにてAPIトークンの設定、ならびにsecretにトークンの登録
+この作業を行って、PyPIを使える状態にしてから、gitにてコミットという順番。
+https://test.pypi.org/
+
 # いざ　gitにてプッシュ・コミット　（バージョンは変えてね）
 最小修正：
 ・DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust/Cargo.toml
@@ -1509,6 +1549,12 @@ dependencies = [
     # ほか省略
 ]
 
+・_version.pyも合わせる
+__version__ = "0.1.16"
+
+合計：５か所あるので要注意！
+
+
 # 1) バージョン合わせ（Rust と Python）
 # Rust
 perl -0777 -pe 's/^(version\s*=\s*")\d+\.\d+\.\d+(")/${1}0.1.6${2}/m' \
@@ -1524,17 +1570,58 @@ perl -0777 -pe 's/(poh_holdmetrics_rust>=)\d+\.\d+\.\d+/${1}0.1.6/' \
 git rm -f .github/workflows/release-wheels.yml 2>/dev/null || true
 git rm -f .github/workflows/release-images.yml 2>/dev/null || true
 
-git add .github/workflows/_release-wheels-reusable.yml \
-        .github/workflows/release-wheels-poh_holdmetrics.yml \
-        .github/workflows/release-images-poh_holdmetrics.yml \
-        .github/workflows/ci.yml
+※もしくは、手動で、rust側、python側のバージョンを次へのバージョンにそろえる。
+cargo.toml,pyproject.tomlです。
+
+※注意（release-images-poh_holdmetrics.ymlのrepository名をつけるところ）
+リポジトリパスは すべて小文字で！
+ghcr.io/satoshinakamoto1024/poh_holdmetrics-http:0.1.15
+
+そして、下記を１つずつ実行する。
+git add \
+  .github/workflows/_release-wheels-reusable.yml \
+  .github/workflows/_release-images-reusable.yml \
+  .github/workflows/release-wheels-poh_holdmetrics.yml \
+  .github/workflows/release-images-poh_holdmetrics.yml \
+  .github/workflows/ci.yml
 
 # 3) コミット & タグ
+# 1つのコミットにまとめる (images,wheelsの両方をコミット)
+git commit -m "ci: wheels -> write all artifacts to \$GITHUB_WORKSPACE/dist and upload from there; images -> bake only service targets; pre-commit minimal scope"
+
+クレート１つずつコミット・プッシュしていくべし
+# 変更をコミット
 git add -A
-git commit -m "chore(poh_holdmetrics): bump to 0.1.6 and fix release-wheels (install protoc)"
-git tag -f v0.1.6
+git commit -m "release(poh_holdmetrics): bump to v0.1.16; CI: triggers & ignore build dirs"
 git push origin main
-git push -f origin v0.1.6
+
+# 注釈付きタグ（どちらでもOK。私はハイフン派）
+git tag -a poh_holdmetrics-v0.1.16 -m "poh_holdmetrics v0.1.16"
+（ git tag -a poh_holdmetrics/v0.1.16 -m "poh_holdmetrics v0.1.16"　）
+
+# タグを push
+git push origin poh_holdmetrics-v0.1.16
+（ git push origin poh_holdmetrics/v0.1.16　）
+
+
+# 結果
+・ci(wheels): grant contents:write at workflow top-level; keep twine --…
+Release Images (poh_holdmetrics) #10: Commit e52921a pushed by SatoshiNakamoto1024
+v0.1.15	
+
+・ci(wheels): grant contents:write at workflow top-level; keep twine --…
+Release Wheels (poh_holdmetrics) #10: Commit e52921a pushed by SatoshiNakamoto1024
+v0.1.15	
+
+・ci(wheels): grant contents:write at workflow top-level; keep twine --…
+pre-commit #24: Commit e52921a pushed by SatoshiNakamoto1024
+main	
+
+・ci(wheels): grant contents:write at workflow top-level; keep twine --…
+CI #25: Commit e52921a pushed by SatoshiNakamoto1024
+main
+
+の４つがグリーンになればOK
 
 
 

@@ -2,9 +2,9 @@
 
 /// rendezvous.rs ― Rendezvous / HRW (Highest-Random-Weight) Hashing Core
 /// ====================================================================
-/// * **決定論的** : 同じ入力 → いつでも同じ出力  
-/// * **安定性**   : ノード追加／削除時の再配置は最小限  
-/// * **速度**     : 1 ノードあたり *O(1)* でハッシュ計算・上位 *k* 抽出  
+/// * **決定論的** : 同じ入力 → いつでも同じ出力
+/// * **安定性**   : ノード追加／削除時の再配置は最小限
+/// * **速度**     : 1 ノードあたり *O(1)* でハッシュ計算・上位 *k* 抽出
 ///
 /// # 公開 API
 ///
@@ -14,7 +14,7 @@
 /// | [`rendezvous_hash_async`]              | **非同期版** – Tokio `spawn_blocking` ラッパ |
 /// | [`rendezvous_scores`]                  | 各ノードのスコアを列挙（デバッグ／可視化） |
 ///
-/// ここでは **`String` ノード ID** を扱いますが、パフォーマンス要件に応じ  
+/// ここでは **`String` ノード ID** を扱いますが、パフォーマンス要件に応じ
 /// `&[u8]` などへ一般化するのも容易です。
 use crate::utils;
 use serde::{Deserialize, Serialize};
@@ -45,7 +45,7 @@ pub struct ScoredNode<'a> {
 // ▼ 内部共通：スコア列挙
 // ---------------------------------------------------------------------
 
-/// すべてのノードについて HRW スコアを計算して返す。  
+/// すべてのノードについて HRW スコアを計算して返す。
 /// **戻り値はソートされていません。**
 #[inline]
 pub fn rendezvous_scores<'a>(nodes: &'a [String], key: &str) -> Vec<ScoredNode<'a>> {
@@ -64,12 +64,12 @@ pub fn rendezvous_scores<'a>(nodes: &'a [String], key: &str) -> Vec<ScoredNode<'
 
 /// 与えられた `nodes` から HRW スコア降順で **上位 `k` ノード** を返す。
 ///
-/// * `nodes` – ノード ID のスライス  
-/// * `key`   – オブジェクト／パーティションなどのキー  
-/// * `k`     – 返す件数  
+/// * `nodes` – ノード ID のスライス
+/// * `key`   – オブジェクト／パーティションなどのキー
+/// * `k`     – 返す件数
 ///
 /// # 戻り値
-/// * `Ok(Vec<String>)` – ノード ID をスコア降順で並べたリスト  
+/// * `Ok(Vec<String>)` – ノード ID をスコア降順で並べたリスト
 /// * `Err(RendezvousError)` – 入力不正
 pub fn rendezvous_hash(
     nodes: &[String],

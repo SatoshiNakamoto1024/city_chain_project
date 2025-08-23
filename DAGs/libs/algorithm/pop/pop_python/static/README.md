@@ -26,4 +26,3 @@ http://localhost:8000/static/pop_event.html
 フォームから JSON を入力・「登録」→ /events/... が更新され、即座に pop_python.events の定義にも反映されます。
 
 これで、UI → FastAPI → JSON 保存 → Python API → PoP 本体 の一連のフローが動くはずです。
-

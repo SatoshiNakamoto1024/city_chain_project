@@ -11,8 +11,6 @@ from google.protobuf.internal import builder as _builder
 _sym_db = _symbol_database.Default()
 
 
-
-
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\tdag.proto\x12\x13\x63ommon.grpc_dag.gen\"+\n\tTxRequest\x12\r\n\x05tx_id\x18\x01 \x01(\t\x12\x0f\n\x07payload\x18\x02 \x01(\t\"-\n\nTxResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x1e\n\rStatusRequest\x12\r\n\x05tx_id\x18\x01 \x01(\t\" \n\x0eStatusResponse\x12\x0e\n\x06status\x18\x01 \x01(\t2\xc5\x01\n\nDAGService\x12T\n\x11SubmitTransaction\x12\x1e.common.grpc_dag.gen.TxRequest\x1a\x1f.common.grpc_dag.gen.TxResponse\x12\x61\n\x16QueryTransactionStatus\x12\".common.grpc_dag.gen.StatusRequest\x1a#.common.grpc_dag.gen.StatusResponseb\x06proto3')
 
 _globals = globals()
@@ -20,14 +18,14 @@ _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'dag_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
-  _globals['_TXREQUEST']._serialized_start=34
-  _globals['_TXREQUEST']._serialized_end=77
-  _globals['_TXRESPONSE']._serialized_start=79
-  _globals['_TXRESPONSE']._serialized_end=124
-  _globals['_STATUSREQUEST']._serialized_start=126
-  _globals['_STATUSREQUEST']._serialized_end=156
-  _globals['_STATUSRESPONSE']._serialized_start=158
-  _globals['_STATUSRESPONSE']._serialized_end=190
-  _globals['_DAGSERVICE']._serialized_start=193
-  _globals['_DAGSERVICE']._serialized_end=390
+  _globals['_TXREQUEST']._serialized_start = 34
+  _globals['_TXREQUEST']._serialized_end = 77
+  _globals['_TXRESPONSE']._serialized_start = 79
+  _globals['_TXRESPONSE']._serialized_end = 124
+  _globals['_STATUSREQUEST']._serialized_start = 126
+  _globals['_STATUSREQUEST']._serialized_end = 156
+  _globals['_STATUSRESPONSE']._serialized_start = 158
+  _globals['_STATUSRESPONSE']._serialized_end = 190
+  _globals['_DAGSERVICE']._serialized_start = 193
+  _globals['_DAGSERVICE']._serialized_end = 390
 # @@protoc_insertion_point(module_scope)

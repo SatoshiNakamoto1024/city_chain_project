@@ -11,7 +11,6 @@ Observability サブシステムの E2E テスト
 インメモリ Exporter と prometheus_client.generate_latest で検証。
 """
 from __future__ import annotations
-import asyncio
 import inspect
 import pytest
 import httpx

@@ -15,6 +15,7 @@ formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+
 class StorageService(storage_pb2_grpc.StorageServiceServicer):
     def StoreFragment(self, request, context):
         node_id = os.getenv("NODE_ID", "default_node")
@@ -42,6 +43,7 @@ class StorageService(storage_pb2_grpc.StorageServiceServicer):
             return storage_pb2.StoreResponse(success=False, message="保存失敗")
         return storage_pb2.StoreResponse(success=True, message="Fragment stored successfully.")
 
+
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     storage_pb2_grpc.add_StorageServiceServicer_to_server(StorageService(), server)
@@ -55,6 +57,7 @@ def serve():
     except KeyboardInterrupt:
         logger.info("サーバー停止中...")
         server.stop(0)
+
 
 if __name__ == "__main__":
     serve()

@@ -9,7 +9,7 @@ use rocket::config::{Config, TlsConfig};
 use base64::encode;
 use rocket::serde::{json::Json, Deserialize, Serialize};
 use rocket::serde::json::Value; // `Value` を `rocket::serde` のものに統一
-use std::sync::Arc; 
+use std::sync::Arc;
 use std::fs;  // fsモジュールをインポート
 use std::error::Error;
 use std::fs::File;
@@ -19,7 +19,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use tokio::runtime::Runtime;
 use tokio::time::Duration;  // tokio を使用している場合
-use tokio::sync::Mutex; 
+use tokio::sync::Mutex;
 use tokio_stream::StreamExt;  // これを追加
 use chrono::format::ParseError;
 use chrono::{DateTime, Utc, Duration, TimeZone};
@@ -196,7 +196,7 @@ fn load_mongodb_config() -> Result<Value, Box<dyn std::error::Error>> {
 
 fn get_mongo_uri(instance_type: &str, continent: &str) -> String {
     let mongodb_config = load_mongodb_config().expect("Failed to load MongoDB config");
-    
+
     if let Some(instance_config) = mongodb_config.get(instance_type) {
         if let Some(uri) = instance_config.get(continent) {
             return uri.as_str().unwrap().to_string();
@@ -223,7 +223,7 @@ fn get_other_continental_chains(municipalities_data: &Value, current_continent_c
 // タイムスタンプを解析する関数
 fn parse_timestamp(timestamp: &str) -> Result<DateTime<Utc>, ParseError> {
     println!("Received timestamp: {}", timestamp);
-    
+
     // "Z" の有無をチェックし、必要ならば取り除いて処理
     let cleaned_timestamp = timestamp.trim_end_matches('Z');
 
@@ -303,7 +303,7 @@ pub struct MunicipalChain {
 impl MunicipalChain {
     pub fn new() -> Self {
         // 1) Dilithium2 の鍵生成
-        let (pk, sk) = dilithium2::keypair(); 
+        let (pk, sk) = dilithium2::keypair();
         // pk: dilithium2::PublicKey
         // sk: dilithium2::SecretKey
 
@@ -763,7 +763,7 @@ impl DPoS {
                 // stateにアクセスできるようにする必要があるため、呼び出し元でAppState参照か、
                 // approve_transactionをAppStateが参照できる形にするなど設計が必要。
                 // ここでは仮にapprove_transaction内でAppStateにアクセス可能と仮定。
-                
+
                 // 送信者のウォレット残高チェック
                 let sender_balance = state.get_wallet_balance(&transaction.sender).await?;
                 if sender_balance < transaction.amount {
@@ -917,7 +917,7 @@ impl Transaction {
             Err(_) => false, // 検証失敗
         }
     }
-    
+
     // 新しいメソッドを追加
     fn generate_proof_of_history(&self) -> String {
         let mut hasher = Sha256::new();
@@ -960,7 +960,7 @@ impl Transaction {
             Ok(bytes) => bytes,
             Err(_) => vec![],  // デコードに失敗した場合、空のVecを返す
         };
-        
+
         // base64文字列を再度エンコードする（必要に応じて処理）
         let signature_reencoded = base64::encode(&signature_bytes);
 
@@ -1008,7 +1008,7 @@ fn determine_continent_from_municipality(municipality: &str) -> Option<String> {
     println!("municipality: {}", municipality);  // デバッグ用
 
     // municipalities.jsonから読み込んだデータを表示
-    let municipalities_data = load_municipalities_data().ok()?;  
+    let municipalities_data = load_municipalities_data().ok()?;
     println!("Loaded municipalities data: {:?}", municipalities_data);
 
     // 'continent-city' 形式で大陸と市町村名を分離
@@ -1057,7 +1057,7 @@ fn determine_continent_from_municipality(municipality: &str) -> Option<String> {
 async fn initialize_mongodb(continent: &str) -> Collection<Document> {
     let instance_type = "send_pending";  // ここは必要に応じて変更
     let mongo_uri = get_mongo_uri(instance_type, continent);
-    
+
     let client_options = ClientOptions::parse(&mongo_uri).await.expect("MongoDB client options failed");
     let mongo_client = MongoClient::with_options(client_options).expect("MongoDB client failed");
     mongo_client.database("transactions_db").collection::<Document>("transactions")
@@ -1103,7 +1103,7 @@ async fn update_transaction_status(
 ) -> Result<(), Box<dyn Error>> {
     // mongo_config.json を読み込む
     let mongo_config = load_mongo_config()?;
-    
+
     // 大陸名を取得（municipal_id から大陸名を取得するロジックが必要です）
     // ここでは仮に municipal_id が大陸名であると仮定します
     let continent = municipal_id; // 必要に応じて修正してください
@@ -1309,14 +1309,14 @@ async fn create_transaction(
     // `status`と`created_at`を設定
     transaction.status = "send_pending".to_string();
     transaction.created_at = Utc::now();
-  
+
     // chrono::DateTime<Utc> を Bson::DateTime に変換
     let bson_timestamp = BsonDateTime::from_millis(transaction.timestamp.timestamp_millis());
     let bson_created_at = BsonDateTime::from_millis(transaction.created_at.timestamp_millis());
-    
+
     // 必要なフィールドを取得
     let sender = transaction_json.get("sender").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    
+
     // attributesフィールドを取得
     let attributes = transaction_json.get("attributes").and_then(|v| v.as_object()).map_or_else(
         || HashMap::new(),
@@ -1535,12 +1535,12 @@ fn calculate_block_hash(block: &Block) -> String {
 #[post("/add_block", format = "json", data = "<block>")]
 async fn add_block(block: Json<Block>, chain: &rocket::State<Blockchain>, client: &rocket::State<Client>) -> Status {
     let mut chain = chain.lock().await;
-    let block_clone = block.clone();  
+    let block_clone = block.clone();
     chain.push(block.into_inner());
 
     let global_chain_url = "http://global_main_chain:1999/add_block";
     let res = client.post(global_chain_url)
-                    .json(&*block_clone)  
+                    .json(&*block_clone)
                     .send()
                     .await;
 
@@ -1800,13 +1800,13 @@ async fn receive_transaction_by_id(transaction_id: Json<String>, state: &State<P
 // DAppsからのトランザクション受信処理を追加
 #[post("/receive_transaction", format = "json", data = "<transaction>")]
 async fn receive_transaction<'r>(
-    transaction: Result<Json<serde_json::Value>, rocket::serde::json::Error<'_>>, 
-    dpos: &rocket::State<Arc<Mutex<DPoS>>>,  
-    state: &rocket::State<Arc<Mutex<AppState>>>,  
-    client: &rocket::State<Client>,  
+    transaction: Result<Json<serde_json::Value>, rocket::serde::json::Error<'_>>,
+    dpos: &rocket::State<Arc<Mutex<DPoS>>>,
+    state: &rocket::State<Arc<Mutex<AppState>>>,
+    client: &rocket::State<Client>,
 ) -> Result<Status, Status> {
     println!("Receiving transaction...");
-    
+
     // トランザクションデータの取得
     let transaction_data = match transaction {
         Ok(Json(data)) => data,
@@ -1828,8 +1828,8 @@ async fn receive_transaction<'r>(
         },
     );
 
-    let mut dpos_guard = dpos.lock().await;  
-    
+    let mut dpos_guard = dpos.lock().await;
+
     // ここでPoHにトランザクションID + タイムスタンプ をイベントとして追加:
     {
         let mut state_guard = state.lock().await;
@@ -1890,7 +1890,7 @@ async fn receive_transaction<'r>(
     fn parse_timestamp(timestamp_str: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
         DateTime::parse_from_rfc3339(timestamp_str).map(|dt| dt.with_timezone(&Utc))
     }
-    
+
     if let Ok(json_value) = transaction {
         // 必要なフィールドを取得
         if let (
@@ -2268,14 +2268,14 @@ async fn gossip_blocks_with_chains(state: Arc<Mutex<AppState>>, chain_urls: Vec<
 
 #[post("/gossip_blocks", format = "json", data = "<gossip_data>")]
 async fn gossip_blocks_handler(
-    gossip_data: Json<GossipBlockRequest>, 
+    gossip_data: Json<GossipBlockRequest>,
     state: &State<Arc<Mutex<AppState>>>
 ) -> Status {
     let gossip_data = gossip_data.into_inner();
-    
+
     // まずAppState全体のロックを取得
     let app_state = state.lock().await;
-    
+
     // その後にブロックチェーンのロックを取得
     let mut blockchain = app_state.blockchain.lock().await;
 
@@ -2362,7 +2362,7 @@ async fn create_indexes(collection: &Collection<Transaction>) -> Result<(), mong
             .build(),
         None,
     ).await?;
-    
+
     collection.create_index(
         IndexModel::builder()
             .keys(doc! { "receiver_municipal_id": 1 })
@@ -2379,7 +2379,7 @@ async fn create_analytics_indexes(analytics_collection: &Collection<Document>) {
         .keys(doc! { "status": 1 })
         .options(None)
         .build();
-    
+
     let created_at_index = IndexModel::builder()
         .keys(doc! { "created_at": 1 })
         .options(None)
@@ -2452,7 +2452,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 大陸名を取得
     let continent = continent_city.split('-').next().unwrap_or("default");
-    
+
     // wallet_collectionを初期化
     let wallet_collection = mongo_client.database("wallet_db").collection::<Document>("wallets");
 
@@ -2487,7 +2487,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let signature = sign_transaction_with_main_key(transaction_data, &main_sign_private_key);
     let is_valid = verify_transaction_with_main_key(&signature, transaction_data, &main_sign_public_key);
     println!("Signature valid: {}", is_valid);
-    
+
     // ポイント: Arc<Mutex<ProofOfHistory>> を初期化
     let poh = Arc::new(Mutex::new(ProofOfHistory::new()));
 

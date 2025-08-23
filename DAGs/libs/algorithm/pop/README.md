@@ -131,12 +131,12 @@ sequenceDiagram
 
 ファイル役割の整理
 ファイル	言語	役割
-Algorithm/PoP/pop_python/		
+Algorithm/PoP/pop_python/
 localization.py	Py	端末が送ってくる緯度経度を受け取り、なければモックで生成。
 events.py	Py	参考実装。時間帯イベント／位置イベントのテーブルを持つ。
 polygons.py	Py	Shapely + STRtree での簡易版判定（Rust にフォールバックするまでのプレースホルダ）。
 manager.py	Py	上位 API。位置取得→(必要なら)Rust呼び出し→倍率合算→キャッシュ。
-Algorithm/PoP/pop_rust/		
+Algorithm/PoP/pop_rust/
 types.rs	Rust	Py⇆Rust 構造体ブリッジ（PolyItem など）。
 polygons.rs	Rust	① GeoJSON 読み込み ② Polygon 変換 ③ rstar で R-tree 構築 ④ 点‐多角形ヒット検索。
 events.rs	Rust	高速なイベント倍率計算。Geo 座標 in-polygon も Rust 側で実行。

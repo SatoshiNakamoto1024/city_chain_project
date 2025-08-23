@@ -17,10 +17,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from resilience.errors import CircuitOpenError
 
+
 class _State(Enum):
     CLOSED = auto()
     OPEN = auto()
     HALF_OPEN = auto()
+
 
 def circuit_breaker(
     *,

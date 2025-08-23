@@ -26,6 +26,6 @@ build-backend = "maturin"
 
 [tool.maturin]
 bindings = "pyo3"
-features = ["py-ext"] 
-module-name      = "rvh_trace_rust" 
+features = ["py-ext"]
+module-name      = "rvh_trace_rust"
 cargo-extra-args = ["--locked"]

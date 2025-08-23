@@ -27,7 +27,7 @@ CITY_LIST = [
 
 NODES_PER_CITY = 100
 FULL_NODE_COUNT = 10  # 1% of 1000
-LIGHT_NODE_COUNT = (len(CITY_LIST)*NODES_PER_CITY) - FULL_NODE_COUNT
+LIGHT_NODE_COUNT = (len(CITY_LIST) * NODES_PER_CITY) - FULL_NODE_COUNT
 
 all_nodes = []
 node_index = 0
@@ -73,6 +73,7 @@ for c in CONTINENTS:
         })
     all_continent_nodes[c] = c_nodes
 
+
 def get_city_nodes(city_name: str):
     """
     指定したcity_nameに属するノードのリストを返す。
@@ -80,6 +81,7 @@ def get_city_nodes(city_name: str):
     city_name_lower = city_name.lower()
     city_nodes = [n for n in all_nodes if n["city"] == city_name_lower]
     return city_nodes
+
 
 def get_continent_nodes(continent_name: str):
     """

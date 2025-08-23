@@ -22,17 +22,20 @@ _HAS_RUST = False
 if not _FORCE_PY:                          # ← ここが肝
     try:
         from rvh_core_rust import (
-            rendezvous_hash        as _rvh_sync,
-            rendezvous_hash_async  as _rvh_async,
+            rendezvous_hash as _rvh_sync,
+            rendezvous_hash_async as _rvh_async,
         )
         _HAS_RUST = True
     except ModuleNotFoundError:
         pass  # wheels が無い環境 → Python fallback
 
+
 class RVHError(Exception):
     """Rendezvous-Hash 共通エラー"""
 
-__all__ = ["rendezvous_hash", "arendezvous_hash", "RVHError"]
+
+__all__ = ["RVHError", "arendezvous_hash", "rendezvous_hash"]
+
 
 # ─── 入力チェック ────────────────────────────────────────────────
 def _check(nodes: Sequence[str], k: int) -> None:
@@ -40,6 +43,7 @@ def _check(nodes: Sequence[str], k: int) -> None:
         raise RVHError("ノードリストが空です")
     if not 1 <= k <= len(nodes):
         raise RVHError(f"k={k} が範囲外です (1..{len(nodes)})")
+
 
 # ─── Pure-Python 実装 (key → node, little-endian) ───────────────
 def _py_sync(nodes: Sequence[str], key: str, k: int) -> List[str]:
@@ -56,9 +60,11 @@ def _py_sync(nodes: Sequence[str], key: str, k: int) -> List[str]:
     scored.sort(key=lambda t: (t[0], t[1]), reverse=True)
     return [n for _, n in scored[:k]]
 
+
 async def _py_async(nodes: Sequence[str], key: str, k: int) -> List[str]:
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _py_sync, nodes, key, k)
+
 
 # ─── Rust ラッパ ────────────────────────────────────────────────
 def _rust_sync(nodes: Sequence[str], key: str, k: int) -> List[str]:
@@ -67,16 +73,19 @@ def _rust_sync(nodes: Sequence[str], key: str, k: int) -> List[str]:
     except Exception as e:                             # pragma: no cover
         raise RVHError(str(e)) from e
 
+
 async def _rust_async(nodes: Sequence[str], key: str, k: int) -> List[str]:
     try:
         return await _rvh_async(list(nodes), key, k)   # type: ignore[arg-type]
     except Exception as e:                             # pragma: no cover
         raise RVHError(str(e)) from e
 
+
 # ─── Public API ────────────────────────────────────────────────
 def rendezvous_hash(nodes: Sequence[str], key: str, k: int) -> List[str]:
     _check(nodes, k)
     return _rust_sync(nodes, key, k) if _HAS_RUST else _py_sync(nodes, key, k)
+
 
 async def arendezvous_hash(nodes: Sequence[str], key: str, k: int) -> List[str]:
     _check(nodes, k)

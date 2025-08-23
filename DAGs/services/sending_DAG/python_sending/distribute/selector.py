@@ -1,6 +1,7 @@
 import random
 from typing import List
 
+
 def pick_next_node(nodes: List[str]) -> List[str]:
     """
     保存先ノードの探索順を決定する

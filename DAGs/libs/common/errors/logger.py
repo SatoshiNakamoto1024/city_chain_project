@@ -8,10 +8,10 @@ import json
 import logging
 import sys
 from datetime import datetime
-from types import FrameType
 from typing import Any, Mapping
 
 _LOGGER_NAME = "city_chain.errors"
+
 
 def _json_formatter(record: logging.LogRecord) -> str:
     data: Mapping[str, Any] = {

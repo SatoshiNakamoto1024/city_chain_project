@@ -10,7 +10,7 @@ poh_holdmetrics/                                 ← リポジトリルート
 ├── poh_holdmetrics_rust/                        ← Rust コア & PyO3 バインディング
 │   ├── Cargo.toml                               ← crate 名: poh_holdmetrics_rust
 │   ├── pyproject.toml                           ← maturin-build設定（abi3-py312）
-│   ├── build.rs 
+│   ├── build.rs
 │   ├── benches/
 │   │   ├── bench_holdmetrics_calc.rs            ← スコア計算性能測定
 │   │   └── bench_holdmetrics_parallel.rs        ← 並列集計ベンチ
@@ -64,7 +64,7 @@ poh_holdmetrics/                                 ← リポジトリルート
         │   ├── hold.proto
         │   └── hold_pb2_grpc.py
         │
-        ├── storage/                               
+        ├── storage/
         │   ├── immudb.py
         │   └── mongodb.py
         │
@@ -136,7 +136,7 @@ src/holdset.rs	HoldAggregator	Arc<DashMap> でスレッド安全なインメモ�
 src/lib.rs	PyO3 でエクスポート	#[pyfunction] calculate_score()
 aggregate_events() などを Python から呼べる。
 build.rs	tonic-build	hold.proto をビルドして pb モジュール生成。
-Cargo.toml	features = ["python"] を付けると cdylib ビルドと extension‑module の両立。	
+Cargo.toml	features = ["python"] を付けると cdylib ビルドと extension‑module の両立。
 
 Rust を入れるメリット
 スループット：約 10〜15 倍（rayon + no‑GIL）
@@ -202,15 +202,17 @@ maturin develop  # or maturin build && pip install dist/*.whl
 # Python 側依存
 pip install -e ./poh_holdmetrics_python[dev]
 
+# 事前に一度だけ（同じasiaで例として）
+export MONGODB_URI='mongodb+srv://satoshi:greg1024@asia.kzxnr.mongodb.net/?retryWrites=true&w=majority'
+
 # 統合テスト実行
 pytest -q libs/algorithm/poh_holdmetrics/test_poh_holdmetrics_integration.py
-Rust 拡張が見つからなければスキップ (@pytest.mark.skipif) されるので
-Python 単独 CI でも fail しません。
+"本番運用では mongomock フォールバックを使用しないためスキップ"されるのでOK
 
 (linux-dev) satoshi@LAPTOP-88SH779D:/mnt/d/city_chain_project/DAGs/libs/algorithm/poh_holdmetrics$ pytest -v tes
 t_poh_holdmetrics_integration.py
 ============================================= test session starts ==============================================
-platform linux -- Python 3.12.3, pytest-8.4.1, pluggy-1.6.0 -- /home/satoshi/envs/linux-dev/bin/python3.12      
+platform linux -- Python 3.12.3, pytest-8.4.1, pluggy-1.6.0 -- /home/satoshi/envs/linux-dev/bin/python3.12
 cachedir: .pytest_cache
 rootdir: /mnt/d/city_chain_project
 configfile: pyproject.toml
@@ -218,23 +220,23 @@ plugins: anyio-4.9.0, cov-6.2.1, asyncio-1.0.0
 asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
 collected 4 items
 
-test_poh_holdmetrics_integration.py::test_calculator_python_vs_rust PASSED                               [ 25%] 
+test_poh_holdmetrics_integration.py::test_calculator_python_vs_rust PASSED                               [ 25%]
 test_poh_holdmetrics_integration.py::test_pipeline_python_vs_rust PASSED                                 [ 50%]
-test_poh_holdmetrics_integration.py::test_mongomock_fallback SKIPPED (本番運用では mongomock フォー...)  [ 75%] 
-test_poh_holdmetrics_integration.py::test_tracker_overlap_merge PASSED                                   [100%] 
+test_poh_holdmetrics_integration.py::test_mongomock_fallback SKIPPED (本番運用では mongomock フォー...)  [ 75%]
+test_poh_holdmetrics_integration.py::test_tracker_overlap_merge PASSED                                   [100%]
 
 =============================================== warnings summary ===============================================
 DAGs/libs/algorithm/poh_holdmetrics/test_poh_holdmetrics_integration.py::test_tracker_overlap_merge
-  DAGs/libs/algorithm/poh_holdmetrics/test_poh_holdmetrics_integration.py:166: PytestWarning: The test <Function test_tracker_overlap_merge> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.      
+  DAGs/libs/algorithm/poh_holdmetrics/test_poh_holdmetrics_integration.py:166: PytestWarning: The test <Function test_tracker_overlap_merge> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
 
 DAGs/libs/algorithm/poh_holdmetrics/test_poh_holdmetrics_integration.py::test_tracker_overlap_merge
 DAGs/libs/algorithm/poh_holdmetrics/test_poh_holdmetrics_integration.py::test_tracker_overlap_merge
-  /mnt/d/city_chain_project/DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/calculator.py:79: PydanticDeprecatedSince211: Accessing the 'model_fields' attribute on the instance is deprecated. Instead, you should access this attribute from the model class. Deprecated in Pydantic V2.11 to be removed in V3.0.  
+  /mnt/d/city_chain_project/DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/calculator.py:79: PydanticDeprecatedSince211: Accessing the 'model_fields' attribute on the instance is deprecated. Instead, you should access this attribute from the model class. Deprecated in Pydantic V2.11 to be removed in V3.0.
     kwargs.update(dict(zip(self.model_fields, args)))
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =================================== 3 passed, 1 skipped, 3 warnings in 1.81s ===================================
-(linux-dev) satoshi@LAPTOP-88SH779D:/mnt/d/city_chain_project/DAGs/libs/algorithm/poh_holdmetrics$ 
+(linux-dev) satoshi@LAPTOP-88SH779D:/mnt/d/city_chain_project/DAGs/libs/algorithm/poh_holdmetrics$
 
 
 # 世界統一の両立パターン！
@@ -414,3 +416,22 @@ py-ext（拡張）と py-embed（埋め込み）を機能フラグで分岐し�
 拡張は maturin で配り、テストは 外部の python.exe を起動。
 埋め込みは pure Python を呼ぶ（拡張を同プロセスで import しない）。
 この型が、世界中で最終的に定着してる“正規”の両立パターンだよ。
+
+
+
+# dockerから単体クレートテスト
+方法B（.env は候補のまま・起動時だけ選択）
+起動コマンドで上書きします。.env の候補はそのまま残し、シェルで 1 本を選んで MONGODB_URL に流し込みます。
+# 例：ASIA を選ぶ
+export MONGODB_URL='mongodb+srv://satoshi:greg1024@asia.kzxnr.mongodb.net/?retryWrites=true&w=majority&appName=asia&readPreference=primary'
+
+# 3) 起動
+docker compose \
+  -f compose.yml \
+  -f compose.atlas.yml \
+  -f compose.test.yml \
+  --env-file DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/.env \
+  --profile poh_holdmetrics \
+  run --rm test_poh_holdmetrics
+
+Compose は「シェル環境変数 ＞ --env-file ＞ デフォルト」の優先度なので、ここで export した MONGODB_URL が 最優先で使われます。

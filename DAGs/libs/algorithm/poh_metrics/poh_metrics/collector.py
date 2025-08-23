@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from prometheus_client import CollectorRegistry
 
-from .metrics import get_metric, register_metrics
+from .metrics import get_metric
 from .registry import get_registry
 
 

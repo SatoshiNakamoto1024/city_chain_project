@@ -20,6 +20,7 @@ from sending_DAG.python_sending.municipality_level.municipality_dag_handler impo
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
+
 class DAGServiceServicerImpl(DAGServiceServicer):
     def __init__(self, handler: CityDAGHandler):
         self.handler = handler
@@ -40,6 +41,7 @@ class DAGServiceServicerImpl(DAGServiceServicer):
         # 例として常に COMPLETED を返す
         return StatusResponse(status="COMPLETED")
 
+
 def serve(port: int = 50051, max_workers: int = 10):
     handler = CityDAGHandler(city_name="NewYork")
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=max_workers), options=[
@@ -52,6 +54,7 @@ def serve(port: int = 50051, max_workers: int = 10):
     server.start()
     logger.info(f"gRPC server listening on port {port}...")
     server.wait_for_termination()
+
 
 if __name__ == "__main__":
     serve()

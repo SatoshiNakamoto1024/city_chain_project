@@ -13,6 +13,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from transport.app_transport import app
 
+
 @pytest.mark.asyncio
 async def test_grpc_echo_and_retry():
     # lifespan="on" を付けて Startup/Shutdown を確実に実行

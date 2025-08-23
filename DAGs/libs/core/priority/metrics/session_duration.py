@@ -2,6 +2,7 @@
 
 from .base import PriorityMetric
 
+
 class SessionDurationMetric(PriorityMetric):
     """
     ログイン後の平均滞在時間（秒）を正規化してスコア化。

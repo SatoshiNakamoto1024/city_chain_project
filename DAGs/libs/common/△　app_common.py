@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import random
 import sys
 import time
@@ -35,6 +34,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] %(levelname)s %(message)s",
 )
+
 
 # ──────────────────────────────────────────────
 # 1) 動的バッチ間隔
@@ -104,7 +104,7 @@ def cmd_storage_server(args: argparse.Namespace) -> None:
     loaded = _load_storage_proto()
     if loaded is None:
         sys.exit(1)
-    storage_pb2, storage_pb2_grpc = loaded  # noqa: N806
+    storage_pb2, storage_pb2_grpc = loaded
 
     class DevStorageServicer(storage_pb2_grpc.StorageServiceServicer):  # type: ignore
         def StoreFragment(self, request, context):  # noqa: N802

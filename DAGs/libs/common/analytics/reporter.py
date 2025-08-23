@@ -1,10 +1,10 @@
-import time
 from prometheus_client import Gauge, push_to_gateway
 
 # Prometheusメトリクス定義
 ONLINE_GAUGE = Gauge('dag_online_nodes', '現在オンラインノード数')
 AVG_SESSION = Gauge('dag_avg_session_time', '平均セッション時間秒')
-GLOBAL_LAT  = Gauge('dag_global_avg_latency', '全体平均PoHレイテンシ秒')
+GLOBAL_LAT = Gauge('dag_global_avg_latency', '全体平均PoHレイテンシ秒')
+
 
 def push_metrics(presence, txmetrics, gateway: str):
     """

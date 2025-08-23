@@ -16,6 +16,7 @@ from .filter_core import (
     FilterError,
 )
 
+
 def _build_cli() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="rvh-filter",
@@ -48,6 +49,7 @@ def _build_cli() -> argparse.ArgumentParser:
     )
     return p
 
+
 def main() -> None:  # pragma: no cover
     args = _build_cli().parse_args()
     nodes = [n.strip() for n in args.nodes.split(",") if n.strip()]
@@ -72,6 +74,7 @@ def main() -> None:  # pragma: no cover
         sys.exit(1)
 
     print(",".join(out))
+
 
 if __name__ == "__main__":
     main()

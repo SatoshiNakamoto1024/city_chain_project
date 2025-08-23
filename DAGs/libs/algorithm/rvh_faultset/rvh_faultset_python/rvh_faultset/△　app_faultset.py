@@ -14,6 +14,7 @@ import argparse
 import sys
 from .faultset_builder import faultset, FaultsetError
 
+
 def main():
     parser = argparse.ArgumentParser(prog="app_faultset",
                                      description="Geohash + Rust failover CLI")
@@ -46,6 +47,7 @@ def main():
     except FaultsetError as e:
         print(f"[ERROR] {e}", file=sys.stderr)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

@@ -32,6 +32,7 @@ from utils.errors import DAGCycleError, InvalidTxTypeError
 
 app = FastAPI(title="Utils Demo")
 
+
 # ───────────────────────────────
 # Pydantic モデル
 # ───────────────────────────────
@@ -40,6 +41,7 @@ class EdgeList(BaseModel):
         ..., description='[["A","B"], ["B","C"], ...] の形式'
     )
 
+
 # ───────────────────────────────
 # TxType
 # ───────────────────────────────
@@ -47,9 +49,11 @@ class EdgeList(BaseModel):
 async def list_tx_types():
     return {"values": [t.value for t in TxType]}
 
+
 @app.get("/tx_types/validate")
 async def validate_tx_type(value: str):
     return {"valid": TxType.has_value(value)}
+
 
 # ───────────────────────────────
 # DAG ユーティリティ
@@ -62,15 +66,18 @@ async def api_topo_sort(body: EdgeList):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
+
 @app.post("/dag/detect_cycle")
 async def api_detect_cycle(body: EdgeList):
     graph = flatten_edges(body.edges)
     return {"cycle": detect_cycle(graph)}
 
+
 @app.post("/dag/flatten")
 async def api_flatten(body: EdgeList):
     graph = flatten_edges(body.edges)
     return {"graph": graph}
+
 
 # ───────────────────────────────
 # Constants
@@ -84,6 +91,7 @@ async def get_constants():
         "SHARD_SIZE_LIMIT": SHARD_SIZE_LIMIT,
     }
 
+
 # ───────────────────────────────
 # Errors
 # ───────────────────────────────
@@ -91,9 +99,11 @@ async def get_constants():
 async def raise_dag_cycle():
     raise DAGCycleError("Cycle detected")
 
+
 @app.get("/errors/invalid_tx")
 async def raise_invalid_tx():
     raise InvalidTxTypeError("Invalid TxType")
+
 
 # ───────────────────────────────
 # Exception Handlers
@@ -101,6 +111,7 @@ async def raise_invalid_tx():
 @app.exception_handler(DAGCycleError)
 async def handle_cycle_error(request: Request, exc: DAGCycleError):
     return JSONResponse(status_code=400, content={"detail": str(exc)})
+
 
 @app.exception_handler(InvalidTxTypeError)
 async def handle_invalid_tx(request: Request, exc: InvalidTxTypeError):

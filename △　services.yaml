@@ -20,87 +20,90 @@
 version: 1
 
 defaults:
-  python: "3.12"
-  rust:
-    msrv: "1.88.0"
-  dockerfile: "./Dockerfile"
-  registry: "local"
-  network: "city_chain_net"
+  network: city_chain_net
+  dockerfile: ./Dockerfile
 
-# -----------------------------------------------------------------------------------
-# 1) pyext: ライブラリ（wheel）をビルドし、必要なら pytest を回す
-# -----------------------------------------------------------------------------------
+# PyO3/pyext（wheel ビルドやテスト用）
 pyext:
-  - name: "rvh_trace"
-    kind: "mixed"
-    crate_path: "DAGs/libs/algorithm/rvh_trace/rvh_trace_rust"
-    python_wrapper: "DAGs/libs/algorithm/rvh_trace/rvh_trace_python"
-    features: ["python"]       # maturin に渡す feature 群（なければ空配列でもOK）
+  - name: poh_holdmetrics
+    # *_rust/_python の親（ドメインルート）を指す
+    crate_path: DAGs/libs/algorithm/poh_holdmetrics
+    kind: mixed
+    features: ["python"]
+    # ★ ここを「Python ラッパのディレクトリ」に修正
+    python_wrapper: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
     tests:
-      - kind: "pytest"
-        path: "DAGs/libs/algorithm/rvh_trace/rvh_trace_python/rvh_trace/tests"
-        markers: "unit or ffi"
-
-  - name: "poh_holdmetrics"
-    kind: "mixed"
-    crate_path: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust"
-    python_wrapper: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python"
-    features: ["python"]       # grpc を feature 化するなら ["python","grpc"] みたいに増やす
-    tests:
-      - kind: "pytest"
-        path: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/tests"
-      - kind: "pytest"
-        path: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_integration.py"
-
-# -----------------------------------------------------------------------------------
-# 2) services: 常駐サーバ（gRPC/HTTP）
-# -----------------------------------------------------------------------------------
-services:
-  - name: "poh_srv"
-    kind: "rust"
-    crate_path: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust"
-    bin_name: "main_holdmetrics"     # cargo build 後にできる実行バイナリ名
-    features: []                     # Rust 側 feature を使うならここに列挙
-    env:
-      PORT: "60051"
-      MONGO_URI: "mongodb://mongo:27017"
-    depends_on: ["mongo"]
-    ports: ["60051:60051"]
-    healthcheck:
-      type: "tcp"
-      port_env: "PORT"
-      interval: "5s"
-      timeout: "2s"
-      retries: 10
-    tests:
-      - kind: "pytest"
-        path: "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/tests/test_api.py::test_grpc_stats_broadcast"
-        env:
-          POH_GRPC_ADDR: "poh_srv:60051"
+      - kind: pytest
+        path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/tests
+        # ここを追加: Mongo の起動完了を待つ
         wait_for:
-          service: "poh_srv"
-          healthy: true
+          service: mongo
+        # ここを追加: コンテナ内からは "mongo" で到達する
+        env:
+          MONGO_URI: "mongodb://mongo:27017"
 
-# -----------------------------------------------------------------------------------
-# 3) infra: 既製ミドル
-# -----------------------------------------------------------------------------------
-infra:
-  - name: "mongo"
-    image: "mongo:7"
-    ports: ["27017:27017"]  # ローカル確認用。CI/本番で外出ししないなら外してOK
-    volumes:
-      - name: "mongo-data"
-        mount: "/data/db"
+# 常駐サービス
+services:
+  # ==== gRPC サーバ ====
+  - name: poh_holdmetrics-grpc
+    # ★ *_rust を指す（OK）
+    crate_path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust
+    kind: rust
+    bin_name: main_holdmetrics
+    env:
+      SERVICE_MODE: "grpc"
+      GRPC_ADDRESS: "0.0.0.0:60051"
+      MONGO_URI: "mongodb://mongo:27017"
+    ports:
+      - "60051:60051"
+      # （任意）メトリクスを scrape したい場合は 9100 も公開
+      - "9100:9100"
+    depends_on:
+      - mongo
+    # ★ ここを追加：Rust の bin をそのまま実行（常駐）
+    command: ["/app/bin/main_holdmetrics", "--grpc-addr", "0.0.0.0:60051"]
     healthcheck:
-      type: "mongosh"
-      command: "db.adminCommand({ping:1})"
+      port: 60051
       interval: "5s"
       timeout: "2s"
       retries: 20
 
-# -----------------------------------------------------------------------------------
-# 4) volumes: Compose 生成用の永続ボリューム宣言
-# -----------------------------------------------------------------------------------
-volumes:
-  - name: "mongo-data"
-    driver: "local"
+  # ==== HTTP サーバ ====
+  - name: poh_holdmetrics-http
+    # どちらでも動くが、統一のため *_rust を推奨（下のどちらか一方を使う）
+    # crate_path: DAGs/libs/algorithm/poh_holdmetrics
+    crate_path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust
+    kind: mixed
+    features: ["python"]
+    env:
+      SERVICE_MODE: "http"
+      HTTP_PORT: "8000"
+      MONGO_URI: "mongodb://mongo:27017"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+    # ★ ここを追加：Uvicorn で FastAPI を常駐起動
+    command: ["python","-m","uvicorn","poh_holdmetrics.api.http_server:app","--host","0.0.0.0","--port","8000"]
+    healthcheck:
+      port: 8000
+      interval: "5s"
+      timeout: "2s"
+      retries: 20
+
+# ミドルウェア
+infra:
+  - name: mongo
+    image: "mongo:7"
+    ports:
+      - "27017:27017"
+    volumes:
+      - name: mongo-data
+        mount: /data/db
+        driver: local
+    healthcheck:
+      type: mongosh
+      command: "db.adminCommand({ ping: 1 })"
+      interval: "5s"
+      timeout: "3s"
+      retries: 20

@@ -27,7 +27,7 @@ ldpc/
 │   ├── test_city.rs
 │   ├── test_continent.rs
 │   └── test_global.rs
-│        
+│
 └── src/
     ├── lib.rs              # 公開 API & ティア毎のプリセット
     ├── gf.rs               # GF(2⁸) 汎用演算
@@ -55,8 +55,8 @@ ldpc/
     │
     ├── pipeline/                # ★ 新規 “非同期パイプライン” レイヤ
     │   ├── src/
-    │   │   ├── lib.rs        
-    │   │   ├── main_pipeline.rs     # bin     
+    │   │   ├── lib.rs
+    │   │   ├── main_pipeline.rs     # bin
     │   │   ├── stream_encode.rs     # ▷ ❶ バイト列 → `ShardStream`
     │   │   ├── stream_decode.rs     # ▷ ❷ `ShardStream` → 完全復元
     │   │   ├── util.rs              # バッファ pool・CRC32C・BLAKE3 等
@@ -70,16 +70,16 @@ ldpc/
     │   │        ├── mod.rs
     │   │        ├── quic.rs
     │   │        └── tcp.rs
-    │   │   
+    │   │
     │   ├── tests/
     │   │        └── test_pipeline.rs     # End-to-end async ↔︎ network
-    │   │ 
+    │   │
     │   └── Cargo.toml
     │
     └── bench/
         ├── bench_city.rs
         └── bench_global.rs
-        
+
 
 各ファイルの役割
 ファイル	主な関数／型	説明
@@ -148,4 +148,3 @@ max_iter 20, scale 1.0 を指定してください。
 さらに テスト／ベンチコード の充実や
 クロスコンパイル (Android/ARMv8) 向け調整が必要な場合は、
 次のステップとしてご相談ください！
-

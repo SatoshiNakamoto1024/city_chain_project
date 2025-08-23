@@ -15,7 +15,6 @@ import time
 import requests
 import pytest
 import os
-import re
 import logging
 from pymongo import MongoClient
 
@@ -31,6 +30,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_servers():
@@ -51,6 +51,7 @@ def setup_servers():
     continent_proc.terminate()
     global_proc.terminate()
     time.sleep(1)
+
 
 def test_dynamic_batch_and_rebalance():
     """
@@ -83,7 +84,7 @@ def test_dynamic_batch_and_rebalance():
     # リバランス => "Rebalance shard OK" のログを見たいが、ここでは時間を置いて挙動確認
     time.sleep(35)  # REBALANCE_INTERVAL=30 くらい
 
-    # まだ自動チェックが難しいので、ログに"Rebalance shard OK"が出ているかを最後に目視 or 
+    # まだ自動チェックが難しいので、ログに"Rebalance shard OK"が出ているかを最後に目視 or
     # あるいはデモ用に just pass
     print("[TEST] test_dynamic_batch_and_rebalance done")
 
@@ -95,7 +96,7 @@ def test_six_months_rule():
     => 簡易: /complete_tx しないまま wait して、ログで "期限切れ=>破棄" が出るかみる
     """
     # 送信
-    r = requests.post(f"{CITY_URL}/send_tx", json={"sender":"OldUser", "receiver":"Bob", "amount":999})
+    r = requests.post(f"{CITY_URL}/send_tx", json={"sender": "OldUser", "receiver": "Bob", "amount": 999})
     assert r.status_code == 200
     data = r.json()
     tx_id = data["tx_id"]
@@ -127,7 +128,7 @@ def test_send_and_complete():
     time.sleep(2)
 
     # complete
-    rc = requests.post(f"{CITY_URL}/complete_tx/"+tx_id)
+    rc = requests.post(f"{CITY_URL}/complete_tx/" + tx_id)
     assert rc.status_code == 200
 
     time.sleep(1)

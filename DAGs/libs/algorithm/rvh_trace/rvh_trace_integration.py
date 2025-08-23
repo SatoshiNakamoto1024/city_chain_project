@@ -1,5 +1,5 @@
 # D:\city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_integration.py
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 End-to-End integration test for rvh_trace
 ========================================
@@ -21,7 +21,7 @@ pytestmark = pytest.mark.ffi
 # import path set-up so that local builds are picked first
 # ---------------------------------------------------------------------------
 ROOT = pathlib.Path(__file__).resolve().parent
-PY_PKG  = ROOT / "rvh_trace_python"
+PY_PKG = ROOT / "rvh_trace_python"
 WHEEL_DIR = ROOT / "rvh_trace_rust" / "target" / "wheels"
 
 if PY_PKG.exists():

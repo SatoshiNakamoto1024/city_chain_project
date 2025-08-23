@@ -18,6 +18,7 @@ formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s')
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
+
 # --- スマートコントラクト実行のスタブ ---
 async def execute_smart_contract(distribution_info, dag_node):
     # 本来はスマートコントラクト実行エンジンが状態更新などを行う
@@ -26,6 +27,7 @@ async def execute_smart_contract(distribution_info, dag_node):
     # 例として distribution_info に "contract_executed" フラグを追加
     distribution_info["contract_executed"] = True
     return distribution_info
+
 
 # --- データ可用性証明のスタブ ---
 def data_availability_proof(distribution_info):
@@ -36,6 +38,7 @@ def data_availability_proof(distribution_info):
     else:
         logger.error("[DataAvailability] Data availability proof failed.")
         raise ValueError("Data availability proof failed")
+
 
 class DistributionAlgorithm:
     def __init__(self, municipalities=AVAILABLE_MUNICIPALITIES,
@@ -94,6 +97,7 @@ class DistributionAlgorithm:
                 best_node = node["node_id"]
         return best_node if best_node is not None else "unknown"
 
+
 class ConsensusSimulator:
     def __init__(self, distribution_algo):
         self.distribution_algo = distribution_algo
@@ -127,6 +131,7 @@ class ConsensusSimulator:
         logger.info("[Consensus] 最終合意: %s", json.dumps(final_proposal, indent=2))
         return final_proposal
 
+
 async def async_consensus_and_distribute(dag_node):
     algo = DistributionAlgorithm(AVAILABLE_MUNICIPALITIES, AVAILABLE_CONTINENTS, CONTINENT_NODES)
     consensus = ConsensusSimulator(algo)
@@ -146,9 +151,11 @@ async def async_consensus_and_distribute(dag_node):
         logger.error("保存エラー: %s", e)
     return final_distribution
 
+
 async def distribute_and_save_transaction(dag_node):
     final_distribution = await async_consensus_and_distribute(dag_node)
     return final_distribution
+
 
 if __name__ == "__main__":
     import asyncio

@@ -62,4 +62,4 @@ def push_to_gateway(
     _push(gateway, job=job, registry=registry)
 
 
-__all__ = ["get_registry", "set_registry", "push_metrics", "push_to_gateway"]
+__all__ = ["get_registry", "push_metrics", "push_to_gateway", "set_registry"]

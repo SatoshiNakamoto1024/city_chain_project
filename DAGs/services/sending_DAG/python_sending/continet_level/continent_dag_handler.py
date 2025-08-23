@@ -24,7 +24,6 @@ from common.config import (
     MAX_DAG_DURATION,
     get_rust_api
 )
-from common.db_handler import save_completed_tx_to_mongo
 from common.node_registry import get_continent_nodes
 from common import reward_system
 
@@ -43,6 +42,7 @@ ch.setFormatter(fmt)
 logger.addHandler(ch)
 
 app = Flask(__name__)
+
 
 class ContinentDAGHandler:
     def __init__(self, continent_name: str):
@@ -180,6 +180,7 @@ class ContinentDAGHandler:
         except Exception as e:
             logger.error("[ContinentDAG] push_global_batch error: %s", e)
 
+
 @app.route("/push_city_batch", methods=["POST"])
 def push_city_batch():
     data = request.get_json()
@@ -189,6 +190,7 @@ def push_city_batch():
     handler = ContinentDAGHandler("Asia")
     handler.add_city_batch(batch_id, batch_hash, tx_list)
     return jsonify({"status": "received", "batch_id": batch_id})
+
 
 if __name__ == "__main__":
     app.run(port=6001, debug=True)

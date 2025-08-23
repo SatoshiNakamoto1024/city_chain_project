@@ -1,6 +1,6 @@
-import time
 from collections import defaultdict
 from threading import Lock
+
 
 class TxMetrics:
     """
@@ -30,9 +30,9 @@ class TxMetrics:
     def get_average_latency(self, node_id: str) -> float:
         with self._lock:
             ls = self._latencies.get(node_id, [])
-            return (sum(ls)/len(ls)) if ls else 0.0
+            return (sum(ls) / len(ls)) if ls else 0.0
 
     def get_global_average_latency(self) -> float:
         with self._lock:
             all_ls = [lat for lst in self._latencies.values() for lat in lst]
-            return (sum(all_ls)/len(all_ls)) if all_ls else 0.0
+            return (sum(all_ls) / len(all_ls)) if all_ls else 0.0

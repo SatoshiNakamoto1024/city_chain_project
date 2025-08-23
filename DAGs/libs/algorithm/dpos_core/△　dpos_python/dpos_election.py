@@ -23,12 +23,13 @@ from . import dpos_advanced
 # 負のウエイト => 低いほど良い(エラー率の場合)、計算時に (1 - error_rate)* weight など工夫も可
 SCORING_CONFIG = {
     "access_rate": 0.2,     # 0~1 (高いほど良い)
-    "mem_capacity": 0.0005, # GB -> スコアへの変換係数
+    "mem_capacity": 0.0005,  # GB -> スコアへの変換係数
     "harmony_score": 0.2,   # 0~1 (和記)
-    "bandwidth": 0.15,      # float (MB/s) 
+    "bandwidth": 0.15,      # float (MB/s)
     "uptime": 0.15,         # 0~1
     "error_rate": -0.1      # 0~1 (低いほど良い => negative weight)
 }
+
 
 class Representative:
     def __init__(self, rep_id, region_type, region_id, eval_score, stake_amount=0):
@@ -53,7 +54,7 @@ class Representative:
         return f"<Rep {self.rep_id} {self.region_id} score={self.eval_score:.2f} stake={self.stake_amount:.1f}>"
 
 
-def compute_eval_score(metrics: dict, adv_manager: dpos_advanced.AdvancedDPoSManager=None, rep_id:str=None) -> float:
+def compute_eval_score(metrics: dict, adv_manager: dpos_advanced.AdvancedDPoSManager = None, rep_id: str = None) -> float:
     """
     metrics: {
        "access_rate": float(0~1),
@@ -73,7 +74,7 @@ def compute_eval_score(metrics: dict, adv_manager: dpos_advanced.AdvancedDPoSMan
     # 1) 各指標にウエイトをかける
     for key, weight in SCORING_CONFIG.items():
         val = metrics.get(key, 0.0)
-        if key=="error_rate":
+        if key == "error_rate":
             # error_rate は 0が最良 => 1-val を計算し weightをかける
             # 例: weight=-0.1 => score += (1 - error_rate)*(-0.1)? or simpler
             # ここでは "score += (1 - val) * abs(weight)" など
@@ -94,10 +95,10 @@ def compute_eval_score(metrics: dict, adv_manager: dpos_advanced.AdvancedDPoSMan
     if adv_manager and rep_id:
         st = adv_manager.get_stake(rep_id)
         # 例: stake_bonus = min(st/100, 2.0)
-        stake_bonus = min(st/100.0, 2.0)
+        stake_bonus = min(st / 100.0, 2.0)
         score += stake_bonus
 
-    return max(score,0.0)
+    return max(score, 0.0)
 
 
 def pick_representatives(region_type, region_id, candidates, num_reps=3, adv_manager=None):
@@ -106,21 +107,21 @@ def pick_representatives(region_type, region_id, candidates, num_reps=3, adv_man
     => compute_eval_score => sort => pick top
     => return [Representative, ...]
     """
-    scored=[]
+    scored = []
     for c in candidates:
-        rep_id=c["rep_id"]
+        rep_id = c["rep_id"]
         s = compute_eval_score(c["metrics"], adv_manager, rep_id)
         # if adv_manager => stake is read inside compute_eval_score
         scored.append((s, rep_id))
 
-    scored.sort(key=lambda x:x[0], reverse=True)
-    out=[]
-    for i in range(min(num_reps,len(scored))):
-        s_val, rid= scored[i]
-        stake_val=0.0
+    scored.sort(key=lambda x: x[0], reverse=True)
+    out = []
+    for i in range(min(num_reps, len(scored))):
+        s_val, rid = scored[i]
+        stake_val = 0.0
         if adv_manager:
-            stake_val= adv_manager.get_stake(rid)
-        r=Representative(
+            stake_val = adv_manager.get_stake(rid)
+        r = Representative(
             rep_id=rid,
             region_type=region_type,
             region_id=region_id,
@@ -130,22 +131,23 @@ def pick_representatives(region_type, region_id, candidates, num_reps=3, adv_man
         out.append(r)
     return out
 
+
 def refresh_representatives(current_list, region_type, region_id, candidates, num_reps=3, adv_manager=None):
     """
     任期/active状態チェック => update
     pick new => merge
     """
-    now=time.time()
-    kept=[]
+    now = time.time()
+    kept = []
     for r in current_list:
-        if r.region_type==region_type and r.region_id==region_id:
-            if now>r.term_end or not r.active:
+        if r.region_type == region_type and r.region_id == region_id:
+            if now > r.term_end or not r.active:
                 # retire
                 continue
             kept.append(r)
         else:
             kept.append(r)
     # pick new
-    new_picks= pick_representatives(region_type, region_id, candidates, num_reps, adv_manager)
+    new_picks = pick_representatives(region_type, region_id, candidates, num_reps, adv_manager)
     kept.extend(new_picks)
     return kept

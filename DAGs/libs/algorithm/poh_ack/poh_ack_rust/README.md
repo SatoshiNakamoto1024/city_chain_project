@@ -235,7 +235,7 @@ default = ["core", "py-ext"]
 
 使い方確認
 cargo clean
-cargo build --features py-ext   # 本物 DLL を生成 
+cargo build --features py-ext   # 本物 DLL を生成
   ※この意味で上記必要→　--features py-ext makes Cargo build the cdylib with #[pymodule] symbols
 cargo test --features python -- --test-threads=1            # もう ImportError は出ない
 
@@ -275,7 +275,7 @@ Criterion の default 設定（統計試行回数・ウォームアップ等）�
 # テスト
 maturin develop --release
 そして、.pydへコピー
-cargo test --features python -- --test-threads=1 
+cargo test --features python -- --test-threads=1
 そうすると、
 
     Finished `bench` profile [optimized] target(s) in 11.38s
@@ -392,7 +392,7 @@ Windows 上のソースコードディレクトリ
 
 
 #　テストはWSL から
-cargo test --features python -- --test-threads=1 
+cargo test --features python -- --test-threads=1
 
 error!対処法：
 # Ubuntu 22.04 / WSL の例 ― 自分の Python の minor を確認して合わせること
@@ -429,6 +429,6 @@ auto‑initialize が入っているので変更不要です。
 
 入れたあと そのまま再ビルド すれば OK
 cargo clean
-maturin develop --release 
+maturin develop --release
 さらに.dll →　.pydにコピーして (Windows側からもmaturin developしないとtarget\に入らないので注意！)
 cargo test --features python -- --test-threads=1

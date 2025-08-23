@@ -1,4 +1,4 @@
-# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\calculator.py
+# \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\calculator.py
 """
 保持スコア計算モジュール
 
@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import os
 import logging
-from datetime import datetime
 from typing import List
 from .data_models import HoldEvent
 
@@ -71,7 +70,7 @@ def _enable_positional_args_for_hold_event() -> None:
 
     def _patched(self, *args, **kwargs):  # type: ignore
         if args:
-            kwargs.update(dict(zip(self.model_fields, args)))
+            kwargs.update(dict(zip(self.model_fields, args, strict=False)))
         original_init(self, **kwargs)
 
     HoldEvent.__init__ = _patched  # type: ignore

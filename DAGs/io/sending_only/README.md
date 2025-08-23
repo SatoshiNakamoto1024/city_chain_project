@@ -30,4 +30,3 @@ io_rate_limiter (2)	outbound Shard/s 上限
 io_backpressure (2)	gRPC ストリームの Flow-control
 io_cli_utils (1)	送信系 CLI サブコマンド補助
 io_file_transport (1)	オフライン・ファイルバッチ送信
-

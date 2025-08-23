@@ -13,6 +13,7 @@ from global_dag_handler import GlobalDAGHandler
 app = Flask(__name__)
 dag_handler = GlobalDAGHandler()
 
+
 @app.route("/push_continent_batch", methods=["POST"])
 def push_continent_batch():
     """
@@ -36,10 +37,12 @@ def push_continent_batch():
     dag_handler.add_continent_batch(c_batch_id, c_hash, c_name, b_data)
     return jsonify({"status": "global_received", "continent_batch_id": c_batch_id}), 200
 
+
 @app.route("/complete_global_tx/<c_batch_id>", methods=["POST"])
 def complete_global_tx(c_batch_id):
     dag_handler.mark_global_batch_completed(c_batch_id)
     return jsonify({"status": "completed", "c_batch_id": c_batch_id}), 200
+
 
 if __name__ == "__main__":
     app.run(port=7001, debug=False)

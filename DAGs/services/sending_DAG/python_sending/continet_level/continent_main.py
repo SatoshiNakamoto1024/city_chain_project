@@ -15,6 +15,7 @@ app = Flask(__name__)
 # 例として "Asia" という大陸DAGとして動かす
 dag_handler = ContinentDAGHandler(continent_name="Asia")
 
+
 @app.route("/push_city_batch", methods=["POST"])
 def push_city_batch():
     """
@@ -36,6 +37,7 @@ def push_city_batch():
     dag_handler.add_city_batch(batch_id, batch_hash, tx_list)
     return jsonify({"status": "received", "batch_id": batch_id}), 200
 
+
 @app.route("/complete_continent_tx/<batch_id>", methods=["POST"])
 def complete_continent_tx(batch_id):
     """
@@ -43,6 +45,7 @@ def complete_continent_tx(batch_id):
     """
     dag_handler.mark_batch_completed(batch_id)
     return jsonify({"status": "completed", "batch_id": batch_id}), 200
+
 
 if __name__ == "__main__":
     # 大陸ごとにポートを変える想定

@@ -3,12 +3,14 @@
 型定義だけ切り出し
 """
 from __future__ import annotations
-from typing import TypedDict, List
+from typing import TypedDict
 from dataclasses import dataclass
+
 
 class PresenceDoc(TypedDict):
     node_id: str
     last_seen: float          # epoch 秒
+
 
 @dataclass
 class NodeInfo:

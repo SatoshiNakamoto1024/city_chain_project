@@ -11,13 +11,14 @@ from typing import Dict, List
 
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, Summary
 
-__all__ = ["register_metrics", "get_metric"]
+__all__ = ["get_metric", "register_metrics"]
 
 # --------------------------------------------------------------------------- #
 # Registry ↔ Metric マッピング（弱参照でリーク防止）
 # --------------------------------------------------------------------------- #
 _REGISTERED: "weakref.WeakKeyDictionary[CollectorRegistry, Dict[str, object]]"
 _REGISTERED = weakref.WeakKeyDictionary()   # {registry: {alias_name: metric}}
+
 
 # --------------------------------------------------------------------------- #
 # 内部ヘルパ

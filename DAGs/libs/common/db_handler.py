@@ -38,7 +38,8 @@ logger.setLevel(logging.INFO)
 # デフォルト接続情報（環境変数で上書き可）
 # ─────────────────────────────
 DEFAULT_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-DEFAULT_DB  = os.getenv("DB_NAME", "federation_dag_db")
+DEFAULT_DB = os.getenv("DB_NAME", "federation_dag_db")
+
 
 # ─────────────────────────────
 # Public API
@@ -74,12 +75,12 @@ def save_completed_tx_to_mongo(
         )
         return res.inserted_id
 
-    _uri     = uri or DEFAULT_URI
+    _uri = uri or DEFAULT_URI
     _db_name = db_name or DEFAULT_DB
 
     try:
         with get_sync_client(uri=_uri) as client:
-            db  = client[_db_name]
+            db = client[_db_name]
             res = db[collection_name].insert_one(record)
             logger.info(
                 "[DBHandler] inserted %s (col=%s, db=%s)", res.inserted_id, collection_name, _db_name

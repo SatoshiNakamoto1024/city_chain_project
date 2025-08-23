@@ -1532,3 +1532,573 @@ DLL 地獄の 8 則（ABI3、maturin、名前一致、VCRUNTIME 同梱…）を�
 Rust‐only → PyO3 の 2 段ビルドで “早いサイクル” と “安全配布” を分離
 “欠け DLL” は delvewheel repair で自動注入するのがプロ流
 これだけで Windows でも WSL でも “一発 import OK” な環境が作れます。
+
+
+よし、みえた！行けるね。じゃあ、immuDBは廃止。mongoDBは分析用に6ヶ月保持のみ。永続保持はDAG未完、未完トランザクションの保持もDAG完結に6ヶ月、にして設計するよ、シミュレーションして
+ChatGPT said:
+思考時間: 22s
+
+了解、その方針（immuDB 廃止 / Mongo は分析用6か月のみ / 完了も未完も DAG 側で6か月保持）で SLOが満たせるかを、あなたの配布ルールでシミュレーションしました。
+
+前提（共通）
+
+ライト：30ユニーク片（各1ノード1片）
+
+復元閾値：k = 10（10片集まれば復元）
+
+ライト同時オンライン率：p = 0.10（100万人登録 → 常時10万人オンライン想定）
+
+アンカー可用性：q = 0.999（高可用運用）
+
+アジアのみ → その後ヨーロッパ追加（6か月間）
+
+日数配分：前半 30日 = アジアのみ、後半 150日 = アジア＋ヨーロッパ（総6か月 = 180日）
+
+アンカー配布
+
+アジアのみ：3アンカー × 各4片 = 12片
+
+アジア＋欧州：（アジア 3×2片）＋（欧州 3×2片）= 12片（合計片数は同じ。配置を分散）
+
+成果
+
+アジアのみ（30日）：成功確率 0.999447（= 99.9447%）
+
+アジア＋欧州（150日）：成功確率 0.999997（= 99.9997% ≈ 5ナイン級）
+
+6か月の重み付き平均：0.999906（= 99.9906% ≈ 4ナイン）
+
+つまり、アジア単独でスタートしても十分（≈99.94%）。
+ヨーロッパを追加し、アンカー片を 6+6 に分散するだけで、
+後半は 5ナイン級まで跳ね上がり、6か月平均でも ≈4ナインが取れます。
+
+感度チェック（p が変動すると…）
+
+（同じ手順で計算した参考値）
+
+ライト同時オンライン率 p	アジアのみ	アジア＋欧州（6+6）	6か月平均
+0.05	0.998340	0.9999917	0.999716（99.9716%）
+0.10	0.999447	0.9999972	0.999906（99.9906%）
+0.20	0.999967	0.99999984	0.999994（99.9994%）
+
+p=0.1 の設計なら 4ナイン前後を確保。
+深夜などで p が 0.05 まで落ちる時間帯が長い場合は、
+**「時間帯だけアンカー片+2する」**等の自動ブーストで 4ナイン維持が簡単です。
+
+運用ルール（実装のコア）
+
+ライト：常に 30ユニーク片（レプリカより強い）
+
+アンカー：初期は アジア 3台×4片、欧州追加後は アジア3×2片＋欧州3×2片（合計12片固定）
+
+SLOブースト：pが下がる時間帯のみ アンカー片を+2（合計14片） に自動調整
+
+PoH台帳：ライト＆アンカーとも PoH_ACK を必ず記録（Repair と監査の基盤）
+
+鍵管理：DEK(AES-GCM) を NTRU-KEM で保存先ごとにカプセル化（ライト30＋アンカー12 = 42カプセル/Tx）
+
+6か月保持と Repair 方針
+
+DAG内保持は 6か月（完了・未完とも）で明確に削除。
+
+その間、Presence監視＋Repairデーモンで
+online_unique_pieces < k + r になりそうな兆候があれば
+即時再復元→再エンコード→今オンラインのライトへ再配布して常に閾値超えを維持。
+
+まとめ
+
+immuDB 廃止でも、ライト30ユニーク＋アンカー12片で十分実用。
+
+アジア単独で開始 → 欧州追加で 5ナイン級に跳ね上げ。
+
+6か月運用の平均でも ≈4ナイン達成。
+
+さらに上を狙うなら、時間帯ブーストやアンカー多地域分散を追加すれば OK。
+
+このまま S1/S3/S4 に実装差し込み（VRFでアンカー抽選、PoH台帳、NTRU-KEM 配布）を進めましょう。必要なら、そのまま使えるコード雛形も出します。
+
+You said:
+間違えた。もう一度やり直し、シミュレーションして。完結はDAGで永続保持。あ、そうか、膨大になるか、期限きらないと無理だな。期限はどれくらいにする？ちなみに、1ノードあたり100メガまで、トランザクションデータを保持できる
+ChatGPT said:
+思考時間: 18s
+TTL - Asia Only (Lights=100k, Anchors=3)
+Now interactive!
+TTL - Asia+Europe (Lights=100k, Anchors Per Continent=3, 6 Pieces/Cont)
+Now interactive!
+思考時間: 5s
+思考時間: 6s
+思考時間: 35s
+思考時間: 22s
+
+いいね、じゃあ100MB/ノードの制約で「DAGだけで保持」する場合の現実的なTTLを、あなたの配布ルール（ライト30ユニーク片＋アンカー12片）で数式→試算しました。結果は上で表示した2つの表（「TTL - Asia only…」「TTL - Asia+Europe…」）に入っています。要点だけ抜き出します。
+
+基本式（これだけ覚えればOK）
+
+片サイズ：piece = S / k（例：S=64KB, k=10 → 1片=6.4KB）
+
+1日の総書き込み（プール全体）
+
+ライト：30 * T * piece
+
+アンカー：12 * T * piece
+
+1ノード1日の受け分＝（上記）÷（プールのノード数）
+
+容量C=100MBだから、TTL（日）＝ C / (1日あたりの受け分)
+
+つまり TTL は 容量×ノード数×k / (片数×Tx/日×S) に比例。
+
+結論（64KB/Tx, k=10 を代表として）
+ライト（30ユニーク片、100,000ライトが受付可能）
+
+T=100,000 Tx/日 → TTL ≈ 533日（約18か月）
+
+T=1,000,000 Tx/日 → TTL ≈ 53日（約1.8か月）
+
+⇒ 64KBで6か月を狙うなら、
+
+Txを100k/日程度に抑える or
+
+オンラインライト数を増やす（計算上 337,500ライトあれば180日に届く） or
+
+1Txサイズを小さくする（16KBなら 1,000,000 Tx/日でもTTL ≈ 213日で6か月超）
+
+上の表「TTL - Asia only」に同じ数字が出ています。
+
+アンカー（12片/Tx, 各大陸3台, 各台100MB）
+
+アジアだけで12片/Tx（3台合計）：
+
+T=100k/日, S=64KB → TTL ≈ 0.04日（約1時間）
+
+アジア+欧州に分割（各大陸6片/Tx, 各3台）：
+
+T=100k/日, S=64KB → TTL ≈ 0.08日（約2時間/大陸）
+
+⇒ 100MB/台だと、アンカーの保持は**“数時間のホット窓”**にしかなりません（表「TTL - Asia+Europe」参照）。
+
+どう設計するか（実用アンサー）
+
+ライトで長期、アンカーは短期の安全網
+
+ライトは数十日〜数百日のTTLを設定（上の式で算定）。
+
+アンカーは2〜6時間程度のTTLで十分（受信者が早期に来ない場合でも、Repairがライトに再配布して“常にk以上オンライン”を維持する運用）。
+
+6か月ガチで持たせたい条件（100MB固定のまま）
+
+64KB・1M Tx/日→ライトTTLは約53日：6か月にしたいなら
+
+Txサイズを16KB前後に抑える（圧縮・メタだけ保持）
+
+オンラインライトを ~34万台に増やす（グローバルで分散受け）
+
+Tx/日を抑える（またはレイヤ別に分流）
+
+アンカーを6か月持たせるのは非現実的（計算上 13,500台/大陸など必要）。
+→ **アンカーは設計上“短期バッファ”**に割り切るのが正解。
+
+可変制御でSLOを守る
+
+深夜などp（ライトの同時オンライン率）が下がる時間帯だけ、
+アンカー片数を+2〜+4（12→14/16片）に自動ブースト。
+
+Repairデーモンで online_unique_pieces < k+r を検知したら即再復元→再エンコード→再配布。
+
+これにより、アンカーTTLが短くても成功確率（復元可用性）は4〜5ナイン級を維持できます（前回の成功確率シミュに同旨）。
+
+目安のTTL設定（おすすめ）
+
+64KB/Tx, 100k Tx/日, ライト10万台 → ライトTTL＝180日でOK
+
+64KB/Tx, 1M Tx/日, ライト10万台 → ライトTTL＝60日（現実線）
+
+6か月狙うなら 16KB/Txかライト増強
+
+アンカーTTL：2時間（アジアのみ12片）／2時間×2大陸分（6+6片）
+
+運用で時間帯ブーストを掛ければ十分
+
+式とノブ（調整パラメータ）
+
+TTL_light ∝ N_light / (T * S)（k=10, 片数=30 固定なら）
+
+TTL_anchor ∝ N_anchor / (T * S), かつ 片数（sA）に反比例
+
+調整ノブ：TxサイズS, Tx/日T, ライト数N_light, アンカー数N_anchor, sA（アンカー片数）, k
+
+必要なら、**あなたの実測トラフィック（平均Txサイズと日次件数）を入れて、最適TTLとアンカー片の自動ブースト曲線まで作ります。今の100MB/ノードの前提でも、ライト主導＋アンカー短期でDAG完結の長期保持（数か月）**は十分現実的です。
+
+You said:
+トランザクション16kbに収まると思います。トークン、行動レベル、科目などのテキストもじで400文字くらいだよ。画像なんて無いし、アイコンもない。本当にテキストのみ。あと、ライトのマックスを500メガにして、アンカーにはなるべく長く保持させ、提案頂きましたように、時期が来たらライトにRepairする仕様で再度シミュレーションして。
+ChatGPT said:
+思考時間: 58s
+TTL (Lights 500MB/Node)
+Now interactive!
+TTL Anchors (Asia Only, 3 Anchors)
+Now interactive!
+TTL Anchors (Split Asia+Europe, 3 Anchors Each)
+Now interactive!
+思考時間: 23s
+
+ナイスです。新条件（Tx=16KBテキスト、ライト=500MB/台、アンカーは長め保持→期限前にライトへRepair）で**TTL（保持期間）**を試算しました。表は手元で出してありますが、要点を抜粋します。
+
+前提
+
+符号化：k=10（10片集まれば復元）
+
+配布：ライト30ユニーク片／アンカー合計12片（アジア単独＝3台×4片、アジア+欧州＝各3台×2片）
+
+同時オンラインライト数：10万台（例）
+
+容量：ライト500MB/台、アンカーはケース別（100/500/1000MBで比較）
+
+TTL（保持期間）の結果（代表値）
+ライト（30ユニーク片、500MB/台、10万台）
+
+T=10万 Tx/日 → 約10,667日（約29年）
+
+T=100万 Tx/日 → 約1,067日（約2.9年）
+
+T=500万 Tx/日 → 約213日（約7.1か月）
+
+T=1,000万 Tx/日 → 約107日（約3.6か月）
+
+16KB×500MBだと、ライトは長期保持が非常に余裕。
+半年（180日）保持は、500万Tx/日でもクリアできるレンジです。
+
+アンカー（12片/Tx、3台/大陸、相関あり）
+
+Tx/日 = 10万、1台=500MB の場合：
+
+アジアのみ（3×4片=12片） → 約0.78日（約18.8時間）
+
+アジア+欧州に分割（各3×2片、計12片） → 約1.56日（約37.5時間／大陸）
+
+Tx/日 = 100万（同条件）：
+
+アジアのみ → 約1.9時間
+
+分割（6+6片） → 約3.8時間／大陸
+
+結論：アンカーは**数時間〜数十時間の“短期バッファ”**として設計し、
+期限前にライトへ自動Repairする方針が現実的です（提案通り）。
+
+どう運用するか（おすすめ）
+
+ライトを主ストア：
+
+16KB＆500MBなら半年保持は余裕（5M Tx/日でもOK）。
+
+TTL_light を180日に設定し、古い片はLRU削除。
+
+アンカーは短期バッファ：
+
+目安：アジア単独なら12〜18時間、アジア+欧州分割なら24〜36時間を上限に。
+
+**閾値（例：残TTL 6時間）**を切ったら、Repairデーモンが
+再復元→再エンコード→“いまオンラインのライト”へ再配布して在庫をライト側へ移す。
+
+同時にPoH_ACKで台帳更新。
+
+トラフィック変動に追随：
+
+深夜など**p（ライトのオンライン率）**が落ちる時間帯は、アンカー片を12→14/16片に一時ブースト。
+
+逆に日中は12片で十分。合計片数はポリシーで可変に。
+
+計算式（実装用）
+
+片サイズ：piece = S / k
+
+ライトTTL（日） ≈ cap_light * N_light / (30 * T * piece)
+
+アンカーTTL（日）（大陸あたり）≈ cap_anchor * N_anchor / (anchor_pieces_per_continent * T * piece)
+
+目標TTLから必要ライト数/アンカー容量を逆算してもOK。
+
+これで「DAGのみで完結」できるか？
+
+はい。
+
+完了Tx：ライト長期＋アンカー短期バッファ＋自動Repairで**永続運用（期限内）**が可能。
+
+未完Tx：同様にライトで保持し続け、k到達保証（PoH台帳＋Repair）で復元可能性を維持。
+
+MongoDBは分析6か月のみ（書き込みはミラー用途、復元経路には使わない）。
+
+すぐ入れる運用パラメータ（例）
+
+K=10, LIGHT_UNIQUE=30, ANCHOR_PCS=12（分割時は大陸ごと6）
+
+LIGHT_TTL_DAYS=180（削除はLRU）
+
+ANCHOR_TTL_TARGET_HOURS=24（Asia-only時は 12〜18h 推奨）
+
+ANCHOR_REPAIR_WATERMARK_HOURS=6（下回ったら即Repair）
+
+ANCHOR_BOOST_NIGHT=+2~+4 pcs（p低下時間帯に自動増量）
+
+必要なら、このTTLロジック（しきい値監視＋Repair発火）を S3/S4 に差し込む実装テンプレ（Python/Rust）をそのまま出します。今の数値なら、immuDBなしでDAG完結の半年運用は十分現実的です。
+
+You said:
+ちょっと待って。やり直して。アンカーって、フルノードなみに、膨大な1000tbなどの契約業者に頼めばどうなの？そしたら、アンカーに永続断片保持させることは無理でも、時期きたらrepairしたら？再度シミュレーションして
+ChatGPT said:
+思考時間: 43s
+Anchors TTL - Asia Only (3 Anchors, Large Capacity)
+Now interactive!
+Anchors TTL - Split Asia+Europe (3 Anchors Each, Large Capacity)
+Now interactive!
+思考時間: 45s
+
+最高です。その前提（アンカー＝大容量の契約業者、例：1,000 TB/台）で**保持期限（TTL）**をシミュレーションしました。結果は十分“実質永続”に近いレンジになります。要点だけまとめます（詳細表は上で表示しています）。
+
+前提
+
+1Tx = 16KB 純テキスト、Erasure k=10（10片で復元）
+
+配布：ライト 30ユニーク片、アンカー 合計12片
+
+アジアのみ：3アンカー×各4片＝12片
+
+アジア＋欧州分散：各大陸 3アンカー×各2片＝（大陸ごとに6片、合計12片）
+
+同時オンライン ライト受け手は別途十分に確保（TTLは容量と書込量の話）
+
+ライト容量：500MB/台（参考：これは半年～年単位を余裕でカバー）
+
+アンカー容量：10 / 100 / 1,000 TB/台で比較（下の抜粋は1,000 TB/台）
+
+アンカーTTL（容量で回転するまでの保持期間）
+アジアのみ（3台×各4片＝12片/Txをアジアで受ける）
+
+1,000 TB/台・3台
+
+10万 Tx/日 → 約 1,677,722 日（4,596 年）
+
+100万 Tx/日 → 約 167,772 日（460 年）
+
+500万 Tx/日 → 約 33,554 日（92 年）
+
+1,000万 Tx/日 → 約 16,777 日（46 年）
+
+5,000万 Tx/日 → 約 3,355 日（9.2 年）
+
+アジア＋欧州に分散（大陸ごとに 6 片/Tx）
+
+1,000 TB/台・各大陸3台（大陸ごとのTTL）
+
+100万 Tx/日 → 約 335,544 日（919 年）
+
+5,000万 Tx/日 → 約 6,711 日（18.4 年）
+
+結論：1,000 TB/台クラス×各大陸3台なら、アンカーは数十年～数百年の保持が可能（書込量が極端に大きくても年単位）。
+つまりアンカーは**“実質永続層”**として機能し、期限が来たらライトにRepairという運用で充分です。
+
+ライト側（参考）
+
+16KB × 500MB/台 × 10万台なら、ライトのTTLは
+
+100万 Tx/日でも 約 1,067 日（約 2.9 年）
+
+500万 Tx/日でも 約 213 日（約 7.1 か月）
+
+1,000万 Tx/日でも 約 107 日（約 3.6 か月）
+→ ライトは半年～年単位を余裕で支え、アンカーはさらに超ロングテイルを担保。
+
+運用設計（おすすめ）
+
+アンカー：各大陸 3台×1,000 TB/台を基本。書込ピークが続いても年単位で余裕。
+
+※アジア＋欧州に6片ずつ分散すると、大陸障害耐性＆レイテンシも最適化。
+
+Repair方針：アンカーの“残り余力”ウォーターマークでライトへ再配布し直す（PoH維持）。
+
+深夜などライト同時オンライン率が落ちる時間帯は、アンカー配布片を +2〜+4一時ブースト。
+
+ポリシー：
+
+アンカー＝“実質永続層”（数十年～）。削除しないか、ごく長期で段階的アーカイブ。
+
+ライト＝“オンライン復元SLOの即応層”（半年〜年）。Repairで常に k 以上オンラインを維持。
+
+鍵と台帳：DEKはNTRU-KEMで保存先ごとにカプセル化、PoH_ACKは必ずDAGに記録（監査&Repair索引）。
+
+まとめ
+
+アンカーを業者の大容量（例：1,000 TB/台）にすれば、TTLは年〜世紀オーダー。
+
+immuDB不要で「DAG＋アンカー＋ライト」の三層だけで実質永続＆高速復元を満たせます。
+
+以降はVRFでのアンカー抽選とRepairデーモンをS3/S4へ差し込み、自動運転にしましょう。
+
+You said:
+よし、いけるね。これを基本設計にし、詳細は微調整したり、時間帯に変動させたり、したらいいかな。これらを、どこに書く？パイプライン.py？それとも、poh、rvhなどのアルゴリズムに入れ込む？どうしたら、一番スムーズに運用つ
+ChatGPT said:
+Thought
+You said:
+どう？教えて
+ChatGPT said:
+思考時間: 39s
+
+いい質問！“どこに書くか”をちゃんと切り分けると、後の運用がめちゃ楽になります。結論はこれ👇
+
+アルゴリズム（PoH/VRF/HRW(Rendezvous)/Erasure/PoP/DPoS…）は純ライブラリにして、ポリシーは一切入れない
+
+**運用ロジック（時間帯でアンカー片数＋2、Repairの発火条件、地域別の片割り当て等）は orchestrator（=パイプライン層）**に集約
+
+設定は外部の config/*.yaml に出してホットリロード（再デプロイなしで調整）
+
+これで「設計は固定、運用は柔軟」を両立できます。
+
+推奨ディレクトリ（最小構成）
+city_chain/
+├─ config/
+│   ├─ policy.yaml           # 片数/TTL/時間帯ブースト/地域分配/Repair閾値
+│   ├─ anchors.yaml          # アンカー台帳（大陸・ID・公開鍵・SLA）
+│   └─ presence.yaml         # Presence backend設定（Redis/Etcd/自前KV）
+├─ orchestrators/
+│   ├─ pipeline.py           # S1→S4の本番パイプライン（送信DAG）
+│   ├─ policy_engine.py      # ポリシー評価（時間帯・p_light等で動的決定）
+│   ├─ repair_daemon.py      # TTL/在庫監視→再配布（受信/送信DAG共用可）
+│   └─ allocator.py          # ライト/アンカー宛先選定（VRF+HRW+PoP）
+├─ services/
+│   ├─ presence/             # node_list（ログイン/ログアウトをイベント化）
+│   ├─ poh_ledger/           # PoH_ACKの台帳I/F（DAGノードAPI）
+│   └─ dist_tx/              # 配布I/F（gRPC/QUIC/UDP、再送制御）
+├─ algorithms/
+│   ├─ poh_python/, poh_rust/        # 署名/検証（FFI）
+│   ├─ vrf_python/, vrf_rust/        # 抽選
+│   ├─ rvh_python/, rvh_rust/        # Rendezvous Hashing
+│   ├─ erasure_python/, erasure_rust/# RaptorQ/RS
+│   ├─ pop_python/, pop_rust/        # City判定/イベントPoP
+│   └─ dpos_python/, dpos_rust/
+├─ common/
+│   ├─ types.py              # TxType, dataclass（FRESH/POH_ACK/REPAIR_REQ…）
+│   ├─ crypto/               # NTRU-KEM, Dilithium（鍵/証明書I/F）
+│   └─ ffi.py                # Rustバインディング
+└─ telemetry/
+    ├─ metrics.py            # Prometheus等
+    └─ auditlog.py
+
+
+迷ったら：アルゴリズムは algorithms/、運用は orchestrators/。
+pipeline.py は演出家、*_rust は**演者（重い処理）**というイメージ。
+
+config/policy.yaml（例：時間帯＆p_lightで動的に片数可変）
+global:
+  k: 10
+  light_unique_pieces: 30
+  anchor_total_pieces: 12           # 基本値（合計12片）
+  split_strategy: auto               # asia/europe へ自動配分（PoP/送受信場所を参照）
+
+boosts:
+  - when: "time: 23:00-06:00 Asia/Tokyo"
+    anchor_total_pieces_delta: +2    # 夜間は+2片（=14片）
+  - when: "p_light < 0.08"           # Presenceから算出
+    anchor_total_pieces_delta: +2
+
+repair:
+  anchor_ttl_hours: 36               # アンカーは長く（大容量前提）
+  repair_watermark_hours: 6          # 下回ったら即Repair
+  online_piece_floor: 12             # 少なくとも k+2 を維持
+  reencode_symbol_size: 1024         # RaptorQ等の符号設定
+
+allocation:
+  continents:
+    - name: asia
+      anchors: 3
+    - name: europe
+      anchors: 3
+  split_ratio:                        # 合計12片を分割（auto時の上限）
+    asia: 6
+    europe: 6
+crypto:
+  kem: ntru
+  sig: dilithium3
+
+
+ポリシーはYAMLに出す → policy_engine.py が読み込み＆ホットリロード。
+
+orchestrator（orchestrators/pipeline.py）の骨格
+# orchestrators/pipeline.py
+from orchestrators.policy_engine import resolve_effective_policy
+from orchestrators.allocator import choose_light_targets, choose_anchor_targets
+from services.dist_tx import send_piece_batch
+from services.poh_ledger import await_poh_acks
+from services.presence import current_plight
+from algorithms import erasure_python as erasure, poh_python as poh
+
+def handle_fresh_tx(tx):
+    # 1) ポリシー評価（時間帯・p_lightで可変片数を決定）
+    plight = current_plight()  # 0.0..1.0
+    pol = resolve_effective_policy(plight=plight, sender=tx.sender, receiver=tx.receiver)
+
+    # 2) エンコード（30 light + pol.anchor_total_pieces）
+    pieces = erasure.encode(tx.payload, k=pol.k,
+                            n_light=pol.light_unique_pieces,
+                            n_anchor=pol.anchor_total_pieces)
+
+    # 3) 宛先選定（VRF + HRW + PoP）
+    light_nodes = choose_light_targets(tx, n=pol.light_unique_pieces)
+    anchor_plan  = choose_anchor_targets(tx, pol)  # 例: {"asia":6,"europe":6}
+
+    # 4) 配布（並列送信→PoH_ACK待ち→不足なら再送/増派）
+    send_piece_batch(tx.tx_id, pieces.light, light_nodes)
+    send_piece_batch(tx.tx_id, pieces.anchor, anchor_plan)
+    ack_count = await_poh_acks(tx.tx_id, min_required=pol.k)
+
+    if ack_count < pol.k:
+        # 足りなければ即座に追加配布（アンカー+2等のエスカレーション）
+        pol = pol.boost_anchor(+2)
+        extra_targets = choose_anchor_targets(tx, pol, exclude=anchor_plan)
+        send_piece_batch(tx.tx_id, pieces.anchor_extra(2), extra_targets)
+
+    # 5) 署名（PoH自体は保存側が署名、ここではFRESHの本人署名）
+    poh.sign_fresh_tx(tx)
+
+    return {"status":"ok"}
+
+
+ポイント：ポリシーで“片数と配分”だけ決めて、アルゴリズムは使い回し。
+VRF/HRW/PoP は allocator.py に集約し、Orchestrator → Algorithm の呼び出し順だけを司令塔に。
+
+Repair デーモン（orchestrators/repair_daemon.py）
+
+アンカーTTLが repair_watermark_hours を下回ったら、ライトへ再配布
+
+Presence を見て online_unique_pieces < floor なら即時再配布
+
+PoH台帳で誰が何片持っているか照会 → 足りない場所へ再符号化＆再配布
+
+（常駐タスクにして、KubernetesならCronJob＋Deploymentの併用が楽）
+
+何をどこに書くか（最終指針）
+
+algorithms/*：PoH/VRF/HRW/Erasure/PoP/DPoS …
+→ 純粋な計算だけ。方針（片数/時間帯/地域）を埋め込まない
+
+orchestrators/*：片数・配分・エスカレーション・TTL監視・Repair発火
+→ ここに運用の知恵を全部入れる（= 変更頻度高い層）
+
+config/*.yaml：可変パラメータ（時間帯ルール、閾値、分配比率、鍵I/F）
+→ 運用中に編集→即反映（ホットリロード）
+
+運用の滑らかさを上げるTips
+
+Feature Flag：anchor_boost_enabled、split_strategy=asia_only|auto|eu_only などでカナリア展開
+
+メトリクス：poh_ack_latency, repair_rate, online_pieces, anchor_fill% を可視化
+
+SLO：4ナイン/5ナインを成功確率と復元時間でモニタ → ポリシー自動調整
+
+テスト：各アルゴリズムはユニットテスト、pipeline.py は結合テスト（Docker ComposeでRust含め起動）
+
+一言で
+
+ポリシーは orchestrator（pipeline.py）＋ policy.yaml
+
+PoH/VRF/RVH/Erasure はライブラリのまま
+
+Repair はデーモンで自動運転
+→ これが一番スムーズで安全に回せます。

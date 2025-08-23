@@ -3,6 +3,7 @@
 from .registry import get_metric
 from typing import Dict, Any, List, Tuple
 
+
 class CompositePriority:
     """
     複数の指標を合成して最終スコアを計算し、ソート済みノード一覧を返す。
@@ -13,9 +14,9 @@ class CompositePriority:
         if total <= 0:
             raise ValueError("weights must sum to > 0")
         # 正規化
-        self.weights = {k: v/total for k, v in weights.items()}
+        self.weights = {k: v / total for k, v in weights.items()}
 
-    def rank_nodes(self, nodes: List[Dict[str,Any]]) -> List[Tuple[Dict,str,float]]:
+    def rank_nodes(self, nodes: List[Dict[str, Any]]) -> List[Tuple[Dict, str, float]]:
         scored = []
         for node in nodes:
             score = 0.0

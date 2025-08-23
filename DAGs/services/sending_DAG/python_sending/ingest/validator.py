@@ -17,6 +17,7 @@ FRESH_TX_SCHEMA = {
     "required": ["tx_id", "type", "sender", "receiver", "amount", "payload", "timestamp"]
 }
 
+
 def validate_raw(raw: dict) -> None:
     """JSON schema レベルのバリデーション"""
     tx_type = raw.get("type")
@@ -32,6 +33,7 @@ def validate_raw(raw: dict) -> None:
         jsonschema.validate(instance=raw, schema=schema)
     except jsonschema.ValidationError as e:
         raise ValidationError(f"JSON Schema違反: {e.message}")
+
 
 def parse_and_validate(raw: dict):
     """

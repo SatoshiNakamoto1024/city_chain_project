@@ -14,6 +14,7 @@ from typing import Any, Callable, Dict
 
 from .config import ConfigManager
 
+
 async def watch_file(
     path: Path,
     on_change: Callable[[Dict[str, Any]], Any],

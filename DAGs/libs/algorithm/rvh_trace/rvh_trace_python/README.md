@@ -100,4 +100,3 @@ rvh_trace\tests\test_trace.py::test_sync_trace_decorator PASSED                 
 rvh_trace\tests\test_trace.py::test_trace_decorator_async PASSED                                                 [100%]
 
 ================================================== 3 passed in 0.13s ==================================================
-

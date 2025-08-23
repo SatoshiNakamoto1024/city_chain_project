@@ -1,17 +1,21 @@
-import time, uuid, base64, threading
+import time
+import uuid
+import base64
+import threading
 from pathlib import Path
 from typing import List, Dict
-from ...core.models import RepairReqTx, RepairAckTx, TxType, BaseTx
+from ...core.models import RepairReqTx, RepairAckTx, TxType
 from ..storage.dag_store import DAGStore
-from .validator       import verify_repair_ack
+from .validator import verify_repair_ack
 from ..network.p2p_bus import broadcast, subscribe
 from receiving_DAG_rust import recovery as rs  # pyo3 拡張
 from cert_python import sign_with_cert
 
+
 class RepairManager:
     def __init__(self, dag: DAGStore, pem_path: Path):
-        self.dag   = dag
-        self.pem   = pem_path
+        self.dag = dag
+        self.pem = pem_path
         self.buf: Dict[str, List[RepairAckTx]] = {}
         subscribe(self._on_bus_msg)
         threading.Thread(target=self._poll_pool,
@@ -20,13 +24,13 @@ class RepairManager:
     # ---- DApps 起点 -------------------------------------------------
     def request_repair(self, missing_tx: str, requester: str):
         sig = sign_with_cert(missing_tx, self.pem)
-        tx  = RepairReqTx(
-            tx_id      = str(uuid.uuid4()),
-            tx_type    = TxType.REPAIR_REQ,
-            timestamp  = time.time(),
-            missing_tx_id = missing_tx,
-            requester     = requester,
-            signature     = base64.b64encode(sig).decode()
+        tx = RepairReqTx(
+            tx_id=str(uuid.uuid4()),
+            tx_type=TxType.REPAIR_REQ,
+            timestamp=time.time(),
+            missing_tx_id=missing_tx,
+            requester=requester,
+            signature=base64.b64encode(sig).decode()
         )
         broadcast(tx.dict())                 # P2P へ流す
         self.dag.add_node(tx)

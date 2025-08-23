@@ -8,7 +8,7 @@ transport モジュール
   - mTLS 用証明書ロード／検証ユーティリティ (tls)
   - 通信リトライ／指数バックオフロジック (retry_policy)
 """
-from .grpc_transport import GRPCClient, GRPCServer
-from .quic_transport import QUICClient, QUICServer
-from .tls import load_client_credentials, load_server_credentials
-from .retry_policy import retry
+from .grpc_transport import GRPCClient as GRPCClient, GRPCServer as GRPCServer
+from .quic_transport import QUICClient as QUICClient, QUICServer as QUICServer
+from .tls import load_client_credentials as load_client_credentials, load_server_credentials as load_server_credentials
+from .retry_policy import retry as retry

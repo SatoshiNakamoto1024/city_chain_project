@@ -9,6 +9,7 @@ formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+
 class DAGAnchor:
     def __init__(self):
         self.anchors = {}
@@ -25,6 +26,7 @@ class DAGAnchor:
             anchor = self.anchors.get(checkpoint_id)
             logger.info("Anchor retrieved: %s -> %s", checkpoint_id, anchor)
             return anchor
+
 
 if __name__ == "__main__":
     anchor = DAGAnchor()

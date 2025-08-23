@@ -17,42 +17,42 @@ repo_root/ ├── python/ │ ├── city_level/ │ ├── continent_l
 
 1. **Local Development**
    - Make changes in Rust code under `src/`.
-   - Run `maturin develop` (in the `rust/` directory) to build and install the Python extension module in your virtualenv. 
+   - Run `maturin develop` (in the `rust/` directory) to build and install the Python extension module in your virtualenv.
    - Then run `pytest` in `python/tests/` to ensure that both Rust unit tests and Python integration tests pass.
 
-2. **Rust Unit Tests**  
-   - In `rust/` directory:  
+2. **Rust Unit Tests**
+   - In `rust/` directory:
      ```bash
      cargo test
      ```
    - This verifies purely Rust-side logic, like concurrency, data structures, etc.
 
-3. **Python Tests**  
-   - In `python/` directory (or `python/tests/`):  
+3. **Python Tests**
+   - In `python/` directory (or `python/tests/`):
      ```bash
      pytest
      ```
    - This checks DAG logic in Python, plus integration with the `federation_dag` library.
 
-4. **CI Pipeline**  
-   - (Example: GitHub Actions) 
+4. **CI Pipeline**
+   - (Example: GitHub Actions)
    - On pull request:
-     1) `cargo test`  
-     2) `maturin build --release` → produce a wheel  
-     3) Install the wheel in a Python venv  
-     4) `pytest` for Python + integration tests  
+     1) `cargo test`
+     2) `maturin build --release` → produce a wheel
+     3) Install the wheel in a Python venv
+     4) `pytest` for Python + integration tests
    - If all pass, we merge.
 
 ## 3. Versioning
 
-- We use Semantic Versioning for the Rust crate. 
-  - `0.x.y` for initial development. 
+- We use Semantic Versioning for the Rust crate.
+  - `0.x.y` for initial development.
   - Once stable, `1.x.y` with backward compatibility guaranteed unless major version increments.
 - Python code depends on `federation_dag` by version constraints, e.g. `federation_dag>=0.1.0,<0.2.0`.
 
 ## 4. Breaking Changes
 
-- When altering the function signatures or data structures that Python calls, we increment the **major** or **minor** version. 
+- When altering the function signatures or data structures that Python calls, we increment the **major** or **minor** version.
 - We update Python code accordingly, ensuring our tests in `test_rust_integration.py` reflect the new calls.
 
 ## 5. Release Process
@@ -70,4 +70,4 @@ repo_root/ ├── python/ │ ├── city_level/ │ ├── continent_l
 
 ---
 
-**END**  
+**END**

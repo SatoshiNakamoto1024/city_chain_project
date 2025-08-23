@@ -19,7 +19,7 @@ from .collector import observe_verify
 from .metrics import get_metric
 from .registry import get_registry
 
-__all__ = ["metrics_middleware", "GrpcMetricsInterceptor", "observe_verify"]
+__all__ = ["GrpcMetricsInterceptor", "metrics_middleware", "observe_verify"]
 
 
 # --------------------------------------------------------------------------- #
@@ -35,8 +35,8 @@ async def metrics_middleware(
     2. レイテンシを PoH verify レイテンシとして記録 … observe_verify()
        └ ラベル result は `success` (<400) / `failure` (>=400 or 例外)
     """
-    start   = time.perf_counter()
-    status  = 500          # デフォルト（ハンドラ走る前に落ちても 5xx とする）
+    start = time.perf_counter()
+    status = 500          # デフォルト（ハンドラ走る前に落ちても 5xx とする）
     try:
         response: web.StreamResponse = await handler(request)
         status = response.status
@@ -46,15 +46,15 @@ async def metrics_middleware(
         raise                           # ← 呼び出し側へ再送出
     finally:
         latency = time.perf_counter() - start
-        result  = "success" if status < 400 else "failure"
+        result = "success" if status < 400 else "failure"
 
         reg = get_registry()
 
         # --- request カウンタ ------------------------------------------------
         get_metric("http_requests_total", reg).labels(
-            method   = request.method,
-            endpoint = request.path,
-            status   = str(status),
+            method=request.method,
+            endpoint=request.path,
+            status=str(status),
         ).inc()
 
         # --- レイテンシを verify 系メトリクスに流用 -------------------------

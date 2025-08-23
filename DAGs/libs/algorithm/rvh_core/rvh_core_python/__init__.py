@@ -3,7 +3,7 @@
 from importlib import metadata as _md
 
 # rvh_core サブパッケージから API を引き上げる
-from .rvh_core import (                      # noqa: F401
+from .rvh_core import (
     rendezvous_hash,
     arendezvous_hash,
     RVHError,
@@ -16,8 +16,8 @@ except _md.PackageNotFoundError:                       # dev 環境
     __version__ = _v.__version__
 
 __all__ = [
-    "rendezvous_hash",
-    "arendezvous_hash",
     "RVHError",
     "__version__",
+    "arendezvous_hash",
+    "rendezvous_hash",
 ]

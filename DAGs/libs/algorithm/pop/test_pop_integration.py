@@ -31,6 +31,7 @@ if str(BASE) not in sys.path:
 if str(SRC_POP_RUST) in sys.path:
     sys.path.remove(str(SRC_POP_RUST))
 
+
 # ────────────────────────────────
 # ヘルパ
 # ────────────────────────────────
@@ -40,7 +41,7 @@ def _compiled_pop_rust_loaded() -> bool:
     （namespace モジュールだと query_point が無い）
     """
     try:
-        import pop_rust  # noqa
+        import pop_rust
         return hasattr(pop_rust, "query_point")
     except ImportError:
         return False
@@ -51,7 +52,7 @@ def _compiled_pop_rust_loaded() -> bool:
 # ────────────────────────────────
 @pytest.mark.skipif(not _compiled_pop_rust_loaded(), reason="pop_rust wheel not installed")
 def test_pop_rust_available() -> None:
-    import pop_rust  # noqa: F401
+    import pop_rust
     assert hasattr(pop_rust, "query_point")
 
 
@@ -106,7 +107,7 @@ def test_get_place_info_gps(pp: ModuleType) -> None:
 
 
 def test_get_place_info_wifi(pp: ModuleType, monkeypatch: pytest.MonkeyPatch) -> None:
-    def fake_wifi(_data):  # noqa: D401
+    def fake_wifi(_data):
         return 36.5720, 136.6460
 
     monkeypatch.setattr(

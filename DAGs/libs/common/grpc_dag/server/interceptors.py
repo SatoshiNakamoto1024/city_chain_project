@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import time
 import traceback
-from typing import Callable, Any
+from typing import Callable
 
 import grpc
 from grpc import StatusCode, ServerInterceptor
@@ -27,6 +27,7 @@ if not logger.handlers:
     h.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s  %(message)s"))
     logger.addHandler(h)
 logger.setLevel(logging.INFO)
+
 
 # ──────────────────────────
 # 1. LoggingInterceptor
@@ -52,6 +53,7 @@ class LoggingInterceptor(ServerInterceptor):
             request_deserializer=handler.request_deserializer,
             response_serializer=handler.response_serializer,
         )
+
 
 # ──────────────────────────
 # 2. AuthInterceptor
@@ -88,6 +90,7 @@ class AuthInterceptor(ServerInterceptor):
             response_serializer=handler.response_serializer,
         )
 
+
 # ──────────────────────────
 # 3. ExceptionInterceptor
 # ──────────────────────────
@@ -110,6 +113,7 @@ class ExceptionInterceptor(ServerInterceptor):
             request_deserializer=handler.request_deserializer,
             response_serializer=handler.response_serializer,
         )
+
 
 # ──────────────────────────
 # 4. MetricsInterceptor  (簡易実装)
@@ -158,6 +162,7 @@ except ImportError:
     class MetricsInterceptor(ServerInterceptor):  # type: ignore
         def intercept_service(self, continuation, call):
             return continuation(call)
+
 
 # ──────────────────────────
 # helper: 全部をまとめて返す

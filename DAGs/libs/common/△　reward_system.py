@@ -29,10 +29,12 @@ TOKEN_BASE = 10
 
 node_rewards = {}  # node_id -> 累計報酬
 
+
 def calculate_node_reward(node_type: str, contribution_score: float) -> float:
     rate = REWARD_RATES.get(node_type, 1.0)
     reward = contribution_score * rate * TOKEN_BASE
     return reward
+
 
 def record_contribution(node_id: str, contribution_score: float):
     """
@@ -48,6 +50,7 @@ def record_contribution(node_id: str, contribution_score: float):
     logger.info("[Reward] ノード %s に %.2f トークン付与 => 累計 %.2f",
                 node_id, rew, node_rewards[node_id])
 
+
 def distribute_rewards():
     """
     全ノードに対してランダムな貢献度を割り当てるデモ。
@@ -59,6 +62,7 @@ def distribute_rewards():
 
     # 1分後に再実行
     threading.Timer(60.0, distribute_rewards).start()
+
 
 if __name__ == "__main__":
     distribute_rewards()

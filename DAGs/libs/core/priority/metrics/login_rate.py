@@ -2,6 +2,7 @@
 
 from .base import PriorityMetric
 
+
 class LoginRateMetric(PriorityMetric):
     """
     ノードの過去一定期間（例：1日）のログイン成功率を元にスコア化。

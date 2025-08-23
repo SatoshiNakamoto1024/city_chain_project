@@ -104,4 +104,3 @@ City 障害：Continent Router → Remote FN + immuDB → 400 ms〜600 ms
 ② フルノード復元	予備	100ms	銀行のATMで下ろす感じ
 ③ MongoDB復元	保険	300ms	通帳を持って銀行窓口で聞く感じ
 ④ 大陸ルーター＋immuDB復元	最終手段	600ms	本店に電話して確認する感じ
-

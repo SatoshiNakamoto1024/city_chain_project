@@ -3,19 +3,19 @@
 """
 test_rust_integration.py (修正版)
 
-Python <-> Rust 連携テスト: 
+Python <-> Rust 連携テスト:
 - Rustライブラリ(federation_dag)のimport
 - ntru, dilithium stub呼び出し
 - batch_verifyの並列検証
 - バージョンなどの確認(例)
 """
 
-import pytest
 
 def test_federation_dag_import():
     import federation_dag
     api = federation_dag.RustDAGApi()
     assert api is not None
+
 
 def test_version_check():
     """
@@ -24,6 +24,7 @@ def test_version_check():
     """
     import federation_dag
     assert hasattr(federation_dag, "__version__"), "Rust module should define __version__"
+
 
 def test_ntru_dilithium():
     import federation_dag
@@ -37,13 +38,14 @@ def test_ntru_dilithium():
     ok = api.dilithium_verify_stub("testdata", sig)
     assert ok is True
 
+
 def test_batch_verify_rayon():
     import federation_dag
     api = federation_dag.RustDAGApi()
 
     sample = [
-        {"tx_id":"t1","sender":"Alice","receiver":"Bob","amount":10,"hash":"abcd"},
-        {"tx_id":"t2","sender":"Charlie","receiver":"Dave","amount":20,"hash":"efgh"}
+        {"tx_id": "t1", "sender": "Alice", "receiver": "Bob", "amount": 10, "hash": "abcd"},
+        {"tx_id": "t2", "sender": "Charlie", "receiver": "Dave", "amount": 20, "hash": "efgh"}
     ]
     verified = api.batch_verify(sample)
     # ダミーで all pass

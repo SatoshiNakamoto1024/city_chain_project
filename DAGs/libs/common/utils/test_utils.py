@@ -1,6 +1,5 @@
 # network/DAGs/common/utils/test_utils.py
 import pytest
-import base64
 from httpx import AsyncClient, ASGITransport
 from asgi_lifespan import LifespanManager
 import sys

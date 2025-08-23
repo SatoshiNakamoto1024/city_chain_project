@@ -1,6 +1,5 @@
 # network/DAGs/common/observability/metrics.py
 
-import time
 from prometheus_client import Counter, Histogram
 from .exporters import start_metrics_server
 

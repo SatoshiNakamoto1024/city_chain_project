@@ -2,6 +2,7 @@
 import aiosqlite
 from typing import Optional
 
+
 class SQLiteStore:
     """
     Async SQLite-based storage for Tx metadata (hash, timestamp).

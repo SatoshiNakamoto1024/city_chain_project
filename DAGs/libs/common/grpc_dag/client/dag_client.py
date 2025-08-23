@@ -15,7 +15,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import logging
-from typing import List, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 import grpc
 
@@ -41,6 +41,7 @@ if not logger.handlers:                 # pytest で多重ハンドラ登録を�
 log_level = os.getenv("GRPC_DAG_CLIENT_LOGLEVEL", "INFO").upper()
 logger.setLevel(log_level)
 
+
 # -----------------------------------------------------------------------------
 # クライアント実装
 # -----------------------------------------------------------------------------
@@ -49,13 +50,13 @@ class DAGClient:
     Parameters
     ----------
     endpoints :
-        gRPC サーバのエンドポイント文字列のリスト  
-        （`str` 単体でも可）。  
+        gRPC サーバのエンドポイント文字列のリスト
+        （`str` 単体でも可）。
         `channel` を指定した場合は無視される。
     channel :
         既に確立済みの `grpc.Channel` を直接注入したい場合に指定。
     tls_root_certificates :
-        mTLS/TLS を行う場合の CA ルート証明書 (PEM バイト列)。  
+        mTLS/TLS を行う場合の CA ルート証明書 (PEM バイト列)。
         `channel` を渡した場合は無視。
     keepalive_ms :
         ChannelFactory でチャンネルを生成する場合の keep-alive インターバル (ms)。
@@ -115,7 +116,7 @@ class DAGClient:
         timeout: float = 5.0,
     ) -> TxResponse:
         """
-        トランザクションを送信。  
+        トランザクションを送信。
         一時的な UNAVAILABLE などは `retry` デコレータで自動再試行。
 
         Returns

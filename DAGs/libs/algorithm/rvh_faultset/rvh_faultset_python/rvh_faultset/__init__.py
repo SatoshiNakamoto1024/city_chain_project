@@ -22,4 +22,4 @@ except PackageNotFoundError:
 # 公開 API
 from .faultset_builder import faultset, faultset_async, FaultsetError
 
-__all__ = ("faultset", "faultset_async", "FaultsetError", "__version__")
+__all__ = ("FaultsetError", "__version__", "faultset", "faultset_async")

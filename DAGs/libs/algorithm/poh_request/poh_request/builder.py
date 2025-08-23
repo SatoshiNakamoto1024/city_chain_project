@@ -76,7 +76,7 @@ class PoHRequestBuilder:
             sig_raw = self._sk.sign(self._digest(), encoder=RawEncoder).signature
             self._req.signature = b58encode(sig_raw)
             return self
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise EncodeError(f"Failed to sign request: {exc}") from exc
 
     # ---- encoding ----------------------------------------------------- #

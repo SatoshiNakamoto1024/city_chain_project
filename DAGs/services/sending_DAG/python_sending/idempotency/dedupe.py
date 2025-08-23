@@ -1,6 +1,7 @@
 import aioredis
 from .errors import IdempotencyError
 
+
 class IdempotencyStore:
     """
     Redisを使って「処理済みTxIDの集合」を管理。
@@ -17,6 +18,7 @@ class IdempotencyStore:
 
     async def mark_processed(self, tx_id: str):
         await self.redis.sadd("processed_tx", tx_id)
+
 
 async def ensure_not_duplicate(tx_id: str, store: IdempotencyStore):
     """

@@ -2,8 +2,7 @@
 # poh_batcher/types.py
 
 from __future__ import annotations
-from pathlib import Path
-from typing import Literal, List
+from typing import Literal
 from pydantic import BaseModel
 
 

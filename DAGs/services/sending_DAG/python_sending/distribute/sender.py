@@ -2,11 +2,13 @@ import grpc
 from grpc_dag.gen.dag_pb2 import PoHRequest, PoHResponse
 from grpc_dag.gen.dag_pb2_grpc import DAGServiceStub
 
+
 class PoHResponse:
     def __init__(self, success: bool, holder_id: str, signature: str):
         self.success = success
         self.holder_id = holder_id
         self.signature = signature
+
 
 async def send_poh_request(
     endpoint: str,

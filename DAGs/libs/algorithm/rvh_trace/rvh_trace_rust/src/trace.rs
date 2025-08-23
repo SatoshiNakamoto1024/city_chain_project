@@ -28,7 +28,7 @@ pub fn init_tracing(filter: &str) -> Result<(), TraceError> {
                      .enable_all()
                      .build()
                      .map_err(|e| TraceError::Init(e.to_string()))?;
-            let _guard = rt.enter();             // <- ここがポイント 
+            let _guard = rt.enter();             // <- ここがポイント
             let res = setup_subscriber(filter);
             RUNTIME.set(rt).ok();
             res

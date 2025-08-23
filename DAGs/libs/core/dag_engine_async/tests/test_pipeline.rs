@@ -7,8 +7,8 @@ use ldpc::{
     encoder::LDPCEncoder,
     decoder::peeling::PeelingDecoder,
     encode_stream, decode_stream,
-    receiver::spawn_listener, 
-    sender::send_packets, 
+    receiver::spawn_listener,
+    sender::send_packets,
     tiers::{CITY_CFG, CITY_H},
 };
 

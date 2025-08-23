@@ -10,6 +10,7 @@ Base32 文字列を返します。
 
 __base32 = "0123456789bcdefghjkmnpqrstuvwxyz"
 
+
 def encode(lat: float, lon: float, precision: int = 6) -> str:
     """
     Geohash エンコード

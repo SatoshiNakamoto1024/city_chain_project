@@ -17,7 +17,7 @@ pub enum HashScoreError {
     EmptyKey,
 }
 
-/// 128-bit スコアを返す。  
+/// 128-bit スコアを返す。
 /// *必要に応じて AVX2 / NEON 版に自動分岐*。
 pub fn score_u128_simd(node_id: &str, object_key: &str) -> Result<u128, HashScoreError> {
     if node_id.is_empty() {

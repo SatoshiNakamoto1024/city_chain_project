@@ -3,6 +3,7 @@
 import uuid
 from typing import Dict, Any
 
+
 class CheckpointManager:
     """
     各バッチ完了時に一意の checkpoint_id を生成・管理するクラス。

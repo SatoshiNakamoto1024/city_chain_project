@@ -45,6 +45,7 @@ fmt = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s')
 ch.setFormatter(fmt)
 logger.addHandler(ch)
 
+
 class CityDAGHandler:
     def __init__(self, city_name: str):
         self.city_name = city_name

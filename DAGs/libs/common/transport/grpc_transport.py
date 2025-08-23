@@ -5,13 +5,10 @@ gRPC トランスポート層 (HTTP/2 + バイナリ) のクライアント／�
 from __future__ import annotations
 import grpc
 from concurrent.futures import ThreadPoolExecutor
-from typing import Sequence, Optional, Type
+from typing import Sequence, Type
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from transport.tls import load_client_credentials, load_server_credentials
-from transport.retry_policy import retry
 
 
 class GRPCClient:

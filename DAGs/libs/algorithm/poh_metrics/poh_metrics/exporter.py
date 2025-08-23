@@ -15,6 +15,7 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 from .registry import get_registry
 
+
 async def metrics_handler(request: web.Request) -> web.Response:
     """
     /metrics リクエストハンドラ。
@@ -25,6 +26,7 @@ async def metrics_handler(request: web.Request) -> web.Response:
         body=data,
         headers={"Content-Type": CONTENT_TYPE_LATEST},
     )
+
 
 async def start_http_server(host: str = "0.0.0.0", port: int = 8000) -> None:
     """

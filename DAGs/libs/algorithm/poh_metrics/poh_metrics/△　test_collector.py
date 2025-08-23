@@ -1,7 +1,6 @@
 # D:\city_chain_project\DAGs\libs\algorithm\poh_metrics\poh_metrics\tests\test_collector.py
 import pytest
 from prometheus_client import CollectorRegistry
-from poh_metrics.registry import _REGISTRY, get_registry
 from poh_metrics.collector import (
     increment_poh,
     observe_verify,

@@ -27,7 +27,7 @@ ldpc/
     ├── tests/
     │   └── test_pipeline.rs     # End-to-end async ↔︎ network
     └── bench/
-        └── bench_pipeline.rs    # Encode+send throughput  
+        └── bench_pipeline.rs    # Encode+send throughput
     ├── Cargo.toml
 
 

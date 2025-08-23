@@ -13,6 +13,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from node_list.schemas import NodeInfo
 from node_list.config import CACHE_TTL_SEC
 
+
 class NodeRegistry:
     """
     - asyncio.Lock でスレッド & async 並列安全
@@ -39,8 +40,10 @@ class NodeRegistry:
                 return []
             return list(self._nodes.values())
 
+
 # シングルトン用ファクトリ
 _registry_singleton: NodeRegistry | None = None
+
 
 def get_registry() -> NodeRegistry:
     global _registry_singleton

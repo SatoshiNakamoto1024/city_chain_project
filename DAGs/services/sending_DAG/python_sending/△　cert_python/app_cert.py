@@ -12,7 +12,8 @@ app_cert.py
 オプション:
   --msg  : 署名／検証対象の JSON 文字列。省略時はデフォルトサンプルを使用。
 """
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import argparse
@@ -23,6 +24,7 @@ from pathlib import Path
 # モジュール化した cert_python パッケージを import
 from cert_python.cert_signer import sign_with_cert
 from cert_python.cert_validator import verify_signature_with_cert
+
 
 def main():
     parser = argparse.ArgumentParser(description="PQC 証明書 (Dilithium) 署名・検証デモ")

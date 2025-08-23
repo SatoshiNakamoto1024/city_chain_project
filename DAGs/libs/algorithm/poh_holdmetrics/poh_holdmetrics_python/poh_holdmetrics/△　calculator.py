@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from typing import List
 
 from .data_models import HoldEvent  # ← テストで直接使われるモデル
@@ -76,7 +75,7 @@ def _enable_positional_args_for_hold_event() -> None:
 
     def _patched(self, *args, **kwargs):  # type: ignore
         if args:
-            kwargs.update(dict(zip(self.model_fields, args)))
+            kwargs.update(dict(zip(self.model_fields, args, strict=False)))
         original_init(self, **kwargs)
 
     HoldEvent.__init__ = _patched  # type: ignore

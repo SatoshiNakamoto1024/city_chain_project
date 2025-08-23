@@ -1,4 +1,4 @@
-# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\api\http_server.py
+# \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\api\http_server.py
 # -*- coding: utf-8 -*-
 """
 HTTP API (FastAPI)
@@ -53,7 +53,7 @@ async def get_stats() -> List[HoldStat]:
 
 
 @app.get("/healthz", response_model=dict[str, str])
-async def healthz() -> dict[str, str]:  # noqa: D401
+async def healthz() -> dict[str, str]:
     """
     単純な Liveness-Probe 用エンドポイント。
     """

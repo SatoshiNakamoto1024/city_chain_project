@@ -19,8 +19,8 @@ except PackageNotFoundError:
     __version__ = "0.0.0"
 
 __all__ = [
-    "calculate_score",
     "AsyncTracker",
     "Scheduler",
     "__version__",
+    "calculate_score",
 ]

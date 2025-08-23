@@ -6,6 +6,7 @@ from .event import ObjectEvent
 
 NUM_SHARDS = 10
 
+
 class Router:
     def __init__(self):
         self.ingress: asyncio.Queue[ObjectEvent] = asyncio.Queue()

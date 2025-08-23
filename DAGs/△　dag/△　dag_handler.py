@@ -3,7 +3,7 @@ import asyncio
 from uuid import uuid4
 from .dag_storage import DAGStorage, DAGNode
 from db_handler import save_transaction
-import time
+
 
 class DAGHandler:
     def __init__(self, batch_interval=1):

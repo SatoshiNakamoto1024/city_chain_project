@@ -13,6 +13,7 @@ formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+
 class DAGHandler:
     def __init__(self, batch_interval=1):
         self.storage = DAGStorage()
@@ -62,8 +63,10 @@ class DAGHandler:
         except Exception as e:
             logger.error("Error in batch processing for tx_id %s: %s", tx_id, e)
 
+
 if __name__ == "__main__":
-    import asyncio, hashlib
+    import asyncio
+    import hashlib
     class DummyDAGNode:
         def __init__(self, tx_id, hash_val, sender, receiver, amount, tx_type):
             self.tx_id = tx_id

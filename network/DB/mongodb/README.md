@@ -345,6 +345,30 @@ satoshi ユーザーを作り、admin or readWriteAnyDatabase などの十分な
 これらを正しく設定することで、Atlas が接続を拒否せず（ホワイトリストOK） & ユーザー操作を拒否しない（ロールOK） → 高速に動作。1つずつ順番に確認し、漏れがないかを洗い出すと、テストがちゃんと最後まで動き、固まる問題が解消されるはずです。
 
 # テスト結果
+実行手順
+# ルートに rsmongo をメンバー追加したら（または単独でもOK）
+cargo clean
+
+# rsmongo 単体を実行
+# 出力を見たいので --nocapture を付ける
+MONGODB_CONTINENT=asia LOAD_N=200 cargo test -p rsmongodb --test loadtest -- --nocapture
+
+cargo run -p rsmongodb --bin main_rsmongodb
+
+# テスト
+cargo test -p rsmongodb -- --nocapture
+
+# 便利コマンド（覚え書き）
+/単一大陸・件数指定
+MONGODB_CONTINENT=asia LOAD_N=500 \
+cargo test -p rsmongodb --test loadtest -- --nocapture
+
+/本番サービス起動（常駐、DAG から enqueue で投入）
+cargo run -p rsmongodb --bin main_rsmongodb
+# デモ2件だけ投げたいとき
+RUN_DEMO=1 cargo run -p rsmongodb --bin main_rsmongodb
+
+
 running 2 tests
 === Starting test_dag_scenario (DAG-based transaction test) ===
 Preparing all HandlerMap for continents & municipalities...
@@ -429,3 +453,86 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 接続数の削減: 必要な接続先（大陸と市町村）を本番環境でまとめる、もしくは Dedicated Cluster（有料プラン）を利用することでパフォーマンスを向上させる。
 リージョンの最適化: アプリケーションと MongoDB クラスターを同一リージョン内に配置する。
 このテストコードはあくまで新規に接続を確立する状況を再現しているため、テストとしては正しいですが、実運用ではこの負荷は発生しません。
+
+
+🪜 次の一歩：順序立てた育て方
+# ステップ 1: 複数大陸の同時負荷を測る
+目的：大陸ごとに Atlas クラスタのレイテンシが違うので「最遅リージョン」がどこかを見る。
+やり方：
+tests/loadtest.rs をコピー → tests/multicontinent_loadtest.rs にする。
+for continent in ["asia","europe","northamerica","southamerica","africa","oceania"] { ... } のループを回す。
+各大陸で LOAD_N 件の書き込みを spawn。
+join_all で待ち、continent ごとに p50/p95 を println。
+こうすると「同時負荷」で遅いクラスタ（大陸）がすぐ分かります。
+
+# ステップ 2: 接続プールのチューニング
+目的：Atlas へのコネクションを効率的に使う。
+やり方：
+MongoDBAsyncHandler::new の内部で ClientOptions::parse(uri).await? のあとにオプションをセット：
+options.max_pool_size = Some(200);
+options.min_pool_size = Some(20);
+本番なら 100〜300 / 10〜30 くらいが妥当（インスタンスサイズに依存）。
+server_selection_timeout / connect_timeout は今のままでOK。
+
+/ 効果検証のコマンド例
+現状値（デフォルト 200/20）：
+LOAD_N=200 cargo test -p rsmongodb --test multicontinent_loadtest -- --nocapture
+
+プール拡大して再計測：
+export MONGO_POOL_MAX=300
+export MONGO_POOL_MIN=30
+export MONGO_POOL_IDLE_MS=60000
+export MONGO_POOL_WAIT_MS=1500
+LOAD_N=400 cargo test -p rsmongodb --test multicontinent_loadtest -- --nocapture
+
+p50/p95、失敗率、Atlas のメトリクス（Connections / Opcounters / Primary/Secondary の使用率）も合わせて見ると良いです。
+
+# ステップ 3: 書き込みの耐障害性を選ぶ
+デフォルト：retryable write が有効。
+さらに「w: majority」にすると レプリカセット多数派確認後にACK。
+これでデータロストは減るが、遅延は増える。
+金融トランザクションなら majority、高頻度ロギングなら 1 ACK で十分。
+
+# ステップ 4: 読み取りをセカンダリ優先に
+既に new_with_read_preference(SecondaryPreferred) を用意済み。
+読み専ワークロードは自動で各リージョンのセカンダリに振り分け → グローバル分散読みが可能。
+
+# ステップ 5: TTL 6ヶ月の確認
+目的：古いドキュメントを自動削除し、容量が無限に増えないようにする。
+やり方：
+ensure_ttl_6months(&collection, "createdAt") を初回起動時に呼ぶ。
+Atlas UI → Collections → Indexes に ttl_createdAt_6m が見えれば成功。
+TTL は 存在すれば no-op なので二重実行しても大丈夫。
+
+ステップ 6: セキュリティ設定
+Secrets 管理：
+ローカル開発 → .env or direnv
+本番 → AWS Secrets Manager / GCP Secret Manager / Vault
+JSON ファイルには URI を残さない。
+IP 制限：
+Atlas Network Access → Allowed IP → 本番サーバの固定IPだけ許可。
+0.0.0.0/0 は検証時のみ。
+
+ステップ 7: 運用監視
+失敗処理：
+insert_document().await? が Err の場合 → ログに残し、DLQ（例: Kafka / S3 / ローカルファイル）へ。
+メトリクス：
+enqueue件数 / 成功件数 / 失敗件数
+insert latency の p50 / p95
+Prometheus Exporter を1つ用意して、Grafanaで可視化。
+
+✅ 優先順位まとめ
+
+複数大陸同時負荷テスト（現状把握）
+
+プールサイズ調整（throughput改善）
+
+書き込み耐障害性設定（use case次第）
+
+セカンダリ優先の読み取り
+
+TTLインデックス確認
+
+Secrets / IP制限でセキュリティ
+
+ログ＋Prometheusで監視

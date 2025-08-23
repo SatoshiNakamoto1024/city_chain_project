@@ -129,6 +129,7 @@ class S3Storage(StorageBackend):
             )
         else:
             loop = asyncio.get_running_loop()
+
             def _put():
                 self._boto_client.put_object(
                     Bucket=self.bucket,
@@ -149,6 +150,7 @@ class S3Storage(StorageBackend):
                 return True
             except self._aiobot_client.exceptions.NoSuchKey:  # type: ignore
                 return False
+
         def _head() -> bool:
             from botocore.exceptions import ClientError
             try:

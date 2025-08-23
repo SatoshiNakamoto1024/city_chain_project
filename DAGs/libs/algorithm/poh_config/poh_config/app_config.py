@@ -19,6 +19,7 @@ from typing import Optional
 
 from .config import ConfigManager
 
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="poh-config")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -39,6 +40,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     return p
 
+
 def _install_signal_handlers(loop: asyncio.AbstractEventLoop):
     for sig in (signal.SIGINT, signal.SIGTERM):
         try:
@@ -47,11 +49,13 @@ def _install_signal_handlers(loop: asyncio.AbstractEventLoop):
             # Windows などでは未実装
             pass
 
+
 async def _shutdown(loop: asyncio.AbstractEventLoop):
     for task in [t for t in asyncio.all_tasks(loop) if t is not asyncio.current_task()]:
         task.cancel()
     await asyncio.gather(*asyncio.all_tasks(loop), return_exceptions=True)
     loop.stop()
+
 
 async def main(argv: Optional[list[str]] = None):
     args = build_parser().parse_args(argv)
@@ -86,6 +90,7 @@ async def main(argv: Optional[list[str]] = None):
         print(json.dumps(init, indent=2))
         # 以降ファイル監視
         await mgr.watch(on_change)
+
 
 if __name__ == "__main__":
     if sys.platform == "win32":

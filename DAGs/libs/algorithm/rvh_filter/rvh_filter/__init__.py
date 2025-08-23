@@ -29,10 +29,10 @@ from .filter_core import (
 )
 
 __all__ = (
-    "filter_nodes",
-    "filter_nodes_async",
-    "NodeFilter",
     "AsyncNodeFilter",
     "FilterError",
+    "NodeFilter",
     "__version__",
+    "filter_nodes",
+    "filter_nodes_async",
 )

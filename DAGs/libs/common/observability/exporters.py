@@ -8,13 +8,13 @@ observability.exporters
 """
 from __future__ import annotations
 import time
-import threading
 from pymongo import monitoring
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from observability.metrics import LATENCY_HIST
+
 
 class _CommandLogger(monitoring.CommandListener):
     """insert / update のレイテンシを Histogram で記録"""

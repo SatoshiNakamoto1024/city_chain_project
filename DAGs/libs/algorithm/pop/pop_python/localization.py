@@ -9,13 +9,15 @@
 from __future__ import annotations
 from typing import Tuple, Optional, List, Dict
 import random
-import sys, os, base64
+import sys
+import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from shapely.geometry import Point
 import pop_python.polygons as poly_mod                    # 動的ロードのためモジュール単位で import
 from pop_python.geolocation.gps_handler import validate_gps
 from pop_python.geolocation.wifi_handler import estimate_location_by_wifi
+
 
 # ----------------------------------------------------------------------
 # Public API
@@ -64,7 +66,7 @@ def get_mobile_location(
     if not poly_mod.city_polygons:                      # geojson 0 件
         return 0.0, 0.0, "MockRandom"
 
-    idx  = random.randrange(len(poly_mod.city_polygons))
+    idx = random.randrange(len(poly_mod.city_polygons))
     poly = poly_mod.city_polygons[idx]
     minx, miny, maxx, maxy = poly.bounds
 

@@ -2,7 +2,8 @@
 """
 Dilithium 署名を Rust FFI で生成
 """
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from cert_rust import signer  # pyo3 拡張モジュール

@@ -7,7 +7,7 @@ city_chain_project/
                 ├── proto/
                 │   └── dag.proto         # 既存の dag.proto を移動
                 └── gen/                  # ここに Python 用生成コードを出力
-                
+
 grpc_dag/proto/*.proto
 Python⇔Rust で共有する RPC 定義。たとえば DAGService, StorageService, PoHService などをここにまとめます。
 
@@ -186,4 +186,3 @@ CI パイプラインに gRPC テストを統合
 pytest -m "not tls" と自己署名 TLS の両方を GitHub Actions で回す。
 
 これで 「通信ロスを絶対に出したくない最重要レイヤ」 が骨格として出来上がり、上位モジュールを安心して乗せられる状態になりました。
-

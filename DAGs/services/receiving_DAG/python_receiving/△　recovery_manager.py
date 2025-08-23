@@ -4,22 +4,26 @@
 - REPAIR_REQ Tx を生成 (Dilithium 署名)
 - Rust verify_and_collect() で PoH/RepairAck を並列検証
 """
-import time, uuid, json, base64, threading
+import time
+import uuid
+import json
+import base64
+import threading
 from pathlib import Path
 from typing import List
 
 from flag_python import TxType, route_tx_by_flag
-from poh_python import build_poh_ack              # 既存モジュール
 from cert_python import sign_with_cert, verify_signature_with_cert
 from .dag_store import DAGStore
 from receiving_DAG.rust import recovery as rs_recovery  # pyo3 export
+
 
 class RecoveryManager:
     MIN_POH = 5
 
     def __init__(self, pem_path: Path):
-        self.pem_path  = pem_path
-        self.dag       = DAGStore()
+        self.pem_path = pem_path
+        self.dag = DAGStore()
         # 受信キュー（PoH_ACK / REPAIR_ACK）をシンプルに list で模倣
         self.incoming: List[dict] = []
         # 監視スレッド（PoH 蓄積→閾値到達検出）
@@ -27,13 +31,13 @@ class RecoveryManager:
 
     # ==== 外部 API ====
     def trigger_repair(self, missing_tx_id: str, requester_id: str):
-        ts  = time.time()
-        tx  = {
-            "tx_id"        : str(uuid.uuid4()),
-            "tx_type"      : TxType.REPAIR_REQ.value,
+        ts = time.time()
+        tx = {
+            "tx_id": str(uuid.uuid4()),
+            "tx_type": TxType.REPAIR_REQ.value,
             "missing_tx_id": missing_tx_id,
-            "requester"    : requester_id,
-            "timestamp"    : ts,
+            "requester": requester_id,
+            "timestamp": ts,
         }
         sig = sign_with_cert(json.dumps(tx, sort_keys=True), self.pem_path)
         tx["signature"] = base64.b64encode(sig).decode()

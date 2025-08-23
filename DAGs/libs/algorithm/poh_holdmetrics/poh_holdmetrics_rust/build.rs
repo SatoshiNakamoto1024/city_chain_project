@@ -1,4 +1,4 @@
-// D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_rust\build.rs 
+// \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_rust\build.rs
 use std::{env, path::PathBuf};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &["../poh_holdmetrics_python/poh_holdmetrics/protocols/hold.proto"],
             &["../poh_holdmetrics_python/poh_holdmetrics/protocols"],
         )?;
-    
+
     // ── PyO3 が自動で python.lib を解決するので追加リンクは不要
     println!("cargo:rerun-if-changed=../poh_holdmetrics_python/poh_holdmetrics/protocols/hold.proto");
     Ok(())

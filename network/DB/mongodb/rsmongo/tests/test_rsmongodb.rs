@@ -1,4 +1,4 @@
-// D:\city_chain_project\network\DB\mongodb\rsmongo\tests\test_rsmongodb.rs
+// \city_chain_project\network\DB\mongodb\rsmongo\tests\test_rsmongodb.rs
 
 use rsmongodb::lib_async::MongoDBAsyncHandler;
 use mongodb::bson::{doc, Document};
@@ -8,28 +8,53 @@ use std::sync::Arc;
 use tokio::{spawn, time::{sleep, Duration}};
 use mongodb::error::Error; // for custom error
 
-/// ヘルパー関数: DB名を生成する
-/// ここでは、location（例: "southamerica-arg-buenosaires-buenosaires"）の最終要素のみを使い、
-/// DB名は "<市区町村名>_complete" とします。
-fn db_name_for(location: &str) -> String {
-    let parts: Vec<&str> = location.split('-').collect();
-    let city = parts.last().unwrap_or(&location);
-    format!("{}_complete", city)
+// ====== 環境切替: Atlas or local ==========================================
+fn load_uri_for(continent: &str) -> String {
+    let env = std::env::var("CC_ENV").unwrap_or_else(|_| "atlas".into());
+
+    if env == "local" {
+        // ローカル用 JSON
+        let p = "/home/satoshi/work/city_chain_project/network/DB/config/config_json/mongodb_config.json";
+        let s = std::fs::read_to_string(p).expect("read local mongodb_config.json");
+        let v: serde_json::Value = serde_json::from_str(&s).expect("parse local mongodb_config.json");
+        v["journal_entries"][match continent {
+            "asia" => "Asia",
+            "europe" => "Europe",
+            "oceania" => "Oceania",
+            "africa" => "Africa",
+            "northamerica" => "NorthAmerica",
+            "southamerica" => "SouthAmerica",
+            "antarctica" => "Antarctica",
+            _ => "Default",
+        }].as_str().unwrap().to_string()
+    } else {
+        // Atlas用 JSON（大陸のみ）
+        let p = "/home/satoshi/work/city_chain_project/network/DB/config/mongodb_config/main_chain/continental_mongodb_config/mongodb_continental.json";
+        let s = std::fs::read_to_string(p).expect("read atlas mongodb_continental.json");
+        let v: serde_json::Value = serde_json::from_str(&s).expect("parse atlas mongodb_continental.json");
+        v["complete"][continent].as_str().unwrap().to_string()
+    }
 }
 
-/// 既存テスト: test_mongodb_operations をそのまま残す
+// ====== DB名: location の最後の要素 + "_complete" ==========================
+fn db_name_for(location: &str) -> String {
+    let parts: Vec<&str> = location.split('-').collect();
+    let last = parts.last().unwrap_or(&location);
+    format!("{}_complete", last)
+}
+
+// ====== 既存の CRUD テスト ==================================================
 #[tokio::test]
 async fn test_mongodb_operations() {
-    let uri = "mongodb+srv://satoshi:greg1024@cluster0.sy70d.mongodb.net/test_data?retryWrites=true&w=majority";
+    let uri = load_uri_for("asia"); // 例：アジアのクラスタ/ローカルを選択
     let database_name = "test_data";
     let collection_name = "transactions";
 
-    // 既存のプライマリ用ハンドラ
-    let db_handler = MongoDBAsyncHandler::new(uri, database_name)
+    let db_handler = MongoDBAsyncHandler::new(&uri, database_name)
         .await
         .expect("Failed to initialize MongoDBAsyncHandler");
 
-    // --- 1) 挿入テスト ---
+    // --- 1) 挿入 ---
     let document = doc! {
         "user": "TestUser",
         "action": "send",
@@ -40,9 +65,9 @@ async fn test_mongodb_operations() {
         .insert_document(collection_name, document)
         .await
         .expect("Failed to insert document");
-    assert!(inserted_id.to_string().len() > 0, "Inserted ID should not be empty");
+    assert!(!inserted_id.to_string().is_empty(), "Inserted ID should not be empty");
 
-    // --- 2) リトライ付き挿入テスト ---
+    // --- 2) リトライ付き挿入 ---
     let doc_retry = doc! {
         "user": "TestRetryUser",
         "action": "receive",
@@ -53,12 +78,12 @@ async fn test_mongodb_operations() {
         .insert_document_with_retry(collection_name, doc_retry, 3)
         .await
         .expect("Failed to insert with retry");
-    assert!(inserted_id_retry.to_string().len() > 0, "Inserted ID (retry) should not be empty");
+    assert!(!inserted_id_retry.to_string().is_empty(), "Inserted ID (retry) should not be empty");
 
-    // --- 3) 取得テスト ---
+    // --- 3) 取得 ---
     let query = doc! { "user": "TestUser" };
     let found_doc = db_handler
-        .find_document::<Document>(collection_name, query.clone())
+        .find_document(collection_name, query.clone())
         .await
         .expect("Failed to execute find_document");
     assert!(found_doc.is_some(), "Document should exist");
@@ -66,7 +91,7 @@ async fn test_mongodb_operations() {
         assert_eq!(d.get_str("user").unwrap(), "TestUser");
     }
 
-    // --- 4) 更新テスト ---
+    // --- 4) 更新 ---
     let update = doc! { "$set": { "status": "completed" } };
     let updated_count = db_handler
         .update_document(collection_name, query.clone(), update)
@@ -74,63 +99,55 @@ async fn test_mongodb_operations() {
         .expect("Failed to update document");
     assert_eq!(updated_count, 1, "Should update exactly 1 document");
 
-    // --- 5) 一覧取得テスト ---
+    // --- 5) 一覧取得 ---
     let all_docs = db_handler
-        .list_documents::<Document>(collection_name)
+        .list_documents(collection_name)
         .await
         .expect("Failed to list documents");
-    assert!(all_docs.len() > 0, "Should have at least one document in collection");
+    assert!(!all_docs.is_empty(), "Should have at least one document in collection");
 
-    // --- 6) 削除テスト ---
+    // --- 6) 削除 ---
     let deleted_count = db_handler
         .delete_document(collection_name, query)
         .await
         .expect("Failed to delete document");
     assert_eq!(deleted_count, 1, "Should delete exactly 1 document");
 
-    // --- 7) 短いスリープ
-    sleep(Duration::from_millis(500)).await;
+    sleep(Duration::from_millis(300)).await;
 }
 
-/// 新たに追加したテスト: セカンダリ優先の読み取りを検証
+// ====== セカンダリ優先の読み取りテスト =====================================
 #[tokio::test]
 async fn test_secondary_read() -> mongodb::error::Result<()> {
     println!("=== Starting test_secondary_read ===");
 
-    let uri = "mongodb+srv://satoshi:greg1024@cluster0.sy70d.mongodb.net/test_data?retryWrites=true&w=majority";
+    let uri = load_uri_for("asia"); // 例：アジアのクラスタ/ローカルを選択
     let database_name = "test_data";
     let collection_name = "transactions_secondary";
 
-    // 書き込み用（プライマリ）ハンドラ
-    let write_handler = MongoDBAsyncHandler::new(uri, database_name).await?;
+    let write_handler = MongoDBAsyncHandler::new(&uri, database_name).await?;
+    let read_handler  = MongoDBAsyncHandler::new_with_read_preference(&uri, database_name).await?;
 
-    // 読み取り用（セカンダリ優先）ハンドラ
-    let read_handler = MongoDBAsyncHandler::new_with_read_preference(uri, database_name).await?;
-
-    // 1) 書き込み（プライマリ）
     let doc = doc! {
         "user": "SecondaryReadTest",
         "action": "insert",
-        "status": "pending"
+        "status": "pending",
+        "createdAt": mongodb::bson::DateTime::now(),
     };
     let inserted_id = write_handler.insert_document(collection_name, doc).await?;
     println!("[write] Inserted document ID: {:?}", inserted_id);
 
-    // 2) 読み取り（セカンダリ優先）
-    //    ※ レプリケーションに多少の遅延がある場合があるので、実際のテストでは
-    //       ちょっと待機するか、複数回リトライすることも考えられます。
     let found_doc = read_handler
-        .find_document::<Document>(collection_name, doc! {"user": "SecondaryReadTest"})
+        .find_document(collection_name, doc! {"user": "SecondaryReadTest"})
         .await?;
     println!("[read] Found document: {:?}", found_doc);
     assert!(found_doc.is_some(), "Document should be found using secondary read");
 
-    // 少し待機して終了
-    sleep(Duration::from_millis(500)).await;
+    sleep(Duration::from_millis(200)).await;
     Ok(())
 }
 
-/// Atlas JSON 用
+// ====== 大陸用 JSON 構造体（municipal は削除） =============================
 #[derive(Debug, Deserialize)]
 struct CompleteConfig {
     asia: String,
@@ -143,41 +160,28 @@ struct CompleteConfig {
     #[serde(rename = "default")]
     def: String,
 }
-
 #[derive(Debug, Deserialize)]
 struct MongodbConfig {
     complete: CompleteConfig,
 }
 
-#[derive(Debug, Deserialize)]
-struct MunicipalConfig {
-    complete: serde_json::Value,
-}
-
-/// ハンドラーキャッシュ
+// ハンドラーキャッシュ
 type HandlerMap = HashMap<String, Arc<MongoDBAsyncHandler>>;
 
-/// 新しいテスト: DAG シナリオ（Replica Set 対応）
+// ====== DAG シナリオ（大陸のみ） ==========================================
 #[tokio::test]
 async fn test_dag_scenario() {
     println!("=== Starting test_dag_scenario (DAG-based transaction test) ===");
 
-    // 1) 大陸用 JSON を読み込む
-    let config_path_continent = r"D:\city_chain_project\network\DB\config\mongodb_config\main_chain\continental_mongodb_config\mongodb_continental.json";
+    // 1) 大陸用 JSON だけを読み込む（municipal は見ない）
+    let config_path_continent = "/home/satoshi/work/city_chain_project/network/DB/config/mongodb_config/main_chain/continental_mongodb_config/mongodb_continental.json";
     let config_str_continent = fs::read_to_string(config_path_continent)
         .expect("Failed to read continent config JSON");
     let config_continent: MongodbConfig = serde_json::from_str(&config_str_continent)
         .expect("Failed to parse continent config JSON");
 
-    // 2) 市町村用 JSON を読み込む
-    let config_path_municipal = r"D:\city_chain_project\network\DB\config\mongodb_config\main_chain\municipal_mongodb_config\mongodb_municipal.json";
-    let config_str_municipal = fs::read_to_string(config_path_municipal)
-        .expect("Failed to read municipal config JSON");
-    let config_municipal: MunicipalConfig = serde_json::from_str(&config_str_municipal)
-        .expect("Failed to parse municipal config JSON");
-
-    println!("Preparing all HandlerMap for continents & municipalities...");
-    let handler_map = Arc::new(prepare_handler_map(&config_continent, &config_municipal).await);
+    println!("Preparing HandlerMap for continents only...");
+    let handler_map = Arc::new(prepare_handler_map_continent_only(&config_continent).await);
 
     let tx1 = doc! {
         "sender": "A",
@@ -188,7 +192,8 @@ async fn test_dag_scenario() {
         "receiver": "B",
         "receiver_city": "europe-ireland-connacht-sligo",
         "status": "completed",
-        "transaction_id": "tx1"
+        "transaction_id": "tx1",
+        "createdAt": mongodb::bson::DateTime::now(),
     };
     let tx2 = doc! {
         "sender": "C",
@@ -199,7 +204,8 @@ async fn test_dag_scenario() {
         "receiver": "D",
         "receiver_city": "africa-southafrica-westerncape-capetown",
         "status": "completed",
-        "transaction_id": "tx2"
+        "transaction_id": "tx2",
+        "createdAt": mongodb::bson::DateTime::now(),
     };
     let tx3 = doc! {
         "sender": "E",
@@ -210,19 +216,20 @@ async fn test_dag_scenario() {
         "receiver": "F",
         "receiver_city": "southamerica-arg-buenosaires-buenosaires",
         "status": "completed",
-        "transaction_id": "tx3"
+        "transaction_id": "tx3",
+        "createdAt": mongodb::bson::DateTime::now(),
     };
 
     println!("DAG: holding transactions for 1 second...");
     sleep(Duration::from_secs(1)).await;
 
-    println!("Now writing 3 transactions in parallel (DAG scenario)...");
+    println!("Now writing 3 transactions in parallel (continents only)...");
     let hm = Arc::clone(&handler_map);
-    let t1 = spawn(handle_tx_in_parallel(tx1, hm.clone()));
+    let t1 = spawn(handle_tx_continent_only(tx1, hm.clone()));
     let hm = Arc::clone(&handler_map);
-    let t2 = spawn(handle_tx_in_parallel(tx2, hm.clone()));
+    let t2 = spawn(handle_tx_continent_only(tx2, hm.clone()));
     let hm = Arc::clone(&handler_map);
-    let t3 = spawn(handle_tx_in_parallel(tx3, hm.clone()));
+    let t3 = spawn(handle_tx_continent_only(tx3, hm.clone()));
 
     let res1 = t1.await.expect("Tx1 join error");
     let res2 = t2.await.expect("Tx2 join error");
@@ -232,13 +239,13 @@ async fn test_dag_scenario() {
     assert!(res2.is_ok(), "Tx2 writing failed: {:?}", res2.err());
     assert!(res3.is_ok(), "Tx3 writing failed: {:?}", res3.err());
 
-    println!("All 3 DAG transactions completed successfully.");
+    println!("All 3 DAG transactions (continents only) completed successfully.");
 }
 
-/// 事前に各 URI -> Handler を順次用意する関数（テスト用）
-async fn prepare_handler_map(
+// 大陸だけの HandlerMap を用意（ウォームアップ付き）
+// 大陸だけの HandlerMap を用意
+async fn prepare_handler_map_continent_only(
     config_continent: &MongodbConfig,
-    config_municipal: &MunicipalConfig,
 ) -> HandlerMap {
     let mut map = HashMap::new();
 
@@ -256,35 +263,29 @@ async fn prepare_handler_map(
     for (name, uri) in continent_pairs {
         let db_name = db_name_for(name);
         println!("Creating continent handler: {} => {} (db: {})", name, uri, db_name);
+
         let handler = MongoDBAsyncHandler::new(uri, &db_name)
             .await
             .expect(&format!("Failed to create continent handler for {}", name));
+
+        // TTLを作成（存在すればno-op）
+        let coll = handler.db().collection::<mongodb::bson::Document>("transactions");
+        rsmongodb::lib_async::ensure_ttl_6months(&coll)
+            .await
+            .expect("ensure_ttl_6months failed");
+
         map.insert(name.to_string(), Arc::new(handler));
         sleep(Duration::from_millis(50)).await;
     }
 
-    let municipal_obj = &config_municipal.complete;
-    if let Some(obj) = municipal_obj.as_object() {
-        for (loc_key, val) in obj {
-            println!("Creating handler for municipal key: {}", loc_key);
-            if let Some(uri) = val.as_str() {
-                let db_name = db_name_for(loc_key);
-                println!(" -> URI={}, db: {}", uri, db_name);
-                let handler = MongoDBAsyncHandler::new(uri, &db_name)
-                    .await
-                    .expect(&format!("Failed to create municipal handler for {}", loc_key));
-                map.insert(loc_key.clone(), Arc::new(handler));
-                println!(" -> Successfully inserted handler for {}", loc_key);
-                sleep(Duration::from_millis(50)).await;
-            }
-        }
-    }
+    // トポロジ発見のウォームアップ（軽く待つ）
+    sleep(Duration::from_millis(800)).await;
 
     map
 }
 
-/// 1つのトランザクションを 大陸 & 市町村 に書き込む関数
-async fn handle_tx_in_parallel(
+// 1トランザクションを「送信者大陸」「受信者大陸」へ非同期書き込み（市町村は書かない）
+async fn handle_tx_continent_only(
     tx: Document,
     handler_map: Arc<HandlerMap>,
 ) -> mongodb::error::Result<()> {
@@ -299,51 +300,60 @@ async fn handle_tx_in_parallel(
 
     let collection_name = "transactions";
 
+    // 送受それぞれで「直前 ping → 挿入」をやるタスクを作る
+    async fn ping_then_insert(
+        handler: Arc<MongoDBAsyncHandler>,
+        coll: &'static str,
+        mut doc: Document,
+    ) -> mongodb::error::Result<mongodb::bson::oid::ObjectId> {
+        // 1) 直前 ping（最大5回、100ms刻み）
+        for _ in 0..5 {
+            match handler.db().run_command(doc! {"ping": 1}, None).await {
+                Ok(_) => break,
+                Err(e) => {
+                    // ServerSelection のときだけ少し待って再試行
+                    if e.kind.to_string().contains("ServerSelection") {
+                        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                        continue;
+                    } else {
+                        // それ以外は即エラー
+                        return Err(e);
+                    }
+                }
+            }
+        }
+        // createdAt が無ければ補完
+        if !doc.contains_key("createdAt") {
+            doc.insert("createdAt", mongodb::bson::DateTime::now());
+        }
+        // 2) 挿入（リトライ回数を少し増やす）
+        handler.insert_document_with_retry(coll, doc, 20).await
+    }
+
+    // 送信者大陸
     let tx_sc = tx.clone();
     let sc_handler = Arc::clone(
         handler_map.get(&sender_continent)
             .ok_or_else(|| Error::custom(format!("No sender continent: {}", sender_continent)))?
     );
     let sc_task = spawn(async move {
-        sc_handler.insert_document(collection_name, tx_sc).await
+        ping_then_insert(sc_handler, "transactions", tx_sc).await
     });
 
+    // 受信者大陸
     let tx_rc = tx.clone();
     let rc_handler = Arc::clone(
         handler_map.get(&receiver_continent)
             .ok_or_else(|| Error::custom(format!("No receiver continent: {}", receiver_continent)))?
     );
     let rc_task = spawn(async move {
-        rc_handler.insert_document(collection_name, tx_rc).await
+        ping_then_insert(rc_handler, "transactions", tx_rc).await
     });
 
-    let tx_scity = tx.clone();
-    let s_city_handler = Arc::clone(
-        handler_map.get(&sender_city)
-            .ok_or_else(|| Error::custom(format!("No sender city: {}", sender_city)))?
-    );
-    let s_city_task = spawn(async move {
-        s_city_handler.insert_document(collection_name, tx_scity).await
-    });
-
-    let tx_rcity = tx.clone();
-    let r_city_handler = Arc::clone(
-        handler_map.get(&receiver_city)
-            .ok_or_else(|| Error::custom(format!("No receiver city: {}", receiver_city)))?
-    );
-    let r_city_task = spawn(async move {
-        r_city_handler.insert_document(collection_name, tx_rcity).await
-    });
-
+    // join
     let sc_res = sc_task.await.map_err(|_| Error::custom("SenderContinent join error"))??;
     let rc_res = rc_task.await.map_err(|_| Error::custom("ReceiverContinent join error"))??;
-    let s_city_res = s_city_task.await.map_err(|_| Error::custom("SenderCity join error"))??;
-    let r_city_res = r_city_task.await.map_err(|_| Error::custom("ReceiverCity join error"))??;
 
-    println!(
-        "Tx inserted => SC:{:?}, RC:{:?}, SCity:{:?}, RCity:{:?}",
-        sc_res, rc_res, s_city_res, r_city_res
-    );
-
+    println!("Tx inserted => SC:{:?}, RC:{:?}", sc_res, rc_res);
     Ok(())
 }

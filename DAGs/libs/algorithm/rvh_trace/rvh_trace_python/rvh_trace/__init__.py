@@ -64,7 +64,7 @@ class _SpanCM:
         _logger.info(self._name)      # async 版も同じく
         return self
 
-    async def __aexit__(             # noqa: D401
+    async def __aexit__(
         self,
         exc_type: Optional[Type[BaseException]],
         exc: Optional[BaseException],
@@ -84,6 +84,7 @@ def span(name: str, **fields: Any) -> _SpanCM:
 from .trace_builder import trace, trace_sync  # noqa: E402  circular-safe
 
 __all__ = [
+    "__version__",
     "init_tracing",
     "span",
     "trace",

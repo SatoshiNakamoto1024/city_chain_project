@@ -41,8 +41,8 @@ from .filter_core import (
 )
 
 __all__: tuple[str, ...] = (
-    "filter_nodes",
-    "NodeFilter",
     "FilterError",
+    "NodeFilter",
     "__version__",
+    "filter_nodes",
 )

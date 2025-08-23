@@ -10,7 +10,7 @@ use tokio::time::Duration; // 追加
 use tokio::time::sleep; // sleep関数をインポート
 use chrono::{DateTime, Utc};
 use reqwest::Client;
-use sha2::{Sha256, Digest}; 
+use sha2::{Sha256, Digest};
 use hex;
 use base64;
 use crate::ntru_sign; // ntru_signモジュールをインポート
@@ -19,7 +19,7 @@ use std::sync::Arc;
 use std::io::BufReader;
 use std::error::Error;
 use std::fs;
-use std::fs::File; 
+use std::fs::File;
 use mongodb::{bson::doc, Client as MongoClient, Collection, options::ClientOptions}; // MongoDB関連のクレートをインポート
 use mongodb::bson::Document;
 use mongodb::options::IndexOptions;
@@ -389,7 +389,7 @@ fn load_municipalities_data() -> Result<HashMap<String, ContinentConfig>, Box<dy
     let file = File::open(file_path)
         .map_err(|e| format!("Failed to open municipalities.json: {:?}", e))?;
     let reader = BufReader::new(file);
-    
+
     // HashMap<String, ContinentConfig>に直接デシリアライズ
     let municipalities_data: HashMap<String, ContinentConfig> = serde_json::from_reader(reader)
         .map_err(|e| format!("Failed to parse municipalities.json: {:?}", e))?;
@@ -672,7 +672,7 @@ impl DPoS {
                 self.send_message_to_user(&rep.user_id, &format!("{} から {} までの期間、{} の代表よろしくお願いします", rep.start_date, rep.end_date, municipality));
             }
         }
-        
+
         // ブロックを承認する関数
         fn approve_block(&self, block: &Block) -> bool {
             // 大陸代表者のリストから承認者を選出し、承認を行います
@@ -932,7 +932,7 @@ fn get_mongo_uri(instance_type: &str, continent: &str) -> Result<String, String>
 
     let continent_config = municipalities_data.get(continent)
         .ok_or_else(|| format!("Continent '{}' not found in municipalities data", continent))?;
-    
+
     let uri = &continent_config.mongodb_port;  // Use the mongodb_port directly from continent config
     Ok(format!("mongodb://localhost:{}", uri))
 }
@@ -1009,7 +1009,7 @@ async fn receive_transaction(
     let transaction = transaction_json.into_inner();
 
     println!("Received transaction: {:?}", transaction.transaction_id);
-    
+
     // 署名をBase64 decode
     let signature_bytes = match base64::decode(&transaction.signature) {
         Ok(b) => b,
@@ -1030,7 +1030,7 @@ async fn receive_transaction(
         println!("Signature verify fail for tx={}", transaction.transaction_id);
         return Err("Signature verify fail".to_string());
     }
-    
+
     // DPoS のロックを取得
     let mut dpos_guard = state.lock().await.dpos.lock().await;
 
@@ -1064,8 +1064,8 @@ async fn receive_transaction(
     {
         let mut state_guard = state.lock().await;
         let mut poh_guard = state_guard.poh.lock().await;
-        let event_str = format!("tx_id:{}|recv_time:{}", 
-                                transaction.transaction_id, 
+        let event_str = format!("tx_id:{}|recv_time:{}",
+                                transaction.transaction_id,
                                 Utc::now().to_rfc3339());
         poh_guard.add_event(&event_str);
         println!("PoH updated => latest_hash={}", poh_guard.get_latest_hash());
@@ -1139,7 +1139,7 @@ async fn receive_transaction(
         };
 
         let bson_created_at = BsonDateTime::from_millis(transaction.created_at.timestamp_millis());
-        
+
         // ★ 変更ここから: 承認成功後、ウォレット残高を更新
         if transaction.status == "approved" {
             // 受信者の user_id
@@ -1389,7 +1389,7 @@ async fn process_pending_transactions(state: Arc<Mutex<AppState>>) {
         let transactions_to_process = {
             let state_guard = state.lock().await;
             let mut pending_transactions_guard = state_guard.pending_transactions.lock().await;
-            
+
             // トランザクションが5件以上ある場合、すべて取得
             if pending_transactions_guard.len() >= 5 {
                 let txs: Vec<Transaction> = pending_transactions_guard.values().cloned().collect();
@@ -1422,7 +1422,7 @@ async fn process_pending_transactions(state: Arc<Mutex<AppState>>) {
             verifiable_credential: "credential".to_string(),
             signature: base64::encode(vec![]), // 必要に応じて実際の署名を追加
         };
-        
+
         {
             // PoHに「ブロック生成イベント」を追加
             let mut state_guard = state.lock().await;
@@ -1698,11 +1698,11 @@ async fn update_status(
         return Err(Status::BadRequest(Some("Invalid status transition".to_string())));
     }
 
-    let update = doc! { 
-        "$set": { 
-            "status": &new_status, 
-            "updated_at": BsonDateTime::from_millis(Utc::now().timestamp_millis()) 
-        } 
+    let update = doc! {
+        "$set": {
+            "status": &new_status,
+            "updated_at": BsonDateTime::from_millis(Utc::now().timestamp_millis())
+        }
     };
 
     match state_guard.mongo_collection.update_one(filter.clone(), update, None).await {
@@ -1877,7 +1877,7 @@ async fn complete_transaction(
         // 該当するデータがなければデフォルトのURLを返す
         "http://localhost:19999".to_string()
     }
-    
+
     // `municipal_chain` のURLを決定
     let municipal_chain_url = determine_municipal_chain_url(&transaction.receiver_municipality);
     println!("Municipal chain URL: {}", municipal_chain_url);
@@ -1977,7 +1977,7 @@ async fn gossip_transactions_with_chains(state: Arc<Mutex<AppState>>, chain_urls
             .json(&gossip_data)
             .send()
             .await;
-        
+
         match res {
             Ok(response) => {
                 if response.status().is_success() {
@@ -2013,7 +2013,7 @@ async fn gossip_transactions(state: Arc<Mutex<AppState>>) {
             .json(&gossip_data)
             .send()
             .await;
-        
+
         match res {
             Ok(response) => {
                 if response.status().is_success() {
@@ -2402,11 +2402,11 @@ pub fn calculate_wallet_balance(wallet_address: &str) -> Result<i64, Box<dyn Err
     let transactions = client.scan_prefix(b"tx:")?;
 
     let mut balance = 0;
-    
+
     // 各トランザクションを処理
     for tx in transactions {
         let tx_data: Transaction = serde_json::from_str(&String::from_utf8(tx.value().to_vec())?)?;
-        
+
         // 送信先または送信元が一致する場合、残高を調整
         if tx_data.to_wallet == wallet_address {
             balance += tx_data.amount;
@@ -2512,7 +2512,7 @@ async fn main() {
 
     // 指定した大陸の設定を取得。存在しない場合は "Default" の設定を使用
     let continent_config = municipalities_data
-        .get(continent) 
+        .get(continent)
         .or_else(|| municipalities_data.get("Default"))
         .expect("No valid continent configuration found.")
         .clone();
@@ -2521,7 +2521,7 @@ async fn main() {
     let mongodb_port = &continent_config.mongodb_port;
     let flask_port = &continent_config.flask_port;
     let mongo_uri = format!("mongodb://localhost:{}", mongodb_port);
-    
+
     // MongoDB クライアントの初期化
     let mongo_client = match MongoClient::with_uri_str(&mongo_uri).await {
         Ok(client) => client,
@@ -2532,7 +2532,7 @@ async fn main() {
     };
 
     // データベース名の設定（必要に応じて）
-    let mongo_db_name = format!("{}_db", continent); 
+    let mongo_db_name = format!("{}_db", continent);
 
     // Flask ポートのパース
     let flask_port: u16 = match flask_port.parse::<u16>() {
@@ -2558,10 +2558,10 @@ async fn main() {
     // 他の大陸のチェーンURLを設定
     let other_continental_chains = Arc::new(Mutex::new(
         municipalities_data.iter()
-            .filter(|&(name, _)| name != continent) 
+            .filter(|&(name, _)| name != continent)
             .map(|(_, config)| format!("http://localhost:{}", config.flask_port))
             .collect::<Vec<String>>()
-    ));        
+    ));
 
     // municipal_chain_urls の設定
     let municipal_chain_urls: HashMap<String, String> = continent_config.cities.iter()
@@ -2577,7 +2577,7 @@ async fn main() {
     let block_collection = mongo_client
         .database(&mongo_db_name)
         .collection::<Document>("blocks");
-    
+
     // PoHを初期化
     let poh = Arc::new(Mutex::new(ProofOfHistory::new()));
 
@@ -2627,7 +2627,7 @@ async fn main() {
 
     // 分析用データベースのインデックスを作成
     create_analytics_indexes(&analytics_collection).await;
-    
+
     // walletアドレス？
     let wallet_address = "0xABCDEF1234567890";
     match calculate_wallet_balance(wallet_address) {
@@ -2694,12 +2694,12 @@ tokio::spawn({
                 if !pending_transactions.is_empty() {
                     // state_cloneのロックを取得
                     let state_guard = state_clone.lock().await;
-                    
+
                     // 最新ブロックを取得して新しいブロックのprev_hashを設定
                     let prev_hash = {
                         // blockchainフィールドのロックを取得
                         let blockchain_guard = state_guard.blockchain.lock().await;
-                        
+
                         if let Some(last_block) = blockchain_guard.last() {
                             last_block.hash.clone()
                         } else {
@@ -2804,7 +2804,7 @@ fn load_test_config() -> Config {
     // テスト用の設定値を定義します
     let figment = Config::figment()
         .merge(("port", 1036)); // テスト用に任意のポート番号を設定
-    
+
     Config::from(figment) // FigmentからConfigに変換
 }
 
@@ -2893,7 +2893,7 @@ mod tests {
             .manage(Client::new())
             .manage(Arc::new(Mutex::new(AppState {
                 pending_transactions: Arc::new(Mutex::new(HashMap::new())),
-                other_continental_chains: Arc::new(Mutex::new(vec![])), 
+                other_continental_chains: Arc::new(Mutex::new(vec![])),
                 mongo_collection: collection.clone(),
                 blockchain: Arc::new(Mutex::new(Vec::new())),
                 block_collection: mongo_client.database("test_db").collection::<Document>("blocks"), // block_collectionを追加
@@ -2951,7 +2951,7 @@ mod tests {
             .manage(Client::new())
             .manage(Arc::new(Mutex::new(AppState {
                 pending_transactions: Arc::new(Mutex::new(HashMap::new())),
-                other_continental_chains: Arc::new(Mutex::new(vec![])), 
+                other_continental_chains: Arc::new(Mutex::new(vec![])),
                 mongo_collection: mongo_collection.clone(),
                 block_collection: block_collection.clone(),
                 blockchain: Arc::new(Mutex::new(Vec::new())),
@@ -3078,7 +3078,7 @@ mod tests {
             "sender_continent": &transaction.sender_continent,
             "receiver_continent": &transaction.receiver_continent,
             "status": &transaction.status,
-            "created_at": BsonDateTime::from_millis(transaction.created_at.timestamp_millis()), 
+            "created_at": BsonDateTime::from_millis(transaction.created_at.timestamp_millis()),
             "sender_municipal_id": &transaction.sender_municipal_id, // 追加
             "receiver_municipal_id": &transaction.receiver_municipal_id, // 追加
             "attributes": &transaction.attributes, // 新しく追加
@@ -3097,7 +3097,7 @@ mod tests {
             .manage(Client::new())
             .manage(Arc::new(Mutex::new(AppState {
                 pending_transactions: Arc::new(Mutex::new(HashMap::new())),
-                other_continental_chains: Arc::new(Mutex::new(vec![])), 
+                other_continental_chains: Arc::new(Mutex::new(vec![])),
                 mongo_collection: collection.clone(),
                 block_collection: mongo_client.database("test_db").collection::<Document>("blocks"),
                 blockchain: Arc::new(Mutex::new(Vec::new())),

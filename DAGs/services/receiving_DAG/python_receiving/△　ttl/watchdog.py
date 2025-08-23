@@ -12,12 +12,13 @@ from ..ttl.config import TTLConfig
 if TYPE_CHECKING:  # 遅延 import 用 (型チェック時のみ)
     from ..storage.dag_store import DAGStore
 
+
 class TTLWatchDog:
     def __init__(self, dag: "DAGStore", cfg: TTLConfig,
                  on_expire: Callable[[BaseTx], None]):
-        self.dag   = dag
-        self.cfg   = cfg
-        self.cb    = on_expire
+        self.dag = dag
+        self.cfg = cfg
+        self.cb = on_expire
         Thread(target=self._loop, daemon=True).start()
 
     def _loop(self):
@@ -38,11 +39,11 @@ class TTLWatchDog:
     # ---------------- internal ----------------
     def _is_expired(self, tx: BaseTx, now: float) -> bool:
         dt = now - tx.timestamp
-        t  = tx.tx_type
-        c  = self.cfg
-        if t == TxType.FRESH_TX and dt > c.FRESH_TX_TTL:       return True
-        if t == TxType.POH_REQUEST and dt > c.POH_REQ_TTL:      return True
-        if t == TxType.POH_ACK     and dt > c.POH_ACK_TTL:      return True
-        if t == TxType.REPAIR_REQ  and dt > c.REPAIR_REQ_TTL:   return True
-        if t == TxType.REPAIR_ACK  and dt > c.REPAIR_ACK_TTL:   return True
+        t = tx.tx_type
+        c = self.cfg
+        if t == TxType.FRESH_TX and dt > c.FRESH_TX_TTL: return True
+        if t == TxType.POH_REQUEST and dt > c.POH_REQ_TTL: return True
+        if t == TxType.POH_ACK and dt > c.POH_ACK_TTL: return True
+        if t == TxType.REPAIR_REQ and dt > c.REPAIR_REQ_TTL: return True
+        if t == TxType.REPAIR_ACK and dt > c.REPAIR_ACK_TTL: return True
         return False

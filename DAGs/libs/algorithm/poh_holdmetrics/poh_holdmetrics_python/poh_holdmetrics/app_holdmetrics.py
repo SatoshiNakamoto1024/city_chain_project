@@ -1,4 +1,4 @@
-# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\app_holdmetrics.py
+# \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\app_holdmetrics.py
 # -*- coding: utf-8 -*-
 """
 CLI ランチャー
@@ -32,14 +32,14 @@ def cli() -> None:
 # サブコマンド群
 # ------------------------------------------------------------------
 @cli.command()
-def grpc() -> None:  # noqa: D401
+def grpc() -> None:
     """Run only gRPC server"""
     # ここは“そのまま”呼ぶ。asyncio.run は serve_grpc 内でやっている
     serve_grpc(settings.grpc_address)
 
 
 @cli.command()
-def http() -> None:  # noqa: D401
+def http() -> None:
     """Run only HTTP server"""
     uvicorn.run(
         http_app,
@@ -50,7 +50,7 @@ def http() -> None:  # noqa: D401
 
 
 @cli.command()
-def all() -> None:  # noqa: D401
+def all() -> None:
     """Run gRPC + HTTP concurrently"""
     async def _serve_all() -> None:
         grpc_task = asyncio.create_task(serve_grpc(settings.grpc_address))

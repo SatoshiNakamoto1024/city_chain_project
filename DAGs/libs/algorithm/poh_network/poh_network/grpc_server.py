@@ -1,11 +1,10 @@
 # D:\city_chain_project\DAGs\libs\algorithm\poh_network\poh_network\grpc_server.py
-import asyncio
 import logging
 
 import grpc.aio
 
 from poh_storage.storage import StorageManager
-from poh_storage.types   import Tx
+from poh_storage.types import Tx
 from .protocols import poh_pb2, poh_pb2_grpc
 
 logging.basicConfig(level=logging.INFO)

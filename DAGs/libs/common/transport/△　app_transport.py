@@ -23,6 +23,7 @@ from grpc_dag.gen.dag_pb2_grpc import (
     add_DAGServiceServicer_to_server,
 )
 
+
 # ──────────────────────────────────────────
 # Lifespan: gRPC サーバを起動 / 終了
 # ──────────────────────────────────────────
@@ -46,6 +47,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Transport Demo", lifespan=lifespan)
+
 
 # ──────────────────────────────────────────
 # HTTP → gRPC Echo Bridge

@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import time
-from typing import Callable, ParamSpec, TypeVar, Awaitable, Any
+from typing import Callable, ParamSpec, TypeVar, Awaitable
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

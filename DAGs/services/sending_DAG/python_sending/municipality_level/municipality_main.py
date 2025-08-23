@@ -15,6 +15,7 @@ app = Flask(__name__)
 # 例として "NewYork" という市町村DAGとして動かす
 dag_handler = CityDAGHandler(city_name="NewYork")
 
+
 @app.route("/send_tx", methods=["POST"])
 def send_tx():
     data = request.get_json()
@@ -26,6 +27,7 @@ def send_tx():
 
     tx_id, tx_hash = dag_handler.add_transaction(sender, receiver, amount, "send")
     return jsonify({"tx_id": tx_id, "tx_hash": tx_hash}), 200
+
 
 @app.route("/receive_tx", methods=["POST"])
 def receive_tx():
@@ -39,10 +41,12 @@ def receive_tx():
     tx_id, tx_hash = dag_handler.add_transaction(sender, receiver, amount, "receive")
     return jsonify({"tx_id": tx_id, "tx_hash": tx_hash}), 200
 
+
 @app.route("/complete_tx/<tx_id>", methods=["POST"])
 def complete_tx(tx_id):
     dag_handler.mark_transaction_completed(tx_id)
     return jsonify({"status": "completed", "tx_id": tx_id}), 200
+
 
 @app.route("/repair_request", methods=["POST"])
 def repair_request():
@@ -71,6 +75,7 @@ def repair_request():
 
     dag_handler.add_raw_tx(repair_tx)
     return jsonify({"status": "repair_requested", "tx_id": repair_tx["tx_id"]}), 200
+
 
 if __name__ == "__main__":
     # 市町村ごとにポートを変えてもよい

@@ -1,6 +1,5 @@
 # \city_chain_project\noxfile.py
 # noxfile.py
-import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
@@ -13,9 +12,10 @@ SERVICES_YAML = ROOT / "services.yaml"
 
 try:
     import yaml  # type: ignore
-except Exception as e:
+except Exception:
     print("[nox] PyYAML is required. Install with: pip install pyyaml", file=sys.stderr)
     raise
+
 
 def load_cfg() -> Dict[str, Any]:
     if not SERVICES_YAML.exists():
@@ -23,9 +23,11 @@ def load_cfg() -> Dict[str, Any]:
     with SERVICES_YAML.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
+
 def crate_root_from_crate_path(crate_path: str) -> Path:
     p = Path(crate_path)
     return p.parent if p.name.endswith("_rust") else p
+
 
 def maturin_develop(session: nox.Session, crate_toml: Path, features: List[str] | None) -> None:
     cmd = ["maturin", "develop", "-m", str(crate_toml), "--release", "--quiet"]
@@ -34,6 +36,7 @@ def maturin_develop(session: nox.Session, crate_toml: Path, features: List[str] 
     session.run(*cmd, external=True)
 
 # ---- セッション ------------------------------------------------------------
+
 
 @nox.session(python="3.12")
 def py(session: nox.Session) -> None:
@@ -80,6 +83,7 @@ def py(session: nox.Session) -> None:
                 # 追加の env が必要なら session.run 前に os.environ[...] = ...
                 session.run("pytest", *args, external=True)
 
+
 @nox.session(python="3.12")
 def rust(session: nox.Session) -> None:
     """
@@ -87,6 +91,7 @@ def rust(session: nox.Session) -> None:
     """
     # Rust はホストに入っている前提（WSLなら apt / rustup 等）
     session.run("cargo", "test", "--workspace", external=True)
+
 
 @nox.session
 def all(session: nox.Session) -> None:

@@ -1,5 +1,5 @@
     │   ├── utils/                       # 全体共通知識
-    │   │   ├── __init__.py          
+    │   │   ├── __init__.py
     │   │   ├── tx_types.py              # TxType 列挙
     │   │   ├── dag_utils.py             # 共通 DAG ヘルパー
     │   │   ├── constants.py             # 定数定義
@@ -44,14 +44,14 @@ print("1 シャード上限:", SHARD_SIZE_LIMIT, "bytes")
 # 起動
 python -m network.DAGs.common.utils.app_utils  # デフォルト :8080
 メソッド	パス	機能
-GET /tx_types	列挙型一覧	
-GET /tx_types/validate?value=	文字列が有効な TxType か確認	
-POST /dag/sort	{ "edges": [["A","B"], ...] } → トポロジカル順	
-POST /dag/detect_cycle	サイクル有無を bool で返却	
-POST /dag/flatten	エッジ → 隣接リスト dict	
-GET /constants	共通定数を JSON で取得	
-GET /errors/dag_cycle	400 で DAGCycleError 例示	
-GET /errors/invalid_tx	422 で InvalidTxTypeError 例示	
+GET /tx_types	列挙型一覧
+GET /tx_types/validate?value=	文字列が有効な TxType か確認
+POST /dag/sort	{ "edges": [["A","B"], ...] } → トポロジカル順
+POST /dag/detect_cycle	サイクル有無を bool で返却
+POST /dag/flatten	エッジ → 隣接リスト dict
+GET /constants	共通定数を JSON で取得
+GET /errors/dag_cycle	400 で DAGCycleError 例示
+GET /errors/invalid_tx	422 で InvalidTxTypeError 例示
 
 ブラウザで http://localhost:8080/docs を開けば Swagger UI で全エンドポイントを即試せます。
 

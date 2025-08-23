@@ -1,4 +1,4 @@
-# D:\city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\tests\test_rust_bindings.py
+# \city_chain_project\DAGs\libs\algorithm\poh_holdmetrics\poh_holdmetrics_python\poh_holdmetrics\tests\test_rust_bindings.py
 # -*- coding: utf-8 -*-
 """
 Rust 拡張 (poh_holdmetrics_rust) の健全性と、Python実装との同値性をまとめてテストする。

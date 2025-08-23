@@ -6,17 +6,17 @@ test_unit_pop.py
 PoPの位置情報計算をテストする例。
 """
 
-import pytest
 from consensus.pop_stub import (
     verify_place,
-    get_user_location,
     sort_nodes_by_distance
 )
+
 
 def test_verify_place():
     # ダミーのユーザ: "alice", "bob", "charlie", ...
     assert verify_place("alice") == True
     assert verify_place("someone") == False
+
 
 def test_sort_nodes_by_distance():
     user_id = "alice"

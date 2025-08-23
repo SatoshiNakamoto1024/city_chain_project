@@ -1,6 +1,7 @@
 import asyncio
 from functools import wraps
 
+
 def retry(
     max_attempts: int = 5,
     initial_delay: float = 0.1,
@@ -18,11 +19,10 @@ def retry(
             for attempt in range(1, max_attempts + 1):
                 try:
                     return await func(*args, **kwargs)
-                except exceptions as e:
+                except exceptions:
                     if attempt == max_attempts:
                         raise
                     await asyncio.sleep(delay)
                     delay *= backoff_factor
         return wrapper
     return decorator
-

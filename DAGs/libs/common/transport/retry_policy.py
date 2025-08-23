@@ -39,7 +39,7 @@ def retry(
     backoff_multiplier : float
         2 回目以降の backoff 乗数。
     exceptions :
-        *再試行対象* とみなす例外型タプル。  
+        *再試行対象* とみなす例外型タプル。
         省略時は `(grpc.RpcError,)` のみ。
     """
 

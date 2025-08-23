@@ -6,7 +6,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import grpc
-import warnings
 import gen.dag_pb2 as dag__pb2
 
 GRPC_GENERATED_VERSION = '1.72.1'
@@ -22,7 +21,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in dag_pb2_grpc.py depends on'
+        + ' but the generated code in dag_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -88,8 +87,9 @@ def add_DAGServiceServicer_to_server(servicer, server):
     server.add_generic_rpc_handlers((generic_handler,))
     server.add_registered_method_handlers('common.grpc_dag.gen.DAGService', rpc_method_handlers)
 
-
  # This class is part of an EXPERIMENTAL API.
+
+
 class DAGService(object):
     """gRPC サービス定義
     """

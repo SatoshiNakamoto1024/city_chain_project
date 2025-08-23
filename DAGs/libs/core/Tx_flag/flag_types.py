@@ -1,14 +1,16 @@
 # D:\city_chain_project\network\sending_DAGs\python_sending\Tx_flag\flag_types.py
 from enum import Enum
 
+
 class TxType(str, Enum):
-    FRESH_TX    = "fresh_tx"
-    POH_ACK     = "poh_ack"
+    FRESH_TX = "fresh_tx"
+    POH_ACK = "poh_ack"
     POH_REQUEST = "poh_request"
-    REPAIR_REQ  = "repair_request"
-    REPAIR_ACK  = "repair_ack"
-    CHECKPOINT  = "checkpoint"
-    SYSTEM_TX   = "system_tx"
+    REPAIR_REQ = "repair_request"
+    REPAIR_ACK = "repair_ack"
+    CHECKPOINT = "checkpoint"
+    SYSTEM_TX = "system_tx"
+
 
 def classify_tx(tx_dict: dict) -> TxType:
     """

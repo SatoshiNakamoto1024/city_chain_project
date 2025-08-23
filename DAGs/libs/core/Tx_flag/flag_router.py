@@ -16,6 +16,7 @@ PRIORITY_ORDER = [
     TxType.SYSTEM_TX,
 ]
 
+
 def route_tx_by_flag(tx_list: list[dict]) -> list[dict]:
     """
     TxType の優先度でソートして返す。

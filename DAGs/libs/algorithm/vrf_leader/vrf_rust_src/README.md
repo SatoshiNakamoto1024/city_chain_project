@@ -7,7 +7,7 @@
 
 
 D:\city_chain_project\openssl-src-rs\rust-openssl\ を利用
-そのために、下記をやる必要がある。 
+そのために、下記をやる必要がある。
 # 1) 現在の PATH を分割して msys64 を除外
 $paths = $env:PATH -split ';'
 $filtered = $paths | Where-Object { $_ -notmatch 'msys64' }
@@ -51,7 +51,7 @@ LIB に MSVC の lib フォルダが設定
 > where perl   ← Strawberry Perl のパスが先頭に来ていれば OK
 > where nasm   ← Strawberry nasm のパスが先頭に来ていれば OK
 
-3. OpenSSL 
+3. OpenSSL
 まずは、下記のフォルダーへカレントを移動し、buildを実行
 D:\city_chain_project\openssl-src-rs>cd openssl-3.4.0
 
@@ -123,7 +123,7 @@ $env:OPENSSL_INCLUDE_DIR = "D:\city_chain_project\openssl-src-rs\openssl-build\i
 これで、openssl-sys はビルド済みのライブラリを見つけて正常にリンクできるはずです。
 
 
-# cargo test 
+# cargo test
 対処法①：Python のインストール先を PATH に追加する
 Python の DLL があるフォルダ（例：C:\Users\kibiy\AppData\Local\Programs\Python\Python312）を探す
 python.exe と同じフォルダに python3.dll があるはずです。

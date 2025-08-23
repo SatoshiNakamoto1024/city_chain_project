@@ -5,6 +5,7 @@ from .file_store import FileStore
 from .sqlite_store import SQLiteStore
 from .hash_utils import sha256_hex
 
+
 class StorageManager:
     """
     High-level API for PoH Tx persistence and recovery.

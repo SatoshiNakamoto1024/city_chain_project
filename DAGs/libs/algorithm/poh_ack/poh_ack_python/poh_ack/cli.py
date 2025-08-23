@@ -70,7 +70,7 @@ def cli() -> None:
 @click.option("--json-output",
               is_flag=True,
               help="Emit result as single‑line JSON")
-def verify_cmd(input: str, ttl: int, json_output: bool) -> None:  # noqa: D401
+def verify_cmd(input: str, ttl: int, json_output: bool) -> None:
     """Synchronously verify one ACK JSON file."""
     req = _load_request(input)
     res = verify_ack(req, ttl)
@@ -93,7 +93,7 @@ def verify_cmd(input: str, ttl: int, json_output: bool) -> None:  # noqa: D401
 @click.option("--json-output",
               is_flag=True,
               help="Emit result as single‑line JSON")
-def verify_async_cmd(input: str, ttl: int, json_output: bool) -> None:  # noqa: D401
+def verify_async_cmd(input: str, ttl: int, json_output: bool) -> None:
     """Asynchronously verify one ACK JSON file."""
     async def _run() -> None:
         req = _load_request(input)
