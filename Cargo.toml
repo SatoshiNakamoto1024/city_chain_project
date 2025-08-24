@@ -14,6 +14,7 @@ resolver = "2"
 members = [
   "network/DB/mongodb/rsmongo",
   "DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust",
+  "DAGs/libs/algorithm/rvh_trace/rvh_trace_rust",
   # pythonのみクレートは列挙しない
   # 必要なら他ドメインも
   # "DAGs/libs/analytics/*/*_rust",

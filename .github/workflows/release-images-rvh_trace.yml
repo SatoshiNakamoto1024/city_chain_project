@@ -1,0 +1,59 @@
+# \city_chain_project\.github\workflows\release-images-rvh_trace.yml
+name: Release Images (rvh_trace)
+
+on:
+  workflow_dispatch: {}
+  push:
+    # rvh_trace 専用タグだけで発火（poh_holdmetrics 側の v* を誤爆しない）
+    tags:
+      - "rvh_trace-v*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 所有者名を小文字化、タグのバージョン部を抽出（rvh_trace-v1.2.3 -> 1.2.3）
+      - name: Compute registry and tags
+        id: meta
+        shell: bash
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          OWNER_LC="${OWNER,,}"
+          echo "owner_lc=${OWNER_LC}" >> "$GITHUB_OUTPUT"
+          TAG="${{ github.ref_name }}"
+          V="${TAG#rvh_trace-v}"
+          echo "version=${V}" >> "$GITHUB_OUTPUT"
+
+      # ルートの Dockerfile を使って runtime ステージをビルド＆push
+      # - CRATE_PATH=DAGs/libs/algorithm/rvh_trace
+      # - CRATE_KIND=mixed / FEATURES=python で wheel をビルドして取り込み
+      - name: Build & Push (rvh_trace runtime image)
+        run: |
+          REG="ghcr.io/${{ steps.meta.outputs.owner_lc }}"
+          docker buildx build \
+            --platform linux/amd64 \
+            --target runtime \
+            --build-arg CRATE_PATH=DAGs/libs/algorithm/rvh_trace \
+            --build-arg CRATE_KIND=mixed \
+            --build-arg FEATURES=python \
+            --build-arg PROFILE=release \
+            --tag "${REG}/rvh_trace:latest" \
+            --tag "${REG}/rvh_trace:${{ steps.meta.outputs.version }}" \
+            --push \
+            .

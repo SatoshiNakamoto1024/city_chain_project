@@ -1194,15 +1194,23 @@ docker buildx create --name cc --driver docker-container --use
 docker buildx inspect --bootstrap
 
 # 2) まとめてビルド（gen.pyが出したHCLを使う）
-docker buildx bake -f docker-bake.generated.hcl
+docker buildx bake -f docker-bake.generated.hcl \
+  --provenance=false \
+  --set *.cache-from=type=local,src=.cache/buildx \
+  --set *.cache-to=type=local,dest=.cache/buildx,mode=max
 
 # 3) 起動（--build は付けない）
+・全体ビルド
 docker compose -f docker-compose.prod.generated.yml up -d
 
 # テストを流す（必要なら）
 例でasiaを明示しておく
 export MONGODB_URL='mongodb+srv://satoshi:greg1024@asia.kzxnr.mongodb.net/?retryWrites=true&w=majority'
-そしてテスト
+
+・単体のみテスト
+docker compose -f docker-compose.test.generated.yml run --rm test-rvh_trace-1
+
+・全体テスト
 docker compose -f docker-compose.test.generated.yml up --build --abort-on-container-exit
 
 
@@ -1581,8 +1589,8 @@ ghcr.io/satoshinakamoto1024/poh_holdmetrics-http:0.1.15
 git add \
   .github/workflows/_release-wheels-reusable.yml \
   .github/workflows/_release-images-reusable.yml \
-  .github/workflows/release-wheels-poh_holdmetrics.yml \
-  .github/workflows/release-images-poh_holdmetrics.yml \
+  .github/workflows/release-wheels-rvh_trace.yml \
+  .github/workflows/release-images-rvh_trace.yml \
   .github/workflows/ci.yml
 
 # 3) コミット & タグ
@@ -1592,16 +1600,12 @@ git commit -m "ci: wheels -> write all artifacts to \$GITHUB_WORKSPACE/dist and 
 クレート１つずつコミット・プッシュしていくべし
 # 変更をコミット
 git add -A
-git commit -m "release(poh_holdmetrics): bump to v0.1.16; CI: triggers & ignore build dirs"
+git commit -m "release(rvh_trace): bump to v0.1.0; CI: triggers & ignore build dirs"
 git push origin main
 
 # 注釈付きタグ（どちらでもOK。私はハイフン派）
-git tag -a poh_holdmetrics-v0.1.16 -m "poh_holdmetrics v0.1.16"
-（ git tag -a poh_holdmetrics/v0.1.16 -m "poh_holdmetrics v0.1.16"　）
-
-# タグを push
-git push origin poh_holdmetrics-v0.1.16
-（ git push origin poh_holdmetrics/v0.1.16　）
+git tag v0.1.16
+git push origin v0.1.16
 
 
 # 結果

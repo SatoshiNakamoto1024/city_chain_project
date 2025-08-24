@@ -566,7 +566,27 @@ console_subscriber::init();   // tracing_subscriber と併用可
 別ターミナルで
 tokio-console
 
-テスト実行
+# テスト実行
+cargo test --features py-embed  (埋め込みでやること！)
+   Compiling pyo3-build-config v0.25.1
+   Compiling pyo3-macros-backend v0.25.1
+   Compiling pyo3-ffi v0.25.1
+   Compiling pyo3 v0.25.1
+   Compiling rvh_trace_rust v0.1.0 (/home/satoshi/work/city_chain_project/DAGs/libs/algorithm/rvh_trace/rvh_trace_rust)
+   Compiling pyo3-macros v0.25.1
+   Compiling pyo3-async-runtimes v0.25.0
+warning: unused import: `predicates::prelude::*`
+ --> DAGs/libs/algorithm/rvh_trace/rvh_trace_rust/tests/test_cli.rs:4:5
+  |
+4 | use predicates::prelude::*;       // 追加したクレート
+  |     ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: `rvh_trace_rust` (test "test_cli") generated 1 warning (run `cargo fix --test "test_cli"` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.98s
+
+
 GUI に spawn / poll / waker 情報がリアルタイム表示され、
 panic 直前に どのタスクが動いた／止まった かが分かります。
 
@@ -604,32 +624,47 @@ tokio-console	Reactor が “OFFLINE” になっていない
 最後に GUI が欲しければ 4️⃣ を付ける、という順で試すのがオススメです。
 
 
-running 1 test
-test test_cli_runs ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
-
-     Running tests\test_py_bindings.rs (target\debug\deps\test_py_bindings-10742091b37017d6.exe)
+Running unittests src/lib.rs (/home/satoshi/work/city_chain_project/target-release/debug/deps/rvh_trace_rust-cf6fae1ee88960f0)
 
 running 0 tests
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\test_trace.rs (target\debug\deps\test_trace-2838684b4965306d.exe)
+     Running unittests src/main_trace.rs (/home/satoshi/work/city_chain_project/target-release/debug/deps/main_trace-d2e46e25eb0abc4f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/test_cli.rs (/home/satoshi/work/city_chain_project/target-release/debug/deps/test_cli-14c457e06dc9d7bc)
 
 running 1 test
-2025-07-03T20:56:49.697885Z  INFO span{name=unit_test}: inside sync span
-2025-07-03T20:56:49.699053Z DEBUG buffer closing; waking pending tasks
+test test_cli_runs ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/test_import.rs (/home/satoshi/work/city_chain_project/target-release/debug/deps/test_import-842ae2a2df9d3c74)
+
+running 1 test
+test test_python_import_only ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+     Running tests/test_trace.rs (/home/satoshi/work/city_chain_project/target-release/debug/deps/test_trace-70cf4bb5e4e72c3d)
+
+running 1 test
+2025-08-24T01:57:46.307524Z  INFO span{name=unit_test}: inside sync span
+2025-08-24T01:57:46.307786Z DEBUG buffer closing; waking pending tasks
 test test_trace_sync ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
    Doc-tests rvh_trace_rust
 
 running 1 test
-test src\lib.rs - (line 6) - compile ... ok
+test DAGs/libs/algorithm/rvh_trace/rvh_trace_rust/src/lib.rs - (line 6) - compile ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.11s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
 
 
 # ベンチ (結果は target/criterion/)

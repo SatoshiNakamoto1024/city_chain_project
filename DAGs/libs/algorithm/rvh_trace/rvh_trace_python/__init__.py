@@ -1,4 +1,4 @@
-# D:\city_chain_project\rvh_trace_python\__init__.py
+# \city_chain_project\rvh_trace_python\__init__.py
 
 """
 rvh_faultset: GeoHash ベースのレイテンシ最適化 ＋ Rust failover 統合パイプライン

@@ -1,0 +1,21 @@
+# \city_chain_project\.github\workflows\release-wheels-rvh_trace.yml
+name: Release Wheels (rvh_trace)
+
+on:
+  workflow_dispatch: {}
+  push:
+    # rvh_trace 専用タグだけで動くようにする
+    tags: ["rvh_trace-v*"]
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  call-reusable:
+    uses: ./.github/workflows/_release-wheels-reusable.yml
+    with:
+      cargo_manifest: DAGs/libs/algorithm/rvh_trace/rvh_trace_rust/Cargo.toml
+      python_wrapper_dir: DAGs/libs/algorithm/rvh_trace/rvh_trace_python
+    secrets:
+      TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}

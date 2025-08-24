@@ -1,4 +1,4 @@
-# D:\city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_python\tests\test_rust_bindings.py
+# \city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_python\tests\test_rust_bindings.py
 # -*- coding: utf-8 -*-
 """
 rvh_trace_python: Rust 拡張 (rvh_trace_rust) の健全性と

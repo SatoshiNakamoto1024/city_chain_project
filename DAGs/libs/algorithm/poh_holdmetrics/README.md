@@ -422,7 +422,7 @@ py-ext（拡張）と py-embed（埋め込み）を機能フラグで分岐し�
 # dockerから単体クレートテスト
 方法B（.env は候補のまま・起動時だけ選択）
 起動コマンドで上書きします。.env の候補はそのまま残し、シェルで 1 本を選んで MONGODB_URL に流し込みます。
-# 例：ASIA を選ぶ
+# 例：ASIA を選ぶ (注意！　.envの一番下に、テスト用にasiaをURLにいれてます。本番はorchestoraから入れますので削除)
 export MONGODB_URL='mongodb+srv://satoshi:greg1024@asia.kzxnr.mongodb.net/?retryWrites=true&w=majority&appName=asia&readPreference=primary'
 
 # 3) 起動

@@ -1,91 +1,78 @@
-# \city_chain_project\services.yaml
-# ===================================================================================
-# 目的:
-#   - クレートごとに「どうビルドするか / どう起動するか / どうテストするか」を宣言
-#   - tools/gen.py が docker-bake.generated.hcl / docker-compose.*.generated.yml を生成
-#
-# 前提（本番想定・Atlas固定）:
-#   - ローカルMongoDBは使わない
-#   - orchestra または起動コマンドが MONGODB_URL を “1本だけ” 注入する
-#   - 依存する他サービス（mongoコンテナ等）は記述しない
-# ===================================================================================
-
 version: 1
-
 defaults:
   network: city_chain_net
   dockerfile: ./Dockerfile
-
-# PyO3/pyext（wheel ビルドやテスト用）
 pyext:
-  - name: poh_holdmetrics
-    # *_rust/_python の親（ドメインルート）を指す
-    crate_path: DAGs/libs/algorithm/poh_holdmetrics
-    kind: mixed
-    features: ["python"]
-    # Python ラッパのディレクトリ
-    python_wrapper: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
-    tests:
-      - kind: pytest
-        path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/tests
-        # ★重要: ここで MONGODB_URL/MONGODB_URI を固定しない（空文字が焼き込まれるのを防ぐ）
-        # Atlas の接続文字列は `docker compose run -e ...` でコンテナ起動時に注入する
-        env:
-          # MONGODB_URL: （削除）
-          # MONGODB_URI: （削除）
-          MONGODB_DB: "pytest_tmp"
-          # テスト安定化用（開発時のみ）
-          PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: "python"
-          PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION: "3"
-          POH_DISABLE_RUST: "1"
-          PYTEST_ADDOPTS: "-o cache_dir=/tmp/pytest_cache"
-
-# 常駐サービス（Atlas 直結）
+- name: rvh_trace
+  crate_path: DAGs/libs/algorithm/rvh_trace
+  kind: mixed
+  features:
+  - python
+  python_wrapper: DAGs/libs/algorithm/rvh_trace/rvh_trace_python
+  tests:
+  - kind: pytest
+    path: DAGs/libs/algorithm/rvh_trace/rvh_trace_python/rvh_trace/tests
+    env: {}
+- name: poh_holdmetrics
+  crate_path: DAGs/libs/algorithm/poh_holdmetrics
+  kind: mixed
+  features:
+  - python
+  python_wrapper: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python
+  tests:
+  - kind: pytest
+    path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_python/poh_holdmetrics/tests
+    env:
+      MONGODB_DB: pytest_tmp
+      PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
+      PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION: '3'
+      POH_DISABLE_RUST: '1'
+      PYTEST_ADDOPTS: -o cache_dir=/tmp/pytest_cache
 services:
-  # ==== gRPC サーバ ====
-  - name: poh_holdmetrics-grpc
-    # *_rust を指す
-    crate_path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust
-    kind: rust
-    bin_name: main_holdmetrics
-    env:
-      SERVICE_MODE: "grpc"
-      GRPC_ADDRESS: "0.0.0.0:60051"
-      # Atlas の接続文字列を1本だけ注入（例：mongodb+srv://...）
-      MONGODB_URL: ${MONGODB_URL}
-      # DB 名（pymongoでは client[DB] で参照）
-      MONGODB_DB: "holdmetrics_prod"
-    ports:
-      - "60051:60051"
-      # （任意）メトリクスを scrape したい場合は 9100 も公開
-      - "9100:9100"
-    # Rust の bin をそのまま実行（常駐）
-    command: ["/app/bin/main_holdmetrics", "--grpc-addr", "0.0.0.0:60051"]
-    healthcheck:
-      port: 60051
-      interval: "5s"
-      timeout: "2s"
-      retries: 20
-
-  # ==== HTTP サーバ ====
-  - name: poh_holdmetrics-http
-    crate_path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust
-    kind: mixed
-    features: ["python"]
-    env:
-      SERVICE_MODE: "http"
-      HTTP_PORT: "8000"
-      # Atlas の接続文字列を1本だけ注入
-      MONGODB_URL: ${MONGODB_URL}
-      MONGODB_DB: "holdmetrics_prod"
-    ports:
-      - "8000:8000"
-    # Uvicorn で FastAPI を常駐起動
-    command: ["python","-m","uvicorn","poh_holdmetrics.api.http_server:app","--host","0.0.0.0","--port","8000"]
-    healthcheck:
-      port: 8000
-      interval: "5s"
-      timeout: "2s"
-      retries: 20
-
-# ※ Atlas固定のため infra: mongo は記述しない（ローカルMongoは使わない）
+- name: poh_holdmetrics-grpc
+  crate_path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust
+  kind: rust
+  bin_name: main_holdmetrics
+  env:
+    SERVICE_MODE: grpc
+    GRPC_ADDRESS: 0.0.0.0:60051
+    MONGODB_URL: ${MONGODB_URL}
+    MONGODB_DB: holdmetrics_prod
+  ports:
+  - 60051:60051
+  - 9100:9100
+  command:
+  - /app/bin/main_holdmetrics
+  - --grpc-addr
+  - 0.0.0.0:60051
+  healthcheck:
+    port: 60051
+    interval: 5s
+    timeout: 2s
+    retries: 20
+- name: poh_holdmetrics-http
+  crate_path: DAGs/libs/algorithm/poh_holdmetrics/poh_holdmetrics_rust
+  kind: mixed
+  features:
+  - python
+  env:
+    SERVICE_MODE: http
+    HTTP_PORT: '8000'
+    MONGODB_URL: ${MONGODB_URL}
+    MONGODB_DB: holdmetrics_prod
+  ports:
+  - 8000:8000
+  command:
+  - python
+  - -m
+  - uvicorn
+  - poh_holdmetrics.api.http_server:app
+  - --host
+  - 0.0.0.0
+  - --port
+  - '8000'
+  healthcheck:
+    port: 8000
+    interval: 5s
+    timeout: 2s
+    retries: 20

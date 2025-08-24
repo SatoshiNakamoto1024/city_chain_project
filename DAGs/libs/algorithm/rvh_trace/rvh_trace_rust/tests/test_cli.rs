@@ -1,4 +1,4 @@
-// D:\city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_rust\tests\test_cli.rs
+// \city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_rust\tests\test_cli.rs
 
 use assert_cmd::Command;          // 実行用
 use predicates::prelude::*;       // 追加したクレート

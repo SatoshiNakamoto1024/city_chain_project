@@ -1,4 +1,4 @@
-// D:\city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_rust\tests\test_trace.rs
+// \city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_rust\tests\test_trace.rs
 
 //! 単体 (Rust だけ) テスト。
 //! init_tracing() 内部で tonic が Tokio へアクセスするため、

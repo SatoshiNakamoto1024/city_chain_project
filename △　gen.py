@@ -300,23 +300,22 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
             out.append(f'    image: "${{REGISTRY:-local}}/{tname}:latest"')
             out.append("    working_dir: /workspace")
             # --- collect env for tests and emit once ---
-            env = {}
+            env: Dict[str, str] = {}
             # 既存のテスト定義から env を拾う（もしあれば）
             if t.get("environment"):
                 env.update(t["environment"])
             if t.get("env"):
                 env.update(t["env"])
-            # Mongo 接続先（未指定ならだけ入れる）
-            env.setdefault("MONGODB_URL", "mongodb://mongo:27017")
-            env.setdefault("MONGODB_URI", "mongodb://mongo:27017")
+            # Atlas 前提の既定値（未指定ならだけ入れる）
+            env.setdefault("MONGODB_URL", "${MONGODB_URL}")
+            env.setdefault("MONGODB_URI", "${MONGODB_URI}")
             env.setdefault("MONGODB_DB", "pytest_tmp")
             # 兄弟サービスへの自動注入（未設定のときだけ）
             if has_grpc:
                 env.setdefault("POH_GRPC_ADDR", "poh_holdmetrics-grpc:60051")
             if has_http:
                 env.setdefault("POH_HTTP_ADDR", "http://poh_holdmetrics-http:8000")
-            if has_mongo:
-                env.setdefault("MONGO_URL", "mongodb://mongo:27017")
+            # Atlas モードでは MONGO_URL は不要（挿入しない）
             if env:
                 out.append("    environment:")
                 for k, v in env.items():
@@ -324,15 +323,12 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
             # 明示 wait_for があればそれを優先
             explicit_wait = t.get("wait_for")
 
-            # 自動 depends_on: mongo は service_started、-grpc/-http は healthy
+            # 自動 depends_on: -grpc/-http は healthy、mongo は使わない前提なので付けない
             out.append("    depends_on:")
             if explicit_wait:
                 out.append(f"      {explicit_wait['service']}:")
                 out.append("        condition: service_healthy")
             else:
-                if has_mongo:
-                    out.append("      mongo:")
-                    out.append("        condition: service_healthy")
                 if has_grpc:
                     out.append("      poh_holdmetrics-grpc:")
                     out.append("        condition: service_healthy")
@@ -343,23 +339,22 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
             if t.get("kind") == "pytest":
                 path = t["path"]
                 markers = t.get("markers")
-                # 先に Rust 拡張 wheel をインストール → その後に Python ラッパを -e で入れる
-                cmd = (
+                # --- 事前インストール（entrypoint）: 旧 rust wheel の除去 → /workspace/wheels から再インストール → wrapper[test]
+                prelude = (
                     "set -eux; "
-                    # maturin build 済みの成果物（/workspace/wheels）を入れる
-                    "if ls /workspace/wheels/*.whl >/dev/null 2>&1; then "
-                    "  python -m pip install --no-cache-dir /workspace/wheels/*.whl; "
-                    "else "
-                    "  echo '!! no wheels found under /workspace/wheels' >&2; "
+                    "python -m pip uninstall -y poh-holdmetrics-rust || true; "
+                    "if ls /workspace/wheels/poh_holdmetrics_rust-*.whl >/dev/null 2>&1; then "
+                    "  python -m pip install --no-cache-dir /workspace/wheels/poh_holdmetrics_rust-*.whl; "
                     "fi; "
-                    # ラッパ（テスト extras 付き）を editable で
                     f"python -m pip install --no-cache-dir -e {wrapper}[test]; "
-                    # pytest 実行
-                    f"pytest -q {path}"
+                    "exec \"$0\" \"$@\""
                 )
+                out.append(f'    entrypoint: ["bash","-lc",{shlex.quote(prelude)}]')
+                # 既定の pytest コマンド（上書きも可）を array で出力
+                cmd_arr = ['"pytest"','"-q"', f'"{path}"']
                 if markers:
-                    cmd += f" -m \"{markers}\""
-                out.append(f"    command: bash -lc {shlex.quote(cmd)}")
+                    cmd_arr += ['"-m"', f'"{markers}"']
+                out.append(f"    command: [{', '.join(cmd_arr)}]")
 
             out.append("    networks:")
             out.append(f"      - {network}")
@@ -387,33 +382,27 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
             out.append(f'    image: "${{REGISTRY:-local}}/{tname}:latest"')
             out.append("    working_dir: /workspace")
             # --- collect env for tests and emit once ---
-            env = {}
+            env: Dict[str, str] = {}
             # 既存のテスト定義から env を拾う（もしあれば）
             if t.get("environment"):
                 env.update(t["environment"])
             if t.get("env"):
                 env.update(t["env"])
-            # Mongo 接続先（未指定ならだけ入れる）
-            env.setdefault("MONGODB_URL", "mongodb://mongo:27017")
-            env.setdefault("MONGODB_URI", "mongodb://mongo:27017")
+            # Atlas 前提の既定値
+            env.setdefault("MONGODB_URL", "${MONGODB_URL}")
+            env.setdefault("MONGODB_URI", "${MONGODB_URI}")
             env.setdefault("MONGODB_DB", "pytest_tmp")
             if has_grpc:
                 env.setdefault("POH_GRPC_ADDR", "poh_holdmetrics-grpc:60051")
             if has_http:
                 env.setdefault("POH_HTTP_ADDR", "http://poh_holdmetrics-http:8000")
-            if has_mongo:
-                env.setdefault("MONGO_URL", "mongodb://mongo:27017")
+            # Atlas モードでは MONGO_URL は不要（挿入しない）
             if env:
                 out.append("    environment:")
                 for k, v in env.items():
                     out.append(f'      {k}: "{v}"')
-            # 明示 wait_for があればそれを優先
-            explicit_wait = t.get("wait_for")
-            # 自動 depends_on
+            # 自動 depends_on（mongo 依存は付けない）
             out.append("    depends_on:")
-            if has_mongo:
-                out.append("      mongo:")
-                out.append("        condition: service_healthy")
             if has_grpc:
                 out.append("      poh_holdmetrics-grpc:")
                 out.append("        condition: service_healthy")
@@ -425,19 +414,20 @@ def _compose_app_and_tests_services(cfg: Dict[str, Any], include_tests: bool) ->
                 path = t["path"]
                 markers = t.get("markers")
                 wrapper_guess = svc["crate_path"].replace("_rust", "_python")
-                cmd = (
+                prelude = (
                     "set -eux; "
-                    "if ls /workspace/wheels/*.whl >/dev/null 2>&1; then "
-                    "  python -m pip install --no-cache-dir /workspace/wheels/*.whl; "
-                    "else "
-                    "  echo '!! no wheels found under /workspace/wheels' >&2; "
+                    "python -m pip uninstall -y poh-holdmetrics-rust || true; "
+                    "if ls /workspace/wheels/poh_holdmetrics_rust-*.whl >/dev/null 2>&1; then "
+                    "  python -m pip install --no-cache-dir /workspace/wheels/poh_holdmetrics_rust-*.whl; "
                     "fi; "
                     f"python -m pip install --no-cache-dir -e {wrapper_guess}[test] || true; "
-                    f"pytest -q {path}"
+                    "exec \"$0\" \"$@\""
                 )
+                out.append(f'    entrypoint: ["bash","-lc",{shlex.quote(prelude)}]')
+                cmd_arr = ['"pytest"','"-q"', f'"{path}"']
                 if markers:
-                    cmd += f" -m \"{markers}\""
-                out.append(f"    command: bash -lc {shlex.quote(cmd)}")
+                    cmd_arr += ['"-m"', f'"{markers}"']
+                out.append(f"    command: [{', '.join(cmd_arr)}]")
 
             out.append("    networks:")
             out.append(f"      - {network}")

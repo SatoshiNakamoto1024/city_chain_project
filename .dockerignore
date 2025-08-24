@@ -18,6 +18,7 @@
 !network/DB/mongodb/
 !network/DB/mongodb/**
 !DAGs/libs/algorithm/poh_holdmetrics/
+!DAGs/libs/algorithm/rvh_trace/
 
 
 # ---- ここから「生成物は除外」 ----

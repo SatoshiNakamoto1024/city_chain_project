@@ -80,9 +80,9 @@ step 1
 step 2
 
 # 単体テスト
-$ pytest rvh_trace_python/tests -q
+$ pytest rvh_trace/tests -v
 ......
-8 passed in 0.42s
+12 passed in 0.42s
 
 
 (.venv312) D:\city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_python>pytest -v rvh_trace/tests

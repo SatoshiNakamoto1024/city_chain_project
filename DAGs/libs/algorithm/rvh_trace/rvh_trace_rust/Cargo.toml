@@ -1,4 +1,4 @@
-# D:\city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_rust\Cargo.toml
+# \city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_rust\Cargo.toml
 [package]
 name        = "rvh_trace_rust"
 version     = "0.1.0"
@@ -10,8 +10,8 @@ build       = "build.rs"
 
 [features]
 # Python 拡張（拡張モジュール用のリンク設定のみ。）
-python        = ["pyo3/extension-module", "pyo3/abi3-py312"]
-py-ext    = ["pyo3/extension-module", "pyo3/abi3-py312"]
+python        = ["pyo3/extension-module","pyo3/abi3-py312"]
+py-ext    = ["pyo3/extension-module","pyo3/abi3-py312"]
 # 埋め込み動作用（必要なら）
 py-embed  = ["pyo3/auto-initialize"]
 
@@ -34,9 +34,10 @@ prometheus      = "0.13"
 # --- OpenTelemetry ---------------------------------------------------------
 opentelemetry           = { version = "0.21", features = ["trace"] }
 opentelemetry-otlp      = { version = "0.14", features = ["tonic"] }
+opentelemetry_sdk       = { version = "0.21", features = ["rt-tokio"] }  # ← これを追加
 
 # --- PyO3 & pyo3-asyncio (for Python ≥3.8 / Python 3.12 対応) ---------------
-pyo3 = { workspace = true, default-features = false }   # ①一旦 feature を全部外す
+pyo3 = { workspace = true } 
 pyo3-async-runtimes = { workspace = true }
 
 # --- errors & CLI etc. ----------------------------------------------------
@@ -49,18 +50,21 @@ chrono          = { version = "0.4", default-features = false, features = ["cloc
 dashmap         = "5.5"
 config          = "0.14"
 
+
 [dev-dependencies]
-tokio-test      = "0.4"
-criterion       = { version = "0.5", features = ["html_reports","async_tokio"] }
-predicates      = "3"
-serde_json      = "1"
 assert_cmd      = "2.0"
 tempfile        = "3.10"
 walkdir         = "2.5"
 rayon           = "1.10"
+tokio-test      = "0.4"
+criterion       = { version = "0.5", features = ["html_reports","async_tokio"] }
+predicates      = "3"
+serde_json      = "1"
 
 [build-dependencies]
 pyo3-build-config = "0.25"
+tonic-build = { version = "0.12", default-features = false, features = ["prost"] }
+prost-build  = "0.13"
 
 # ===== ☆ 重要 ☆ =========================================
 # これを書くだけで pyo3-build-config が自動でリンクフラグを伝搬

@@ -1,4 +1,4 @@
-// D:\city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_rust\tests\test_import.rs
+// \city_chain_project\DAGs\libs\algorithm\rvh_trace\rvh_trace_rust\tests\test_import.rs
 
 //! tests/test_import.rs – Python 拡張の「単純 import」チェック
 use assert_cmd::Command;
