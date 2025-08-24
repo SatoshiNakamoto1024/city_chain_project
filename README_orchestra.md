@@ -1600,12 +1600,13 @@ git commit -m "ci: wheels -> write all artifacts to \$GITHUB_WORKSPACE/dist and 
 クレート１つずつコミット・プッシュしていくべし
 # 変更をコミット
 git add -A
-git commit -m "release(rvh_trace): bump to v0.1.0; CI: triggers & ignore build dirs"
+git commit -m "release(rvh_trace): bump to v0.1.1; CI: triggers & ignore build dirs"
 git push origin main
 
 # 注釈付きタグ（どちらでもOK。私はハイフン派）
-git tag v0.1.16
-git push origin v0.1.16
+# いまの HEAD に rvh_trace 用のタグを付けて push
+git tag -a rvh_trace-v0.1.1 -m "rvh_trace v0.1.1"
+git push origin rvh_trace-v0.1.1
 
 
 # 結果
