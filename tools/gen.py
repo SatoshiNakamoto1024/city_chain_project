@@ -546,6 +546,9 @@ def _compose_services(cfg: Dict[str, Any], include_tests: bool) -> List[str]:
         kind = px.get("kind", "mixed")
         features = join_features(px.get("features") or (["python"] if kind != "rust" else []))
         wrapper = px.get("python_wrapper")
+        #  追加
+        dist_name = px.get("dist_name", f"{name}_rust")   # maturin が出す wheel のパッケージ名
+        wheel_glob = f"/workspace/wheels/{dist_name}-*.whl"
 
         for i, t in enumerate(px.get("tests") or [], start=1):
             tname = f"test-{name}-{i}"
@@ -587,9 +590,22 @@ def _compose_services(cfg: Dict[str, Any], include_tests: bool) -> List[str]:
                 path = t["path"]
                 prelude = (
                     "set -eux; "
-                    "python -m pip uninstall -y poh-holdmetrics-rust || true; "
-                    "if ls /workspace/wheels/poh_holdmetrics_rust-*.whl >/dev/null 2>&1; then "
-                    "  python -m pip install --no-cache-dir /workspace/wheels/poh_holdmetrics_rust-*.whl; "
+                    # 1) wheels の中身を出してデバッグしやすく
+                    "echo '== ls /workspace/wheels'; ls -al /workspace/wheels || true; "
+                    # 2) まずはローカル wheel をインストール
+                    f"if compgen -G {shlex.quote(wheel_glob)} > /dev/null; then "
+                    f"  echo '== installing local wheel: {wheel_glob}'; "
+                    f"  python -m pip install --no-cache-dir {wheel_glob}; "
+                    "else "
+                    # 3) 無ければコンテナ内でビルドしてインストール（PyPI に取りに行かない）
+                    "  echo '== wheel not found; building in container with maturin'; "
+                    f"  RT=$(ls {crate_root}/*_rust/Cargo.toml 2>/dev/null | head -n1 || true); "
+                    "  if [ -n \"$RT\" ]; then "
+                    "    maturin build -m \"$RT\" --release --features python -o /tmp; "
+                    "    python -m pip install --no-cache-dir /tmp/*.whl; "
+                    "  else "
+                    "    echo '!! *_rust/Cargo.toml not found; cannot build'; "
+                    "  fi; "
                     "fi; "
                 )
                 if wrapper:
