@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rvh_trace"
-version = "0.1.1"
+version = "0.1.2"
 description = "Python helper for high-performance tracing & metrics via rvh_trace_rust"
 authors = [{ name = "Your Name", email = "you@example.com" }]
 requires-python = ">=3.8"
 
 dependencies = [
   # 先にパッケージ化してあるのでOK
-  "rvh_trace_rust>=0.1.1",
+  "rvh_trace_rust>=0.1.2",
   "aiofiles>=23.1.0",
   "aiosqlite>=0.18.0",
 ]
