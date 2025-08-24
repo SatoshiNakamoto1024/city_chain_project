@@ -611,7 +611,8 @@ def _compose_services(cfg: Dict[str, Any], include_tests: bool) -> List[str]:
                 if wrapper:
                     prelude += f"python -m pip install --no-cache-dir -e {shlex.quote(wrapper)}[test]; "
                 prelude += 'exec "$0" "$@"'
-                out.append(f'    entrypoint: ["bash","-lc",{shlex.quote(prelude)}]')
+                escaped = prelude.replace('\\', '\\\\').replace('"', '\\"')
+                out.append(f'    entrypoint: ["bash","-lc","{escaped}"]')
                 out.append(f'    command: ["pytest","-q","{path}"]')
 
             out += ["    networks:", f"      - {network}", ""]
